@@ -1,0 +1,58 @@
+import React from 'react'
+import { describe, expect, it, jest } from '@jest/globals'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import ManualAuthForm, { PASSWORD_GUIDANCE, isStrongPassword } from './ManualAuthForm'
+
+describe('ManualAuthForm', () => {
+  it('submits an existing username account', async () => {
+    const onSubmit = jest.fn(() => Promise.resolve())
+    const user = userEvent.setup()
+    render(<ManualAuthForm busyAction={null} errorMessage="" onBack={jest.fn()} onSubmit={onSubmit} />)
+
+    await user.type(screen.getByLabelText('Username'), 'test')
+    await user.type(screen.getByLabelText('Password'), 'test')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(onSubmit).toHaveBeenCalledWith('login', { username: 'test', password: 'test' })
+  })
+
+  it('requires matching strong passwords before registration reaches the backend', async () => {
+    const onSubmit = jest.fn()
+    const user = userEvent.setup()
+    render(<ManualAuthForm busyAction={null} errorMessage="" onBack={jest.fn()} onSubmit={onSubmit} />)
+
+    await user.click(screen.getByRole('tab', { name: 'Create account' }))
+    await user.type(screen.getByLabelText('Username'), 'new-player')
+    await user.type(screen.getByLabelText('Password'), 'StrongPassword1!')
+    await user.type(screen.getByLabelText('Enter password again'), 'DifferentPassword1!')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The two passwords do not match.')
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('submits a valid new account with password confirmation', async () => {
+    const onSubmit = jest.fn(() => Promise.resolve())
+    const user = userEvent.setup()
+    render(<ManualAuthForm busyAction={null} errorMessage="" onBack={jest.fn()} onSubmit={onSubmit} />)
+
+    await user.click(screen.getByRole('tab', { name: 'Create account' }))
+    await user.type(screen.getByLabelText('Username'), 'new-player')
+    await user.type(screen.getByLabelText('Password'), 'StrongPassword1!')
+    await user.type(screen.getByLabelText('Enter password again'), 'StrongPassword1!')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(onSubmit).toHaveBeenCalledWith('register', {
+      username: 'new-player',
+      password: 'StrongPassword1!',
+      passwordConfirmation: 'StrongPassword1!',
+    })
+  })
+
+  it('uses the same strong-password rule described to the player', () => {
+    expect(isStrongPassword('StrongPassword1!')).toBe(true)
+    expect(isStrongPassword('weakpassword')).toBe(false)
+    expect(PASSWORD_GUIDANCE).toMatch(/12–72 characters/)
+  })
+})

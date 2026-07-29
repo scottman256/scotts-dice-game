@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, expect, it, jest } from '@jest/globals'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DiceRoller from './DiceRoller'
 import { ALL_CATEGORIES } from '../gameRules'
@@ -364,5 +364,21 @@ describe('DiceRoller', () => {
     expect(finalScore).not.toHaveClass('spectacular-score-display')
     expect(within(finalScore).getByText('Game Complete')).toBeVisible()
     expect(within(finalScore).getByText('500')).toHaveClass('final-score-number')
+  })
+
+  it('reports a completed game once and announces a confirmed new high score', async () => {
+    const onGameComplete = jest.fn()
+    renderGame({
+      initialState: { scores: completeScores(1) },
+      highScoreStatus: 'new',
+      onGameComplete,
+    })
+
+    expect(screen.getByText('NEW HIGH SCORE')).toBeVisible()
+    await waitFor(() => expect(onGameComplete).toHaveBeenCalledTimes(1))
+    expect(onGameComplete).toHaveBeenCalledWith({
+      gameId: expect.any(String),
+      score: expect.any(Number),
+    })
   })
 })

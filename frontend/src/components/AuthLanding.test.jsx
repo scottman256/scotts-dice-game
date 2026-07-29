@@ -8,16 +8,20 @@ import AuthLanding from './AuthLanding'
 function defaultProps(overrides = {}) {
   return {
     authConfigured: true,
+    backendAvailable: true,
+    manualAuthEnabled: true,
+    socialAuthEnabled: true,
     busyProvider: null,
     errorMessage: '',
     onGuest: jest.fn(),
+    onManualAuth: jest.fn(),
     onProviderSignIn: jest.fn(),
     ...overrides,
   }
 }
 
 describe('AuthLanding', () => {
-  it('introduces the game and offers all three entry choices', () => {
+  it('introduces the game and offers all four entry choices', () => {
     render(<AuthLanding {...defaultProps()} />)
 
     expect(screen.getByRole('main')).toHaveAccessibleName('Ready to roll?')
@@ -27,6 +31,7 @@ describe('AuthLanding', () => {
     expect(screen.getByRole('list', { name: 'Game features' })).toHaveTextContent('Hold your best dice')
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continue with Facebook' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continue with Username' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
     expect(screen.queryByText(/Social sign-in needs Firebase setup/)).not.toBeInTheDocument()
   })
@@ -50,8 +55,30 @@ describe('AuthLanding', () => {
 
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Continue with Facebook' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Continue with Username' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
-    expect(screen.getByText('Social sign-in needs Firebase setup. Guest play is ready now.')).toBeVisible()
+    expect(screen.getByText('Social sign-in needs matching Firebase setup. Username and guest play are ready.')).toBeVisible()
+  })
+
+  it('offers only guest mode when the backend is offline', () => {
+    render(<AuthLanding {...defaultProps({ backendAvailable: false })} />)
+
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with Facebook' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with Username' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
+    expect(screen.getByText('The game service is offline. Guest play still works normally.')).toBeVisible()
+  })
+
+  it('opens the username sign-in and account creation form', async () => {
+    const user = userEvent.setup()
+    render(<AuthLanding {...defaultProps()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Continue with Username' }))
+
+    expect(screen.getByRole('heading', { name: 'Use your username' })).toBeVisible()
+    expect(screen.getByRole('tab', { name: 'Sign in' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Create account' })).toBeVisible()
   })
 
   it.each([

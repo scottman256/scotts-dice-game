@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { AUTH_PROVIDERS } from '../auth/authModel'
+import ManualAuthForm from './ManualAuthForm'
 
 function GoogleMark() {
   return (
@@ -21,14 +22,29 @@ function FacebookMark() {
   )
 }
 
+function UsernameMark() {
+  return (
+    <svg className="provider-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 21c.5-5 3-7.5 7.5-7.5s7 2.5 7.5 7.5" />
+    </svg>
+  )
+}
+
 export default function AuthLanding({
   authConfigured,
+  backendAvailable = false,
+  manualAuthEnabled = false,
+  socialAuthEnabled = false,
   busyProvider,
   errorMessage,
   onGuest,
+  onManualAuth,
   onProviderSignIn,
 }) {
+  const [manualOpen, setManualOpen] = useState(false)
   const isBusy = Boolean(busyProvider)
+  const socialAvailable = backendAvailable && socialAuthEnabled && authConfigured
 
   return (
     <main className="auth-page" aria-labelledby="welcome-title">
@@ -49,53 +65,89 @@ export default function AuthLanding({
       </section>
 
       <section className="auth-card" aria-labelledby="sign-in-title">
-        <div className="auth-card-heading">
-          <p className="eyebrow">Welcome</p>
-          <h2 id="sign-in-title">Choose how to play</h2>
-          <p>Sign in for a named session, or jump straight into a guest game.</p>
-        </div>
+        {manualOpen ? (
+          <>
+            <div className="auth-card-heading">
+              <p className="eyebrow">Player account</p>
+              <h2 id="sign-in-title">Use your username</h2>
+              <p>Sign in to an existing account or create a new one.</p>
+            </div>
+            <ManualAuthForm
+              busyAction={busyProvider}
+              errorMessage={errorMessage}
+              onBack={() => setManualOpen(false)}
+              onSubmit={onManualAuth}
+            />
+          </>
+        ) : (
+          <>
+            <div className="auth-card-heading">
+              <p className="eyebrow">Welcome</p>
+              <h2 id="sign-in-title">Choose how to play</h2>
+              <p>Sign in to save high scores, or jump straight into a guest game.</p>
+            </div>
 
-        <div className="auth-actions">
-          <button
-            type="button"
-            className="provider-button google-button"
-            onClick={() => onProviderSignIn(AUTH_PROVIDERS.google)}
-            disabled={!authConfigured || isBusy}
-          >
-            <GoogleMark />
-            <span>{busyProvider === AUTH_PROVIDERS.google ? 'Connecting to Google…' : 'Continue with Google'}</span>
-          </button>
-          <button
-            type="button"
-            className="provider-button facebook-button"
-            onClick={() => onProviderSignIn(AUTH_PROVIDERS.facebook)}
-            disabled={!authConfigured || isBusy}
-          >
-            <FacebookMark />
-            <span>{busyProvider === AUTH_PROVIDERS.facebook ? 'Connecting to Facebook…' : 'Continue with Facebook'}</span>
-          </button>
+            <div className="auth-actions">
+              {backendAvailable && (
+                <>
+                  <button
+                    type="button"
+                    className="provider-button google-button"
+                    onClick={() => onProviderSignIn(AUTH_PROVIDERS.google)}
+                    disabled={!socialAvailable || isBusy}
+                  >
+                    <GoogleMark />
+                    <span>{busyProvider === AUTH_PROVIDERS.google ? 'Connecting to Google…' : 'Continue with Google'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="provider-button facebook-button"
+                    onClick={() => onProviderSignIn(AUTH_PROVIDERS.facebook)}
+                    disabled={!socialAvailable || isBusy}
+                  >
+                    <FacebookMark />
+                    <span>{busyProvider === AUTH_PROVIDERS.facebook ? 'Connecting to Facebook…' : 'Continue with Facebook'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="provider-button username-button"
+                    onClick={() => setManualOpen(true)}
+                    disabled={!manualAuthEnabled || isBusy}
+                  >
+                    <UsernameMark />
+                    <span>Continue with Username</span>
+                  </button>
+                </>
+              )}
 
-          <div className="auth-divider"><span>or</span></div>
+              {backendAvailable && <div className="auth-divider"><span>or</span></div>}
 
-          <button
-            type="button"
-            className="guest-button"
-            onClick={onGuest}
-            disabled={isBusy}
-          >
-            Continue as Guest
-          </button>
-        </div>
+              <button
+                type="button"
+                className="guest-button"
+                onClick={onGuest}
+                disabled={isBusy}
+              >
+                Continue as Guest
+              </button>
+            </div>
 
-        {errorMessage && <p className="auth-message auth-error" role="alert">{errorMessage}</p>}
-        {!authConfigured && (
-          <p className="auth-message auth-setup-note">
-            Social sign-in needs Firebase setup. Guest play is ready now.
-          </p>
+            {errorMessage && <p className="auth-message auth-error" role="alert">{errorMessage}</p>}
+            {!backendAvailable && (
+              <p className="auth-message auth-setup-note">
+                The game service is offline. Guest play still works normally.
+              </p>
+            )}
+            {backendAvailable && !socialAvailable && (
+              <p className="auth-message auth-setup-note">
+                Social sign-in needs matching Firebase setup. Username and guest play are ready.
+              </p>
+            )}
+            <p className="auth-privacy-note">
+              Account sign-in unlocks saved scores and leaderboards.
+            </p>
+          </>
         )}
-        <p className="auth-privacy-note">
-          Social sign-in shares only your basic account profile with this app.
-        </p>
       </section>
     </main>
   )

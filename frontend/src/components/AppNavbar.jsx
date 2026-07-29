@@ -1,16 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { getUserInitials } from '../auth/authModel'
 
 export default function AppNavbar({
   sessionKind,
   user,
   isSigningOut,
+  isScoresOpen,
   isSettingsOpen,
+  onOpenScores,
   onReturnHome,
   onOpenSettings,
   onSignOut,
   settingsButtonRef,
 }) {
+  const [scoresMenuOpen, setScoresMenuOpen] = useState(false)
   const isGuest = sessionKind === 'guest'
   const accountDetail = isGuest
     ? 'Local guest session'
@@ -40,6 +43,45 @@ export default function AppNavbar({
           <strong>{user.name}</strong>
           <small>{accountDetail}</small>
         </span>
+        {!isGuest && (
+          <div className="scores-menu-wrap">
+            <button
+              type="button"
+              className="scores-menu-button"
+              aria-expanded={scoresMenuOpen}
+              aria-haspopup="menu"
+              aria-pressed={isScoresOpen}
+              onClick={() => setScoresMenuOpen((open) => !open)}
+              disabled={isSigningOut}
+            >
+              Scores <span aria-hidden="true">▾</span>
+            </button>
+            {scoresMenuOpen && (
+              <div className="scores-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setScoresMenuOpen(false)
+                    onOpenScores('personal')
+                  }}
+                >
+                  My Top 10
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setScoresMenuOpen(false)
+                    onOpenScores('global')
+                  }}
+                >
+                  Top 10 Overall
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <button
           type="button"
           className="settings-icon-button"

@@ -1,48 +1,39 @@
-# Scott's Dice Game
+# Scott's Dice Game frontend
 
-React + Vite dice game with a guest entry flow, optional Google/Facebook authentication, held dice, category scoring, bonus rolls, five visual themes, and a complete scorecard.
+React + Vite dice game with held dice, category scoring, bonus rolls, fourteen visual themes, guest play, username accounts, optional Google/Facebook authentication, saved high scores, and personal/global leaderboards.
 
 ## Run locally
 
-From the repository root:
-
-```bash
+```powershell
 cd frontend
+Copy-Item .env.example .env.local
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite (normally `http://localhost:5173`).
+Open the Vite URL, normally `http://localhost:5173`. Run the Spring Boot service described in the [root README](../README.md) to enable accounts and saved scores. If it is unavailable, the app seamlessly presents Guest mode only; guest games remain local and never call protected APIs.
 
-Guest mode works immediately. Google and Facebook buttons remain disabled until Firebase is configured.
+Use the gear button during a game to switch among themes such as Classic, Rainbow, Vegas, Cosmic Galaxy, 60s Tie-Dye, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in.
 
-Use the gear button in the game navbar to switch between Classic, Rainbow, Fire, Beach, and Sky. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in.
+## Google and Facebook sign-in
 
-## Enable Google and Facebook sign-in
+The app uses the modular Firebase Authentication SDK:
 
-The app uses the modular Firebase Authentication SDK. No Java backend is required for this phase.
+1. Create a Firebase project and register a Web app.
+2. Enable the Google and Facebook authentication providers.
+3. For Facebook, configure its App ID, App Secret, and Firebase OAuth redirect URI in the provider consoles—not in this repository.
+4. Add `localhost` and deployed hostnames to Firebase Authentication's authorized domains.
+5. Put the public `VITE_FIREBASE_*` values in `.env.local`, set the matching `FIREBASE_PROJECT_ID` for the backend, and restart both services.
 
-1. Create a [Firebase project](https://console.firebase.google.com/) and register a Web app.
-2. In Firebase Authentication, enable the Google and Facebook sign-in providers.
-3. For Facebook, enter the Facebook App ID and App Secret in Firebase—not in this repository—and add Firebase's OAuth redirect URI to the Facebook app.
-4. Add `localhost` and each deployed hostname to Firebase Authentication's authorized domains.
-5. Copy `.env.example` to `.env.local`, replace the placeholder Firebase Web configuration, and restart Vite.
-
-```powershell
-Copy-Item .env.example .env.local
-npm run dev
-```
-
-Only the public Firebase Web configuration belongs in `VITE_FIREBASE_*` variables. Never add a Facebook App Secret or Firebase service-account key to a Vite environment file.
-
-When the Java backend is added, retrieve the signed-in user's Firebase ID token through the auth service, send it to the backend over HTTPS, and verify it with the Firebase Admin SDK before trusting the user identity.
+Only public Firebase web configuration belongs in `VITE_FIREBASE_*`. Never add provider secrets or Firebase service-account keys to a frontend environment file.
 
 ## Tests
 
-```bash
+```powershell
 npm test
 npm run test:watch
 npm run test:coverage
+npm run build
 ```
 
-`npm run test:ci` runs the complete suite once with enforced coverage thresholds.
+`npm run test:ci` runs the complete test suite once with coverage thresholds enforced.

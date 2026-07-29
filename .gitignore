@@ -13,9 +13,11 @@ build/
 .gradle/
 out/
 *.class
+backend/data/
 
 # IDE metadata
 .idea/
+.vscode/
 *.iml
 .classpath
 .project

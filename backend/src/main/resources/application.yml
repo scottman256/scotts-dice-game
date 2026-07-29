@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: dice-game-backend
+  datasource:
+    url: ${DICE_DATABASE_URL:jdbc:h2:file:./data/dicegame}
+    username: ${DICE_DATABASE_USERNAME:sa}
+    password: ${DICE_DATABASE_PASSWORD:}
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+  h2:
+    console:
+      enabled: ${DICE_H2_CONSOLE_ENABLED:true}
+      path: /h2-console
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  jackson:
+    time-zone: UTC
+
+dice:
+  security:
+    # Local-development key only. Set DICE_JWT_SECRET to a unique 32+ byte Base64 value outside local use.
+    jwt-secret: ${DICE_JWT_SECRET:c2NvdHRzLWRpY2UtZ2FtZS1sb2NhbC1qd3Qtc2VjcmV0LWtleS0yMDI2}
+    access-token-ttl: ${DICE_ACCESS_TOKEN_TTL:PT8H}
+  firebase:
+    project-id: ${FIREBASE_PROJECT_ID:}
+  cors:
+    allowed-origins: ${DICE_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  seed-test-user: ${DICE_SEED_TEST_USER:true}

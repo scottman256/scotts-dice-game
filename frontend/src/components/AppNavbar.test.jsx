@@ -40,6 +40,7 @@ describe('AppNavbar', () => {
 
   it('shows an authenticated profile photo, email, and sign-out action', async () => {
     const onSignOut = jest.fn()
+    const onOpenScores = jest.fn()
     const user = userEvent.setup()
     const { container } = render(
       <AppNavbar
@@ -53,7 +54,9 @@ describe('AppNavbar', () => {
           providerLabel: 'Google',
         }}
         isSigningOut={false}
+        isScoresOpen={false}
         isSettingsOpen={false}
+        onOpenScores={onOpenScores}
         onReturnHome={jest.fn()}
         onOpenSettings={jest.fn()}
         onSignOut={onSignOut}
@@ -67,6 +70,14 @@ describe('AppNavbar', () => {
       'src',
       'https://example.com/ada.jpg',
     )
+
+    await user.click(screen.getByRole('button', { name: /Scores/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'My Top 10' }))
+    expect(onOpenScores).toHaveBeenCalledWith('personal')
+
+    await user.click(screen.getByRole('button', { name: /Scores/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Top 10 Overall' }))
+    expect(onOpenScores).toHaveBeenCalledWith('global')
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(onSignOut).toHaveBeenCalledTimes(1)

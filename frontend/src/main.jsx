@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { createBackendClient } from './api/backendClient'
 import { createFirebaseAuthService } from './auth/firebaseAuth'
 import './index.css'
 
@@ -13,8 +14,12 @@ const authService = createFirebaseAuthService({
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 })
 
+const backendClient = createBackendClient({
+  baseUrl: import.meta.env.VITE_API_BASE_URL,
+})
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App authService={authService} />
+    <App authService={authService} backendClient={backendClient} />
   </React.StrictMode>
 )

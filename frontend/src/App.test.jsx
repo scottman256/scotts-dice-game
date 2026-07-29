@@ -1,10 +1,9 @@
 import React from 'react'
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, jest } from '@jest/globals'
 import App from './App'
-
-const NO_AUTH_EMISSION = Symbol('no-auth-emission')
+import { BackendApiError } from './api/backendClient'
 
 function authenticatedUser(overrides = {}) {
   return {
@@ -18,19 +17,9 @@ function authenticatedUser(overrides = {}) {
   }
 }
 
-function deferred() {
-  let resolve
-  let reject
-  const promise = new Promise((resolvePromise, rejectPromise) => {
-    resolve = resolvePromise
-    reject = rejectPromise
-  })
-  return { promise, resolve, reject }
-}
-
 function createMockAuthService({
   isConfigured = true,
-  initialUser = NO_AUTH_EMISSION,
+  initialUser = null,
   signIn = jest.fn(),
   signOut = jest.fn(() => Promise.resolve()),
 } = {}) {
@@ -42,12 +31,12 @@ function createMockAuthService({
     subscribe: jest.fn((userCallback, errorCallback) => {
       onUserChanged = userCallback
       onObserverError = errorCallback
-      if (initialUser !== NO_AUTH_EMISSION) userCallback(initialUser)
+      userCallback(initialUser)
       return unsubscribe
     }),
     signIn,
     signOut,
-    getIdToken: jest.fn(),
+    getIdToken: jest.fn(() => Promise.resolve('firebase-id-token')),
   }
 
   return {
@@ -62,15 +51,41 @@ function createMockAuthService({
   }
 }
 
+function createMockBackendClient({
+  status = { available: true, manualAuthEnabled: true, socialAuthEnabled: true },
+  restoredUser = null,
+  register = jest.fn(),
+  login = jest.fn(),
+  loginWithFirebase = jest.fn(),
+  signOut = jest.fn(() => Promise.resolve()),
+  saveScore = jest.fn(),
+  getPersonalScores = jest.fn(() => Promise.resolve([])),
+  getLeaderboard = jest.fn(() => Promise.resolve([])),
+} = {}) {
+  return {
+    knownUnavailable: false,
+    checkAvailability: jest.fn(() => Promise.resolve(status)),
+    restoreSession: jest.fn(() => Promise.resolve(restoredUser)),
+    register,
+    login,
+    loginWithFirebase,
+    signOut,
+    saveScore,
+    getPersonalScores,
+    getLeaderboard,
+  }
+}
+
 describe('App authentication shell', () => {
-  it('shows the new landing page first and keeps unconfigured social providers disabled', () => {
+  it('offers only guest play when the backend is unavailable', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { level: 1, name: 'Ready to roll?' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Continue with Facebook' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with Facebook' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with Username' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
-    expect(screen.getByText('Social sign-in needs Firebase setup. Guest play is ready now.')).toBeVisible()
+    expect(screen.getByText('The game service is offline. Guest play still works normally.')).toBeVisible()
     expect(screen.queryByRole('heading', { name: 'Your Roll' })).not.toBeInTheDocument()
   })
 
@@ -99,160 +114,143 @@ describe('App authentication shell', () => {
     expect(screen.getByLabelText('Turn not started')).toBeVisible()
   })
 
-  it('checks a configured provider session and unsubscribes on unmount', () => {
+  it('checks the backend and unsubscribes from Firebase on unmount', async () => {
     const auth = createMockAuthService()
-    const { unmount } = render(<App authService={auth.service} />)
+    const backendClient = createMockBackendClient()
+    const { unmount } = render(<App authService={auth.service} backendClient={backendClient} />)
 
     expect(screen.getByRole('main', { name: 'Loading account' })).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent('Checking your saved sign-in…')
+    expect(screen.getByRole('status')).toHaveTextContent('Connecting to the game service…')
+    expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
+    expect(backendClient.checkAvailability).toHaveBeenCalledTimes(1)
+    expect(backendClient.restoreSession).toHaveBeenCalledTimes(1)
     expect(auth.service.subscribe).toHaveBeenCalledTimes(1)
 
     unmount()
     expect(auth.unsubscribe).toHaveBeenCalledTimes(1)
   })
 
-  it('enables social choices after the auth observer reports no saved user', () => {
+  it('enables username and social choices when the backend is online', async () => {
     const auth = createMockAuthService()
-    render(<App authService={auth.service} />)
+    const backendClient = createMockBackendClient()
+    render(<App authService={auth.service} backendClient={backendClient} />)
 
-    act(() => auth.emitUser(null))
-
-    expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continue with Facebook' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continue with Username' })).toBeEnabled()
   })
 
-  it('restores a persisted authenticated profile into the game navbar', () => {
-    const auth = createMockAuthService()
-    render(<App authService={auth.service} />)
+  it('restores a persisted backend account into the game navbar', async () => {
+    const backendClient = createMockBackendClient({ restoredUser: authenticatedUser() })
+    render(<App backendClient={backendClient} />)
 
-    act(() => auth.emitUser(authenticatedUser()))
-
-    expect(screen.getByRole('heading', { name: "Scott's Dice Game" })).toBeVisible()
-    expect(screen.getByText('Ada Lovelace')).toBeVisible()
+    expect(await screen.findByText('Ada Lovelace')).toBeVisible()
     expect(screen.getByText('ada@example.com')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Scores/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
     expect(screen.queryByRole('link', { name: /Return to sign in/ })).not.toBeInTheDocument()
   })
 
-  it('shows provider progress and enters the game after Google sign-in succeeds', async () => {
-    const signInResult = deferred()
-    const signIn = jest.fn(() => signInResult.promise)
-    const auth = createMockAuthService({ initialUser: null, signIn })
+  it('signs in with the seeded username account', async () => {
+    const manualUser = authenticatedUser({
+      id: 'manual-user',
+      name: 'test',
+      email: '',
+      providerId: 'manual',
+      providerLabel: 'Username',
+    })
+    const login = jest.fn(() => Promise.resolve(manualUser))
+    const backendClient = createMockBackendClient({
+      status: { available: true, manualAuthEnabled: true, socialAuthEnabled: false },
+      login,
+    })
     const user = userEvent.setup()
-    render(<App authService={auth.service} />)
+    render(<App backendClient={backendClient} />)
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Google' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue with Username' }))
+    await user.type(screen.getByLabelText('Username'), 'test')
+    await user.type(screen.getByLabelText('Password'), 'test')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(login).toHaveBeenCalledWith({ username: 'test', password: 'test' })
+    expect(await screen.findByText('test')).toBeVisible()
+    expect(screen.getByText('Username account')).toBeVisible()
+  })
+
+  it('exchanges a Firebase token with the backend after Google sign-in', async () => {
+    const signIn = jest.fn(() => Promise.resolve())
+    const auth = createMockAuthService({ initialUser: null, signIn })
+    const loginWithFirebase = jest.fn(() => Promise.resolve(authenticatedUser()))
+    const backendClient = createMockBackendClient({ loginWithFirebase })
+    const user = userEvent.setup()
+    render(<App authService={auth.service} backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
 
     expect(signIn).toHaveBeenCalledWith('google')
-    expect(screen.getByRole('button', { name: 'Connecting to Google…' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeDisabled()
+    expect(auth.service.getIdToken).toHaveBeenCalledWith(true)
+    expect(loginWithFirebase).toHaveBeenCalledWith('firebase-id-token')
+    expect(await screen.findByText('Ada Lovelace')).toBeVisible()
+  })
 
-    await act(async () => {
-      signInResult.resolve(authenticatedUser())
-      await signInResult.promise
+  it('displays backend login errors without leaving the landing page', async () => {
+    const login = jest.fn(() => Promise.reject(new BackendApiError(
+      'Invalid username or password.',
+      { code: 'INVALID_CREDENTIALS', status: 401 },
+    )))
+    const backendClient = createMockBackendClient({
+      status: { available: true, manualAuthEnabled: true, socialAuthEnabled: false },
+      login,
     })
-
-    expect(screen.getByRole('heading', { name: "Scott's Dice Game" })).toBeVisible()
-    expect(screen.getByText('Ada Lovelace')).toBeVisible()
-  })
-
-  it('passes the Facebook provider and displays its returned identity', async () => {
-    const facebookUser = authenticatedUser({
-      id: 'facebook-user',
-      name: 'Lin Player',
-      email: '',
-      providerId: 'facebook',
-      providerLabel: 'Facebook',
-    })
-    const signIn = jest.fn(() => Promise.resolve(facebookUser))
-    const auth = createMockAuthService({ initialUser: null, signIn })
     const user = userEvent.setup()
-    render(<App authService={auth.service} />)
+    render(<App backendClient={backendClient} />)
 
-    await user.click(screen.getByRole('button', { name: 'Continue with Facebook' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue with Username' }))
+    await user.type(screen.getByLabelText('Username'), 'nobody')
+    await user.type(screen.getByLabelText('Password'), 'wrong')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(signIn).toHaveBeenCalledWith('facebook')
-    expect(await screen.findByText('Lin Player')).toBeVisible()
-    expect(screen.getByText('Facebook account')).toBeVisible()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password.')
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled()
   })
 
-  it('keeps the landing page usable and explains provider sign-in failures', async () => {
-    const signIn = jest.fn(() => Promise.reject({ code: 'auth/popup-blocked' }))
-    const auth = createMockAuthService({ initialUser: null, signIn })
-    const user = userEvent.setup()
-    render(<App authService={auth.service} />)
-
-    await user.click(screen.getByRole('button', { name: 'Continue with Google' }))
-
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Your browser blocked the sign-in window. Allow popups for this site and try again.',
-    )
-    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
-  })
-
-  it('recovers to the landing page when saved-session restoration fails', () => {
-    const auth = createMockAuthService()
-    render(<App authService={auth.service} />)
-
-    act(() => auth.emitError())
-
-    expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'We could not restore your saved sign-in. Please sign in again.',
-    )
-  })
-
-  it('shows sign-out progress and returns to the landing page after success', async () => {
-    const signOutResult = deferred()
-    const signOut = jest.fn(() => signOutResult.promise)
-    const auth = createMockAuthService({
-      initialUser: authenticatedUser(),
+  it('signs out through the backend and returns to the landing page', async () => {
+    const signOut = jest.fn(() => Promise.resolve())
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser({ providerId: 'manual', providerLabel: 'Username' }),
       signOut,
     })
     const user = userEvent.setup()
-    render(<App authService={auth.service} />)
+    render(<App backendClient={backendClient} />)
 
-    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
 
     expect(signOut).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: 'Signing out…' })).toBeDisabled()
-
-    await act(async () => {
-      signOutResult.resolve()
-      await signOutResult.promise
-    })
-
-    expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
   })
 
-  it('keeps the authenticated game open when sign-out fails', async () => {
-    const signOut = jest.fn(() => Promise.reject(new Error('sign out failed')))
-    const auth = createMockAuthService({
-      initialUser: authenticatedUser(),
-      signOut,
+  it('loads authenticated personal high scores from the navbar menu', async () => {
+    const getPersonalScores = jest.fn(() => Promise.resolve([{
+      scoreId: 9,
+      rank: 1,
+      playerName: 'Ada Lovelace',
+      score: 842,
+      completedAt: '2026-07-28T12:00:00Z',
+    }]))
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getPersonalScores,
     })
     const user = userEvent.setup()
-    render(<App authService={auth.service} />)
+    render(<App backendClient={backendClient} />)
 
-    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    await user.click(await screen.findByRole('button', { name: /Scores/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'My Top 10' }))
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'We could not sign you out. Please try again.',
-    )
-    expect(screen.getByText('Ada Lovelace')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
-  })
-
-  it('returns to the landing page when Firebase later reports a signed-out session', () => {
-    const auth = createMockAuthService({ initialUser: authenticatedUser() })
-    render(<App authService={auth.service} />)
-
-    expect(screen.getByText('Ada Lovelace')).toBeVisible()
-    act(() => auth.emitUser(null))
-
-    expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'My Top 10 Scores' })).toBeVisible()
+    expect(getPersonalScores).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('cell', { name: '842' })).toBeVisible()
   })
 
   it('changes theme mid-game without losing the current roll or held dice', async () => {
@@ -350,19 +348,17 @@ describe('App authentication shell', () => {
   })
 
   it('resets to Classic after an authenticated user signs out', async () => {
-    const auth = createMockAuthService({ initialUser: authenticatedUser() })
+    const backendClient = createMockBackendClient({ restoredUser: authenticatedUser() })
     const user = userEvent.setup()
-    const { container } = render(<App authService={auth.service} />)
+    const { container } = render(<App backendClient={backendClient} />)
 
-    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(await screen.findByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
     await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
-    act(() => auth.emitUser(authenticatedUser()))
-
-    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+    expect(container.querySelector('.game-session')).not.toBeInTheDocument()
   })
 })

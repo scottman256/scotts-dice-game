@@ -1,32 +1,66 @@
 # Scott's Dice Game
 
-Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott built himself when he first got into coding. This new version was created with ChatGPT 5.6 (Sol), carrying the original idea into a polished contemporary experience.
+Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott built when he first got into coding. This version was created with ChatGPT 5.6 (Sol), carrying the original idea into a polished contemporary experience.
 
 ## The game
 
-Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible.
+Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players can save completed games and compare their personal top ten with the overall leaderboard; guest play remains fully local.
 
-## Themes
-
-Open the gear-shaped Settings menu during a game to change its theme without losing your progress. Each theme includes its own background and custom dice artwork; examples include Classic, Vegas, Cosmic Galaxy, 60s Tie-Dye, and World Traveler.
+Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, 60s Tie-Dye, and World Traveler.
 
 ## Project structure
 
-This repository is organized as a monorepo so the React frontend and future Java backend can evolve together.
+- `frontend/` — React and Vite web application
+- `backend/` — Spring Boot, Spring Security, JPA/Hibernate, Flyway, and H2 service
 
-- `frontend/` — the existing React and Vite application
-- `backend/` — reserved for the future Java backend
+## Run both services locally
 
-## Run the frontend
+The backend targets Java 17 and works with the currently installed Java `17.0.10`. Maven is supplied through the project wrapper, so a separate Maven installation is not required.
 
-From the repository root:
+Start the backend from one PowerShell window:
 
-```bash
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+On first startup, H2 creates `backend/data/dicegame`, Flyway creates the tables, and the application seeds the local account `test` / `test`. That deliberately weak password is a development-only exception; every newly registered account must meet the strong-password policy.
+
+Start the frontend from a second PowerShell window:
+
+```powershell
 cd frontend
+Copy-Item .env.example .env.local
 npm install
 npm run dev
 ```
 
-See [`frontend/README.md`](frontend/README.md) for authentication setup, tests, and other frontend details.
+Open the Vite URL, normally `http://localhost:5173`. `VITE_API_BASE_URL` defaults to `http://localhost:8080` in the example environment file. If the backend is stopped, the frontend automatically offers only Guest mode and does not make authenticated score requests.
 
-The backend directory intentionally contains no Java project yet. Its `.gitkeep` placeholder allows Git to preserve the empty directory until the backend is created.
+## Optional social sign-in
+
+Configure the Firebase web values in `frontend/.env.local`, enable Google and/or Facebook in Firebase Authentication, and give the backend the same project ID before starting it:
+
+```powershell
+$env:FIREBASE_PROJECT_ID='your-project-id'
+.\mvnw.cmd spring-boot:run
+```
+
+The frontend sends the Firebase ID token to the backend, which verifies its signature, issuer, audience, and provider before creating or updating the linked local user. Keep provider secrets and Firebase service-account keys out of Vite environment files.
+
+## H2 console and tests
+
+While the backend is running, the local H2 console is at `http://localhost:8080/h2-console`. Use JDBC URL `jdbc:h2:file:./data/dicegame`, user `sa`, and a blank password.
+
+```powershell
+# Backend unit and integration tests
+cd backend
+.\mvnw.cmd test
+
+# Frontend tests and production build
+cd ..\frontend
+npm test -- --runInBand
+npm run build
+```
+
+See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration and API details.

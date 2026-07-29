@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react'
+import React, { useEffect, useReducer, useRef } from 'react'
 import { getDiceSet } from '../assets/diceSets'
 import { randomFace, rollUnheldDice } from '../diceLogic'
 import {
@@ -78,6 +78,15 @@ function TotalRow({ label, value, className = '' }) {
       </td>
     </tr>
   )
+}
+
+function createGameId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = Math.floor(Math.random() * 16)
+    const value = character === 'x' ? random : (random & 0x3) | 0x8
+    return value.toString(16)
+  })
 }
 
 function Scorecard({ dice, rollCount, scores, gameComplete, onScore, onNewGame }) {
@@ -211,8 +220,17 @@ function Scorecard({ dice, rollCount, scores, gameComplete, onScore, onNewGame }
   )
 }
 
-export default function DiceRoller({ faceRoller = randomFace, initialState, theme = 'classic' } = {}) {
+export default function DiceRoller({
+  faceRoller = randomFace,
+  highScoreStatus = null,
+  initialState,
+  onGameComplete,
+  onNewGame,
+  theme = 'classic',
+} = {}) {
   const [state, dispatch] = useReducer(gameReducer, initialState, createInitialGameState)
+  const gameIdRef = useRef(createGameId())
+  const submittedGameRef = useRef(null)
   const diceSet = getDiceSet(theme)
   const {
     dice,
@@ -236,6 +254,17 @@ export default function DiceRoller({ faceRoller = randomFace, initialState, them
     rollButtonLabel,
   } = getGameViewState(state)
 
+  useEffect(() => {
+    if (
+      gameComplete
+      && onGameComplete
+      && submittedGameRef.current !== gameIdRef.current
+    ) {
+      submittedGameRef.current = gameIdRef.current
+      onGameComplete({ gameId: gameIdRef.current, score: totals.grandTotal })
+    }
+  }, [gameComplete, onGameComplete, totals.grandTotal])
+
   function handleRoll() {
     if (rollDisabled) return
 
@@ -254,6 +283,9 @@ export default function DiceRoller({ faceRoller = randomFace, initialState, them
   }
 
   function handleNewGame() {
+    gameIdRef.current = createGameId()
+    submittedGameRef.current = null
+    onNewGame?.()
     dispatch({ type: GAME_ACTIONS.newGame })
   }
 
@@ -295,6 +327,9 @@ export default function DiceRoller({ faceRoller = randomFace, initialState, them
             </span>
             <span className="final-score-label">Final Score</span>
             <strong className="final-score-number">{totals.grandTotal}</strong>
+            {highScoreStatus === 'new' && (
+              <strong className="new-high-score-message">NEW HIGH SCORE</strong>
+            )}
           </div>
         )}
 
