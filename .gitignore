@@ -1,0 +1,22 @@
+# Frontend
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.local
+.env.*.local
+
+# Java backend
+target/
+build/
+.gradle/
+out/
+*.class
+
+# IDE metadata
+.idea/
+*.iml
+.classpath
+.project
+.settings/
