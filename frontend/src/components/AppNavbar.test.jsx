@@ -55,6 +55,7 @@ describe('AppNavbar', () => {
         }}
         isSigningOut={false}
         isScoresOpen={false}
+        activeScoreMode={null}
         isSettingsOpen={false}
         onOpenScores={onOpenScores}
         onReturnHome={jest.fn()}
@@ -81,6 +82,52 @@ describe('AppNavbar', () => {
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(onSignOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes the scores menu when clicking outside or pressing Escape', async () => {
+    const user = userEvent.setup()
+    render(
+      <div>
+        <button type="button">Outside target</button>
+        <AppNavbar
+          sessionKind="authenticated"
+          user={{
+            id: 'manual-user',
+            name: 'Dice Player',
+            email: '',
+            photoUrl: null,
+            providerId: 'manual',
+            providerLabel: 'Username',
+          }}
+          isSigningOut={false}
+          isScoresOpen
+          activeScoreMode="personal"
+          isSettingsOpen={false}
+          onOpenScores={jest.fn()}
+          onReturnHome={jest.fn()}
+          onOpenSettings={jest.fn()}
+          onSignOut={jest.fn()}
+        />
+      </div>,
+    )
+
+    const scoresButton = screen.getByRole('button', { name: /Scores/ })
+    await user.click(scoresButton)
+
+    expect(screen.getByRole('menu')).toBeVisible()
+    expect(screen.getByRole('menuitem', { name: 'My Top 10' }))
+      .toHaveAttribute('aria-current', 'page')
+
+    await user.click(screen.getByRole('button', { name: 'Outside target' }))
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(scoresButton).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(scoresButton)
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(scoresButton).toHaveFocus()
   })
 
   it('uses initials and the provider label when profile details are absent', () => {

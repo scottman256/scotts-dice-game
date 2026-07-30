@@ -7,7 +7,7 @@ const THEME_IDS = [
   'classic', 'rainbow', 'fire', 'beach', 'sky', 'christmas', 'halloween', 'golden',
   'retro-arcade', 'vegas',
   'american', 'cosmic-galaxy',
-  'sixties-tie-dye', 'world-traveler',
+  'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
 ]
 const THEME_SIGNATURES = Object.freeze({
   rainbow: ['id="body"', 'id="pip"'],
@@ -23,6 +23,8 @@ const THEME_SIGNATURES = Object.freeze({
   'cosmic-galaxy': ['id="nebula"', 'id="orbit-planet"'],
   'sixties-tie-dye': ['id="tie-dye-swirl"', 'id="flower-pip"'],
   'world-traveler': ['id="map-paper"', 'id="compass-pip"'],
+  clockwork: ['id="brass-plate"', 'id="gear-pip"'],
+  baseball: ['id="leather-shell"', 'id="baseball-pip"'],
 })
 
 function assetPath(themeId, face) {

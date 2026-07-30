@@ -230,7 +230,7 @@ describe('App authentication shell', () => {
     expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
   })
 
-  it('loads authenticated personal high scores from the navbar menu', async () => {
+  it('switches from personal to overall high scores through the navbar menu', async () => {
     const getPersonalScores = jest.fn(() => Promise.resolve([{
       scoreId: 9,
       rank: 1,
@@ -238,9 +238,17 @@ describe('App authentication shell', () => {
       score: 842,
       completedAt: '2026-07-28T12:00:00Z',
     }]))
+    const getLeaderboard = jest.fn(() => Promise.resolve([{
+      scoreId: 10,
+      rank: 1,
+      playerName: 'Sir Rolls-a-Lot',
+      score: 499,
+      completedAt: '2026-07-27T12:00:00Z',
+    }]))
     const backendClient = createMockBackendClient({
       restoredUser: authenticatedUser(),
       getPersonalScores,
+      getLeaderboard,
     })
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
@@ -251,6 +259,16 @@ describe('App authentication shell', () => {
     expect(await screen.findByRole('heading', { name: 'My Top 10 Scores' })).toBeVisible()
     expect(getPersonalScores).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('cell', { name: '842' })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: /Scores/ }))
+    expect(screen.getByRole('menuitem', { name: 'My Top 10' }))
+      .toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('menuitem', { name: 'Top 10 Overall' }))
+
+    expect(await screen.findByRole('heading', { name: 'Top 10 Overall' })).toBeVisible()
+    expect(getLeaderboard).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('cell', { name: 'Sir Rolls-a-Lot' })).toBeVisible()
+    expect(screen.getByRole('cell', { name: '499' })).toBeVisible()
   })
 
   it('changes theme mid-game without losing the current roll or held dice', async () => {
@@ -301,6 +319,8 @@ describe('App authentication shell', () => {
     ['Cosmic Galaxy', 'cosmic-galaxy'],
     ['60s Tie-Dye', 'sixties-tie-dye'],
     ['World Traveler', 'world-traveler'],
+    ['Clockwork', 'clockwork'],
+    ['Baseball', 'baseball'],
   ])('applies the %s style after it is saved', async (themeLabel, themeId) => {
     const user = userEvent.setup()
     const { container } = render(<App />)

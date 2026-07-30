@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { getUserInitials } from '../auth/authModel'
 
 export default function AppNavbar({
@@ -6,6 +6,7 @@ export default function AppNavbar({
   user,
   isSigningOut,
   isScoresOpen,
+  activeScoreMode,
   isSettingsOpen,
   onOpenScores,
   onReturnHome,
@@ -14,10 +15,40 @@ export default function AppNavbar({
   settingsButtonRef,
 }) {
   const [scoresMenuOpen, setScoresMenuOpen] = useState(false)
+  const scoresMenuRef = useRef(null)
+  const scoresMenuButtonRef = useRef(null)
   const isGuest = sessionKind === 'guest'
   const accountDetail = isGuest
     ? 'Local guest session'
     : user.email || `${user.providerLabel} account`
+
+  useEffect(() => {
+    if (!scoresMenuOpen) return undefined
+
+    function handleOutsidePointerDown(event) {
+      if (!scoresMenuRef.current?.contains(event.target)) {
+        setScoresMenuOpen(false)
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key !== 'Escape') return
+      setScoresMenuOpen(false)
+      scoresMenuButtonRef.current?.focus()
+    }
+
+    document.addEventListener('pointerdown', handleOutsidePointerDown)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [scoresMenuOpen])
+
+  function openScores(mode) {
+    setScoresMenuOpen(false)
+    onOpenScores(mode)
+  }
 
   return (
     <nav className="app-navbar" aria-label="Account navigation">
@@ -44,37 +75,35 @@ export default function AppNavbar({
           <small>{accountDetail}</small>
         </span>
         {!isGuest && (
-          <div className="scores-menu-wrap">
+          <div className="scores-menu-wrap" ref={scoresMenuRef}>
             <button
               type="button"
               className="scores-menu-button"
               aria-expanded={scoresMenuOpen}
               aria-haspopup="menu"
               aria-pressed={isScoresOpen}
+              aria-controls={scoresMenuOpen ? 'scores-navigation-menu' : undefined}
               onClick={() => setScoresMenuOpen((open) => !open)}
               disabled={isSigningOut}
+              ref={scoresMenuButtonRef}
             >
               Scores <span aria-hidden="true">▾</span>
             </button>
             {scoresMenuOpen && (
-              <div className="scores-menu" role="menu">
+              <div className="scores-menu" id="scores-navigation-menu" role="menu">
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => {
-                    setScoresMenuOpen(false)
-                    onOpenScores('personal')
-                  }}
+                  aria-current={isScoresOpen && activeScoreMode === 'personal' ? 'page' : undefined}
+                  onClick={() => openScores('personal')}
                 >
                   My Top 10
                 </button>
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => {
-                    setScoresMenuOpen(false)
-                    onOpenScores('global')
-                  }}
+                  aria-current={isScoresOpen && activeScoreMode === 'global' ? 'page' : undefined}
+                  onClick={() => openScores('global')}
                 >
                   Top 10 Overall
                 </button>

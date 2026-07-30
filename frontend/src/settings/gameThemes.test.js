@@ -8,7 +8,7 @@ import {
 } from './gameThemes'
 
 describe('game theme settings', () => {
-  it('defines the fourteen requested themes in display order', () => {
+  it('defines the sixteen requested themes in display order', () => {
     expect(GAME_THEMES.map(({ id, label }) => ({ id, label }))).toEqual([
       { id: 'classic', label: 'Classic' },
       { id: 'rainbow', label: 'Rainbow' },
@@ -24,8 +24,10 @@ describe('game theme settings', () => {
       { id: 'cosmic-galaxy', label: 'Cosmic Galaxy' },
       { id: 'sixties-tie-dye', label: '60s Tie-Dye' },
       { id: 'world-traveler', label: 'World Traveler' },
+      { id: 'clockwork', label: 'Clockwork' },
+      { id: 'baseball', label: 'Baseball' },
     ])
-    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 14)
+    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 16)
     GAME_THEMES.forEach((theme) => expect(theme.description).not.toHaveLength(0))
   })
 
@@ -43,7 +45,7 @@ describe('game theme settings', () => {
     'classic', 'rainbow', 'fire', 'beach', 'sky', 'christmas', 'halloween', 'golden',
     'retro-arcade', 'vegas',
     'american', 'cosmic-galaxy',
-    'sixties-tie-dye', 'world-traveler',
+    'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
   ])(
     'recognizes %s as a supported theme',
     (themeId) => expect(isGameTheme(themeId)).toBe(true),

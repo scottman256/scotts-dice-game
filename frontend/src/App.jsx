@@ -275,6 +275,7 @@ export default function App({
         user={session.user}
         isSigningOut={busyAction === 'signOut'}
         isScoresOpen={activeScreen === 'scores'}
+        activeScoreMode={activeScreen === 'scores' ? scoreMode : null}
         isSettingsOpen={activeScreen === 'settings'}
         onReturnHome={handleReturnHome}
         onOpenScores={handleOpenScores}

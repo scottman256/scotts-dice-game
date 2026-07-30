@@ -73,6 +73,16 @@ export const GAME_THEMES = Object.freeze([
     label: 'World Traveler',
     description: 'Vintage luggage dice with map textures, stitched corners, and compass pips.',
   }),
+  Object.freeze({
+    id: 'clockwork',
+    label: 'Clockwork',
+    description: 'Brass machine dice with verdigris pipes, rivets, and turning gear pips.',
+  }),
+  Object.freeze({
+    id: 'baseball',
+    label: 'Baseball',
+    description: 'Vintage leather baseball dice with red seams, ball pips, and ballpark details.',
+  }),
 ])
 
 export const GAME_SETTING_DEFINITIONS = Object.freeze([

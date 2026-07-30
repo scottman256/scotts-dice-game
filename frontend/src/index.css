@@ -570,6 +570,81 @@ a:focus-visible {
   --theme-complete-background: rgba(93, 179, 164, 0.13);
 }
 
+.game-session[data-game-theme="clockwork"] {
+  --panel: rgba(42, 34, 27, 0.96);
+  --panel-strong: #5a4029;
+  --line: rgba(114, 194, 169, 0.24);
+  --line-strong: rgba(226, 180, 83, 0.46);
+  --accent: #deb45d;
+  --accent-light: #f5dda0;
+  --accent-dark: #70431f;
+  --teal: #66b9a2;
+  --muted: #cbbba6;
+  --game-background:
+    radial-gradient(circle at 14% 18%, transparent 0 3.7rem, rgba(219, 170, 72, 0.13) 3.8rem 4rem, transparent 4.1rem),
+    radial-gradient(circle at 88% 24%, transparent 0 5.2rem, rgba(83, 165, 143, 0.14) 5.3rem 5.55rem, transparent 5.65rem),
+    repeating-linear-gradient(0deg, transparent 0 40px, rgba(113, 189, 165, 0.035) 40px 41px),
+    repeating-linear-gradient(90deg, transparent 0 40px, rgba(225, 177, 79, 0.03) 40px 41px),
+    linear-gradient(155deg, #17120f, #38271d 48%, #101b1a);
+  --nav-background: rgba(48, 37, 28, 0.95);
+  --theme-heading: #fff3d2;
+  --theme-page-copy: #ded1bd;
+  --theme-focus: rgba(111, 209, 181, 0.94);
+  --theme-primary-background: linear-gradient(100deg, #f6dfa0, #cf933d 51%, #874522);
+  --theme-primary-hover: linear-gradient(100deg, #fff0c1, #e6b765 51%, #a9663b);
+  --theme-primary-text: #2c1c12;
+  --theme-secondary-background: linear-gradient(100deg, #82ceb9, #3f917f);
+  --theme-secondary-text: #112d29;
+  --theme-held-border: #67bda6;
+  --theme-held-background: linear-gradient(145deg, rgba(214, 160, 65, 0.18), rgba(66, 153, 132, 0.18));
+  --theme-held-glow: rgba(88, 185, 159, 0.27);
+  --theme-coin-border: #f8e2a6;
+  --theme-coin-background: conic-gradient(from 25deg, #f5d987, #9b5729, #58aa94, #d3a64f, #f5d987);
+  --theme-coin-text: #2e1e13;
+  --theme-qualifying-background: rgba(212, 158, 64, 0.08);
+  --theme-bonus-background: rgba(79, 167, 144, 0.11);
+  --theme-grand-background: linear-gradient(90deg, rgba(194, 128, 48, 0.14), rgba(73, 157, 137, 0.13));
+  --theme-complete-background: rgba(79, 167, 144, 0.13);
+}
+
+.game-session[data-game-theme="baseball"] {
+  --panel: rgba(7, 45, 35, 0.96);
+  --panel-strong: #0e6045;
+  --line: rgba(244, 235, 207, 0.23);
+  --line-strong: rgba(200, 64, 61, 0.44);
+  --accent: #ead59d;
+  --accent-light: #fff3cc;
+  --accent-dark: #6c4f2a;
+  --teal: #d34a49;
+  --muted: #bfd2c7;
+  --game-background:
+    radial-gradient(circle at 10% 5%, rgba(255, 248, 215, 0.62) 0 .14rem, transparent .23rem),
+    radial-gradient(circle at 18% 5%, rgba(255, 248, 215, 0.55) 0 .14rem, transparent .23rem),
+    radial-gradient(circle at 82% 5%, rgba(255, 248, 215, 0.55) 0 .14rem, transparent .23rem),
+    radial-gradient(circle at 90% 5%, rgba(255, 248, 215, 0.62) 0 .14rem, transparent .23rem),
+    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.025) 0 3rem, transparent 3rem 6rem),
+    linear-gradient(170deg, #041d1c 0%, #07382c 36%, #0b6241 70%, #073224 100%);
+  --nav-background: rgba(6, 51, 39, 0.95);
+  --theme-heading: #fff8df;
+  --theme-page-copy: #dce9df;
+  --theme-focus: rgba(245, 220, 158, 0.96);
+  --theme-primary-background: linear-gradient(100deg, #fff4d5, #e3cb91 54%, #bd9259);
+  --theme-primary-hover: linear-gradient(100deg, #fffaf0, #f0dfb1 54%, #d0aa78);
+  --theme-primary-text: #243b2e;
+  --theme-secondary-background: linear-gradient(100deg, #dc5754, #a72f35);
+  --theme-secondary-text: #fff9e9;
+  --theme-held-border: #d44b49;
+  --theme-held-background: linear-gradient(145deg, rgba(223, 201, 145, 0.17), rgba(190, 55, 55, 0.17));
+  --theme-held-glow: rgba(208, 62, 60, 0.26);
+  --theme-coin-border: #fff2c7;
+  --theme-coin-background: radial-gradient(circle at 34% 26%, #fffaf0, #dfc98e 46%, #9b7446 100%);
+  --theme-coin-text: #344034;
+  --theme-qualifying-background: rgba(231, 211, 159, 0.075);
+  --theme-bonus-background: rgba(196, 61, 60, 0.1);
+  --theme-grand-background: linear-gradient(90deg, rgba(230, 211, 158, 0.13), rgba(190, 52, 53, 0.13));
+  --theme-complete-background: rgba(235, 216, 166, 0.12);
+}
+
 .game-session button:focus-visible,
 .game-session input:focus-visible,
 .game-session a:focus-visible {
@@ -822,6 +897,8 @@ a:focus-visible {
 }
 
 .app-navbar {
+  position: relative;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1409,6 +1486,50 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="world-traveler"] .preview-action {
   background: linear-gradient(90deg, #e5c17a, #c17c4f);
+}
+
+.theme-preview[data-preview-theme="clockwork"] {
+  background:
+    radial-gradient(circle at 19% 26%, transparent 0 10%, rgba(226, 180, 84, 0.38) 11% 14%, transparent 15%),
+    repeating-linear-gradient(0deg, transparent 0 11px, rgba(89, 180, 154, 0.08) 11px 12px),
+    linear-gradient(145deg, #5b3822, #172322);
+}
+
+.theme-preview[data-preview-theme="clockwork"] .preview-orb {
+  background: #66b9a2;
+  box-shadow: 0 0 4px #d9edcf, 0 0 12px rgba(206, 147, 58, 0.64);
+}
+
+.theme-preview[data-preview-theme="clockwork"] .preview-table {
+  background: rgba(49, 35, 27, 0.84);
+  border-color: rgba(224, 180, 92, 0.42);
+}
+
+.theme-preview[data-preview-theme="clockwork"] .preview-action {
+  background: linear-gradient(90deg, #f0d78e, #b96c31 50%, #58a68f);
+}
+
+.theme-preview[data-preview-theme="baseball"] {
+  background:
+    radial-gradient(circle at 17% 12%, #fff4cd 0 2%, transparent 3%),
+    radial-gradient(circle at 83% 12%, #fff4cd 0 2%, transparent 3%),
+    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.045) 0 12px, transparent 12px 24px),
+    linear-gradient(160deg, #0c6544, #052a24);
+}
+
+.theme-preview[data-preview-theme="baseball"] .preview-orb {
+  border: 1px solid #b93c3e;
+  background: #f8ecd0;
+  box-shadow: 0 0 12px rgba(255, 242, 201, 0.55);
+}
+
+.theme-preview[data-preview-theme="baseball"] .preview-table {
+  background: rgba(8, 57, 43, 0.84);
+  border-color: rgba(244, 226, 181, 0.4);
+}
+
+.theme-preview[data-preview-theme="baseball"] .preview-action {
+  background: linear-gradient(90deg, #f4e2b7 0 58%, #c74343 58%);
 }
 
 .theme-option-copy {
@@ -2632,7 +2753,7 @@ td small {
 
 .scores-menu {
   position: absolute;
-  z-index: 20;
+  z-index: 100;
   display: grid;
   top: calc(100% + 8px);
   right: 0;
@@ -2661,6 +2782,11 @@ td small {
 .scores-menu button:hover {
   background: rgba(93, 224, 195, 0.1);
   color: #fff;
+}
+
+.scores-menu button[aria-current="page"] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-light);
 }
 
 .scores-page {

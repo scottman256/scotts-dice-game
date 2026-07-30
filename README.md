@@ -4,9 +4,9 @@ Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott bu
 
 ## The game
 
-Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players can save completed games and compare their personal top ten with the overall leaderboard; guest play remains fully local.
+Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players can save completed games and compare their personal top ten with the overall leaderboard; guest play remains fully local. A new database starts with ten fictional dice-themed leaderboard players whose scores range from 499 to 250, giving every player an immediate target to beat.
 
-Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, 60s Tie-Dye, and World Traveler.
+Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler.
 
 ## Project structure
 
@@ -24,7 +24,7 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-On first startup, H2 creates `backend/data/dicegame`, Flyway creates the tables, and the application seeds the local account `test` / `test`. That deliberately weak password is a development-only exception; every newly registered account must meet the strong-password policy.
+On first startup, H2 creates `backend/data/dicegame`, Flyway creates the tables and default leaderboard, and the application seeds the local account `test` / `test`. The fictional leaderboard identities are system accounts with no login credentials. The deliberately weak test password is a development-only exception; every newly registered account must meet the strong-password policy.
 
 Start the frontend from a second PowerShell window:
 

@@ -1,6 +1,6 @@
 # Scott's Dice Game frontend
 
-React + Vite dice game with held dice, category scoring, bonus rolls, fourteen visual themes, guest play, username accounts, optional Google/Facebook authentication, saved high scores, and personal/global leaderboards.
+React + Vite dice game with held dice, category scoring, bonus rolls, sixteen visual themes, guest play, username accounts, optional Google/Facebook authentication, saved high scores, and personal/global leaderboards.
 
 ## Run locally
 
@@ -13,7 +13,7 @@ npm run dev
 
 Open the Vite URL, normally `http://localhost:5173`. Run the Spring Boot service described in the [root README](../README.md) to enable accounts and saved scores. If it is unavailable, the app seamlessly presents Guest mode only; guest games remain local and never call protected APIs.
 
-Use the gear button during a game to switch among themes such as Classic, Rainbow, Vegas, Cosmic Galaxy, 60s Tie-Dye, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in.
+Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in.
 
 ## Google and Facebook sign-in
 

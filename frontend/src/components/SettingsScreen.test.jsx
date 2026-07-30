@@ -15,7 +15,7 @@ function renderSettings(overrides = {}) {
 }
 
 describe('SettingsScreen', () => {
-  it('renders an accessible, focused settings page with all fourteen style choices', () => {
+  it('renders an accessible, focused settings page with all sixteen style choices', () => {
     const { container } = renderSettings()
 
     expect(screen.getByRole('heading', { level: 1, name: 'Game settings' })).toHaveFocus()
@@ -26,18 +26,18 @@ describe('SettingsScreen', () => {
       'Classic', 'Rainbow', 'Fire', 'Beach', 'Sky', 'Christmas', 'Halloween', 'Golden',
       'Retro Arcade', 'Vegas',
       'American', 'Cosmic Galaxy',
-      '60s Tie-Dye', 'World Traveler',
+      '60s Tie-Dye', 'World Traveler', 'Clockwork', 'Baseball',
     ]
     expectedThemes.forEach((theme) => {
       expect(screen.getByRole('radio', { name: new RegExp(`^${theme}`) })).toBeVisible()
     })
-    expect(screen.getAllByRole('radio')).toHaveLength(14)
+    expect(screen.getAllByRole('radio')).toHaveLength(16)
     expect(screen.getByRole('radio', { name: /^Classic/ })).toBeChecked()
     ;[
       'classic', 'rainbow', 'fire', 'beach', 'sky', 'christmas', 'halloween', 'golden',
       'retro-arcade', 'vegas',
       'american', 'cosmic-galaxy',
-      'sixties-tie-dye', 'world-traveler',
+      'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
     ]
       .forEach((themeId) => {
       expect(container.querySelector(`[data-preview-theme="${themeId}"] img.preview-die`))
@@ -60,6 +60,8 @@ describe('SettingsScreen', () => {
     ['Cosmic Galaxy', 'cosmic-galaxy'],
     ['60s Tie-Dye', 'sixties-tie-dye'],
     ['World Traveler', 'world-traveler'],
+    ['Clockwork', 'clockwork'],
+    ['Baseball', 'baseball'],
   ])('saves the %s selection as normalized settings', async (label, themeId) => {
     const { props, user } = renderSettings({ currentSettings: { theme: 'fire' } })
 

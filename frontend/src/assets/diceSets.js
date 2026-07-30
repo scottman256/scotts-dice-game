@@ -82,6 +82,18 @@ import worldTraveler3 from './world-traveler/dice-3.svg'
 import worldTraveler4 from './world-traveler/dice-4.svg'
 import worldTraveler5 from './world-traveler/dice-5.svg'
 import worldTraveler6 from './world-traveler/dice-6.svg'
+import clockwork1 from './clockwork/dice-1.svg'
+import clockwork2 from './clockwork/dice-2.svg'
+import clockwork3 from './clockwork/dice-3.svg'
+import clockwork4 from './clockwork/dice-4.svg'
+import clockwork5 from './clockwork/dice-5.svg'
+import clockwork6 from './clockwork/dice-6.svg'
+import baseball1 from './baseball/dice-1.svg'
+import baseball2 from './baseball/dice-2.svg'
+import baseball3 from './baseball/dice-3.svg'
+import baseball4 from './baseball/dice-4.svg'
+import baseball5 from './baseball/dice-5.svg'
+import baseball6 from './baseball/dice-6.svg'
 
 function createDiceSet(id, faces) {
   return Object.freeze({ id, faces: Object.freeze(faces) })
@@ -118,6 +130,12 @@ export const DICE_SETS = Object.freeze({
   'world-traveler': createDiceSet('world-traveler', [
     worldTraveler1, worldTraveler2, worldTraveler3,
     worldTraveler4, worldTraveler5, worldTraveler6,
+  ]),
+  clockwork: createDiceSet('clockwork', [
+    clockwork1, clockwork2, clockwork3, clockwork4, clockwork5, clockwork6,
+  ]),
+  baseball: createDiceSet('baseball', [
+    baseball1, baseball2, baseball3, baseball4, baseball5, baseball6,
   ]),
 })
 
