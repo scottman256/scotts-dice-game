@@ -76,13 +76,21 @@ public class UserAccount {
             String email,
             String photoUrl
     ) {
-        if (provider == AuthProvider.MANUAL) {
+        if (provider == null || !provider.isSocial()) {
             throw new IllegalArgumentException("A social account requires a social provider.");
         }
         UserAccount account = new UserAccount();
         account.authProvider = Objects.requireNonNull(provider);
         account.externalSubject = Objects.requireNonNull(externalSubject);
         account.updateSocialProfile(displayName, email, photoUrl);
+        return account;
+    }
+
+    public static UserAccount system(String systemKey, String displayName) {
+        UserAccount account = new UserAccount();
+        account.authProvider = AuthProvider.SYSTEM;
+        account.externalSubject = Objects.requireNonNull(systemKey);
+        account.displayName = Objects.requireNonNull(displayName);
         return account;
     }
 

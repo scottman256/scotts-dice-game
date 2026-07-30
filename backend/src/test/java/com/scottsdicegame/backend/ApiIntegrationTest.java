@@ -1,15 +1,18 @@
 package com.scottsdicegame.backend;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +35,9 @@ class ApiIntegrationTest {
     @Value("${local.server.port}")
     private int port;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Test
@@ -42,6 +48,51 @@ class ApiIntegrationTest {
         assertThat(response.body()).contains("\"status\":\"UP\"");
         assertThat(response.body()).contains("\"manualAuthEnabled\":true");
         assertThat(response.body()).contains("\"socialAuthEnabled\":false");
+    }
+
+    @Test
+    void migrationsSeedTenNonLoginLeaderboardPlayersWithTheRequestedScores() throws Exception {
+        List<String> names = jdbcTemplate.queryForList("""
+                SELECT u.display_name
+                FROM game_scores s
+                JOIN user_accounts u ON u.id = s.user_id
+                WHERE u.auth_provider = 'SYSTEM'
+                ORDER BY s.score DESC
+                """, String.class);
+        List<Integer> scores = jdbcTemplate.queryForList("""
+                SELECT s.score
+                FROM game_scores s
+                JOIN user_accounts u ON u.id = s.user_id
+                WHERE u.auth_provider = 'SYSTEM'
+                ORDER BY s.score DESC
+                """, Integer.class);
+
+        assertThat(names).containsExactly(
+                "Sir Rolls-a-Lot",
+                "Dicey McDiceface",
+                "Pip Zeppelin",
+                "Count Rollula",
+                "Snake Eyes Malone",
+                "Cubert von Chance",
+                "The Rolling Scone",
+                "Lady Luckbeard",
+                "Rollbert Einstein",
+                "Pipsqueak Prime"
+        );
+        assertThat(scores).containsExactly(499, 475, 450, 425, 400, 375, 350, 325, 300, 250);
+
+        Integer credentialCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM user_accounts
+                WHERE auth_provider = 'SYSTEM'
+                  AND (username IS NOT NULL OR normalized_username IS NOT NULL OR password_hash IS NOT NULL)
+                """, Integer.class);
+        assertThat(credentialCount).isZero();
+
+        HttpResponse<String> login = post("/api/auth/login", """
+                {"username":"Sir Rolls-a-Lot","password":"anything"}
+                """, null);
+        assertThat(login.statusCode()).isEqualTo(401);
     }
 
     @Test
@@ -73,6 +124,10 @@ class ApiIntegrationTest {
         HttpResponse<String> leaderboard = get("/api/scores/leaderboard", token);
         assertThat(leaderboard.statusCode()).isEqualTo(200);
         assertThat(leaderboard.body()).contains("\"score\":410");
+        assertThat(leaderboard.body().indexOf("\"score\":425"))
+                .isLessThan(leaderboard.body().indexOf("\"score\":410"));
+        assertThat(leaderboard.body().indexOf("\"score\":410"))
+                .isLessThan(leaderboard.body().indexOf("\"score\":400"));
     }
 
     @Test

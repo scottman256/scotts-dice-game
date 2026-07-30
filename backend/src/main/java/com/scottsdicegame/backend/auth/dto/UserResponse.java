@@ -25,6 +25,7 @@ public record UserResponse(
                     case MANUAL -> "Username";
                     case GOOGLE -> "Google";
                     case FACEBOOK -> "Facebook";
+                    case SYSTEM -> "Leaderboard";
                 }
         );
     }

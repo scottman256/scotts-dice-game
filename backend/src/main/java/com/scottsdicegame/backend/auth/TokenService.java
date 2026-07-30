@@ -34,6 +34,9 @@ public class TokenService {
     }
 
     public AuthResponse issue(UserAccount user) {
+        if (!user.getAuthProvider().isAuthenticationAllowed()) {
+            throw new IllegalArgumentException("System leaderboard accounts cannot receive access tokens.");
+        }
         Instant issuedAt = clock.instant();
         Instant expiresAt = issuedAt.plus(tokenTtl);
         JwtClaimsSet claims = JwtClaimsSet.builder()
