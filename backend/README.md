@@ -6,7 +6,7 @@ Spring Boot service for local/manual authentication, verified Firebase identitie
 
 ```powershell
 cd backend
-.\mvnw.cmd spring-boot:run
+.\gradlew.bat bootRun
 ```
 
 The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The seed account is `test` / `test`.
@@ -44,5 +44,13 @@ Each user can have one resumable game. Dice and category scores are stored in no
 Run all unit and real HTTP/H2 integration tests with:
 
 ```powershell
-.\mvnw.cmd test
+.\gradlew.bat test
 ```
+
+Create the executable Spring Boot JAR with:
+
+```powershell
+.\gradlew.bat build
+```
+
+The packaged service is written under `backend/build/libs/`.

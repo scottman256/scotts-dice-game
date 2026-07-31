@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = WebEnvironment.RANDOM_PORT,
         properties = {
-                "spring.datasource.url=jdbc:h2:file:./target/test-data/dice-integration-${random.uuid}",
+                "spring.datasource.url=jdbc:h2:file:./build/test-data/dice-integration-${random.uuid}",
                 "spring.h2.console.enabled=false",
                 "dice.seed-test-user=true",
                 "dice.firebase.project-id="
