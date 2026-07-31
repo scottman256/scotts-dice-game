@@ -40,6 +40,7 @@ function createEmptyHolds() {
 }
 
 export function createInitialGameState(overrides = {}) {
+  overrides = overrides ?? {}
   return {
     dice: [...(overrides.dice ?? createEmptyDice())],
     heldDice: [...(overrides.heldDice ?? createEmptyHolds())],
@@ -53,6 +54,10 @@ export function createInitialGameState(overrides = {}) {
 
 export function hasSavedScore(scores, categoryId) {
   return Object.prototype.hasOwnProperty.call(scores, categoryId)
+}
+
+export function hasGameProgress(state) {
+  return state.rollCount > 0 || Object.keys(state.scores).length > 0
 }
 
 export function getGameViewState(state) {

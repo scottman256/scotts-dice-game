@@ -98,6 +98,29 @@ describe('DiceRoller', () => {
     })).toBeDisabled()
   })
 
+  it('reports changed game state with the stable game ID after a roll', async () => {
+    const onGameStateChange = jest.fn()
+    const faceRoller = createFaceSequence([1, 2, 3, 4, 5])
+    const { user } = renderGame({
+      faceRoller,
+      initialGameId: 'saved-game-id',
+      onGameStateChange,
+    })
+
+    expect(onGameStateChange).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+
+    await waitFor(() => expect(onGameStateChange).toHaveBeenCalledTimes(1))
+    expect(onGameStateChange).toHaveBeenCalledWith({
+      gameId: 'saved-game-id',
+      state: expect.objectContaining({
+        dice: [1, 2, 3, 4, 5],
+        rollCount: 1,
+        scores: {},
+      }),
+    })
+  })
+
   it('keeps held dice across rolls and clears every hold after cashing in', async () => {
     const faceRoller = createFaceSequence([1, 2, 3, 4, 6, 5])
     const { user } = renderGame({ faceRoller })

@@ -158,6 +158,21 @@ export function createBackendClient({
     async getLeaderboard() {
       return request('/api/scores/leaderboard')
     },
+    async getGameSession() {
+      return request('/api/game-session')
+    },
+    async saveTheme(theme) {
+      return request('/api/game-session/theme', { method: 'PUT', body: { theme } })
+    },
+    async saveGame(gameId, state) {
+      return request('/api/game-session/game', {
+        method: 'PUT',
+        body: { gameId, ...state },
+      })
+    },
+    async deleteSavedGame() {
+      return request('/api/game-session/game', { method: 'DELETE' })
+    },
   })
 }
 
@@ -184,5 +199,9 @@ export function createUnavailableBackendClient() {
     saveScore: unavailable,
     getPersonalScores: unavailable,
     getLeaderboard: unavailable,
+    getGameSession: unavailable,
+    saveTheme: unavailable,
+    saveGame: unavailable,
+    deleteSavedGame: unavailable,
   })
 }

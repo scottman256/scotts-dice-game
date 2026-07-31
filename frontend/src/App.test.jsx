@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, jest } from '@jest/globals'
 import App from './App'
@@ -61,6 +61,10 @@ function createMockBackendClient({
   saveScore = jest.fn(),
   getPersonalScores = jest.fn(() => Promise.resolve([])),
   getLeaderboard = jest.fn(() => Promise.resolve([])),
+  getGameSession = jest.fn(() => Promise.resolve({ theme: 'classic', savedGame: null })),
+  saveTheme = jest.fn(() => Promise.resolve({ theme: 'classic' })),
+  saveGame = jest.fn(() => Promise.resolve()),
+  deleteSavedGame = jest.fn(() => Promise.resolve()),
 } = {}) {
   return {
     knownUnavailable: false,
@@ -73,6 +77,10 @@ function createMockBackendClient({
     saveScore,
     getPersonalScores,
     getLeaderboard,
+    getGameSession,
+    saveTheme,
+    saveGame,
+    deleteSavedGame,
   }
 }
 
@@ -150,6 +158,120 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('button', { name: /Scores/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
     expect(screen.queryByRole('link', { name: /Return to sign in/ })).not.toBeInTheDocument()
+  })
+
+  it('offers to resume and restores the saved theme, dice, holds, and scorecard', async () => {
+    const savedGame = {
+      gameId: '83d35313-a908-4516-b132-c599f460df6a',
+      dice: [6, 5, 4, 3, 2],
+      heldDice: [true, false, true, false, false],
+      rollCount: 2,
+      scores: { ones: 2 },
+      extraRollsUsed: 1,
+      status: 'Roll 2 of 3. Hold dice, roll again, or cash in a qualifying score.',
+      statusTone: 'normal',
+      updatedAt: '2026-07-29T12:00:00Z',
+    }
+    const getGameSession = jest.fn(() => Promise.resolve({ theme: 'fire', savedGame }))
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession,
+    })
+    const user = userEvent.setup()
+    const { container } = render(<App backendClient={backendClient} />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Welcome back!' })
+    expect(dialog).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Continue Last Game' })).toHaveFocus()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
+
+    await user.click(screen.getByRole('button', { name: 'Continue Last Game' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Roll 2')).toBeVisible()
+    expect(screen.getByLabelText('Dice total 20')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Die 1 showing 6.*Held/ }))
+      .toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Ones: 2 points')).toBeVisible()
+  })
+
+  it('deletes saved progress when the returning player starts a new game', async () => {
+    const deleteSavedGame = jest.fn(() => Promise.resolve())
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn(() => Promise.resolve({
+        theme: 'cosmic-galaxy',
+        savedGame: {
+          gameId: '2f180d38-7ff8-45de-838f-9bec3784ca5d',
+          dice: [1, 2, 3, 4, 5],
+          heldDice: [false, false, false, false, false],
+          rollCount: 1,
+          scores: {},
+          extraRollsUsed: 0,
+          status: 'Roll 1 of 3.',
+          statusTone: 'normal',
+        },
+      })),
+      deleteSavedGame,
+    })
+    const user = userEvent.setup()
+    const { container } = render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Start New Game' }))
+
+    await waitFor(() => expect(deleteSavedGame).toHaveBeenCalledTimes(1))
+    expect(await screen.findByRole('button', { name: 'Roll Dice' })).toBeEnabled()
+    expect(screen.getByLabelText('Turn not started')).toBeVisible()
+    expect(container.querySelector('.game-session'))
+      .toHaveAttribute('data-game-theme', 'cosmic-galaxy')
+  })
+
+  it('autosaves authenticated progress after a roll and persists theme changes', async () => {
+    const saveGame = jest.fn(() => Promise.resolve())
+    const saveTheme = jest.fn(() => Promise.resolve({ theme: 'vegas' }))
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      saveGame,
+      saveTheme,
+    })
+    const user = userEvent.setup()
+    render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Roll Dice' }))
+
+    await waitFor(() => expect(saveGame).toHaveBeenCalledTimes(1))
+    expect(saveGame).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        dice: expect.arrayContaining([expect.any(Number)]),
+        heldDice: [false, false, false, false, false],
+        rollCount: 1,
+        scores: {},
+      }),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('radio', { name: /Vegas/ }))
+    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+
+    await waitFor(() => expect(saveTheme).toHaveBeenCalledWith('vegas'))
+  })
+
+  it('never calls game persistence APIs during guest play', async () => {
+    const backendClient = createMockBackendClient()
+    const user = userEvent.setup()
+    render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('radio', { name: /Fire/ }))
+    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+
+    expect(backendClient.getGameSession).not.toHaveBeenCalled()
+    expect(backendClient.saveGame).not.toHaveBeenCalled()
+    expect(backendClient.saveTheme).not.toHaveBeenCalled()
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
   })
 
   it('signs in with the seeded username account', async () => {

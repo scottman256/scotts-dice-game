@@ -223,13 +223,16 @@ function Scorecard({ dice, rollCount, scores, gameComplete, onScore, onNewGame }
 export default function DiceRoller({
   faceRoller = randomFace,
   highScoreStatus = null,
+  initialGameId,
   initialState,
   onGameComplete,
+  onGameStateChange,
   onNewGame,
   theme = 'classic',
 } = {}) {
   const [state, dispatch] = useReducer(gameReducer, initialState, createInitialGameState)
-  const gameIdRef = useRef(createGameId())
+  const gameIdRef = useRef(initialGameId || createGameId())
+  const hasRenderedInitialStateRef = useRef(false)
   const submittedGameRef = useRef(null)
   const diceSet = getDiceSet(theme)
   const {
@@ -253,6 +256,14 @@ export default function DiceRoller({
     heldCount,
     rollButtonLabel,
   } = getGameViewState(state)
+
+  useEffect(() => {
+    if (!hasRenderedInitialStateRef.current) {
+      hasRenderedInitialStateRef.current = true
+      return
+    }
+    onGameStateChange?.({ gameId: gameIdRef.current, state })
+  }, [onGameStateChange, state])
 
   useEffect(() => {
     if (
@@ -285,7 +296,7 @@ export default function DiceRoller({
   function handleNewGame() {
     gameIdRef.current = createGameId()
     submittedGameRef.current = null
-    onNewGame?.()
+    onNewGame?.({ gameId: gameIdRef.current })
     dispatch({ type: GAME_ACTIONS.newGame })
   }
 

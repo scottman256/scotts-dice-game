@@ -10,6 +10,7 @@ import {
   createInitialGameState,
   gameReducer,
   getGameViewState,
+  hasGameProgress,
   hasSavedScore,
 } from './gameState'
 
@@ -96,6 +97,14 @@ describe('hasSavedScore', () => {
     expect(hasSavedScore(scores, 'twos')).toBe(true)
     expect(hasSavedScore(scores, 'ones')).toBe(false)
     expect(hasSavedScore(scores, 'threes')).toBe(false)
+  })
+})
+
+describe('hasGameProgress', () => {
+  it('only marks games with a roll or a saved category as resumable', () => {
+    expect(hasGameProgress(createInitialGameState())).toBe(false)
+    expect(hasGameProgress(createInitialGameState({ rollCount: 1 }))).toBe(true)
+    expect(hasGameProgress(createInitialGameState({ scores: { ones: 0 } }))).toBe(true)
   })
 })
 

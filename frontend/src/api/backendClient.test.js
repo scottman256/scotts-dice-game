@@ -69,6 +69,49 @@ describe('backend client', () => {
     expect(fetchImpl.mock.calls[1][1].headers.Authorization).toBe('Bearer backend-token')
   })
 
+  it('loads, saves, and deletes authenticated game progress and theme preferences', async () => {
+    const storage = storageMock()
+    const fetchImpl = jest.fn()
+      .mockResolvedValueOnce(response(200, {
+        accessToken: 'backend-token',
+        user: { id: 'user-1', name: 'Scott' },
+      }))
+      .mockResolvedValueOnce(response(200, { theme: 'classic', savedGame: null }))
+      .mockResolvedValueOnce(response(200, { theme: 'vegas' }))
+      .mockResolvedValueOnce(response(200, { gameId: 'game-1' }))
+      .mockResolvedValueOnce(response(204, null))
+    const client = createBackendClient({ fetchImpl, storage })
+    const state = {
+      dice: [1, 2, 3, 4, 5],
+      heldDice: [true, false, false, false, false],
+      rollCount: 1,
+      scores: {},
+      extraRollsUsed: 0,
+      status: 'Roll 1 of 3.',
+      statusTone: 'normal',
+    }
+
+    await client.login({ username: 'test', password: 'test' })
+    await expect(client.getGameSession()).resolves.toMatchObject({ theme: 'classic' })
+    await expect(client.saveTheme('vegas')).resolves.toEqual({ theme: 'vegas' })
+    await expect(client.saveGame('game-1', state)).resolves.toEqual({ gameId: 'game-1' })
+    await expect(client.deleteSavedGame()).resolves.toBeNull()
+
+    expect(fetchImpl.mock.calls[1]).toEqual([
+      'http://localhost:8080/api/game-session',
+      expect.objectContaining({ method: 'GET' }),
+    ])
+    expect(fetchImpl.mock.calls[2][1]).toEqual(expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ theme: 'vegas' }),
+    }))
+    expect(fetchImpl.mock.calls[3][1]).toEqual(expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ gameId: 'game-1', ...state }),
+    }))
+    expect(fetchImpl.mock.calls[4][1]).toEqual(expect.objectContaining({ method: 'DELETE' }))
+  })
+
   it('surfaces backend problem details such as duplicate usernames', async () => {
     const client = createBackendClient({
       fetchImpl: jest.fn(() => Promise.resolve(response(409, {

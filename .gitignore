@@ -8,7 +8,6 @@ coverage/
 .env.*.local
 
 # Java backend
-target/
 build/
 .gradle/
 out/

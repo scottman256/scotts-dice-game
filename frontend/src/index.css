@@ -2877,6 +2877,133 @@ td small {
   animation: spectacular-glow 2.4s ease-in-out infinite;
 }
 
+.game-persistence-loading {
+  display: grid;
+  min-height: 54vh;
+  place-content: center;
+  justify-items: center;
+  color: var(--muted);
+}
+
+.game-persistence-loading p {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+}
+
+.resume-game-backdrop {
+  position: fixed;
+  z-index: 200;
+  display: grid;
+  inset: 0;
+  padding: 24px;
+  overflow-y: auto;
+  place-items: center;
+  background: rgba(3, 10, 20, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.resume-game-modal {
+  width: min(100%, 500px);
+  padding: clamp(25px, 5vw, 42px);
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.52);
+  color: var(--theme-page-copy);
+  text-align: center;
+  animation: settings-reveal 220ms ease-out both;
+}
+
+.resume-game-die {
+  display: inline-grid;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  place-items: center;
+  background: var(--panel-strong);
+  color: var(--accent-light);
+  font-size: 2.2rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.resume-game-modal h1 {
+  margin: 5px 0 10px;
+  color: var(--theme-heading);
+  font-size: clamp(1.8rem, 6vw, 2.5rem);
+  letter-spacing: -0.04em;
+}
+
+.resume-game-modal > p:not(.eyebrow) {
+  max-width: 390px;
+  margin: 0 auto;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.resume-game-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.resume-game-summary div {
+  padding: 14px;
+}
+
+.resume-game-summary div + div {
+  border-left: 1px solid var(--line);
+}
+
+.resume-game-summary dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.resume-game-summary dd {
+  margin: 5px 0 0;
+  color: var(--accent-light);
+  font-weight: 900;
+}
+
+.resume-game-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.resume-game-actions button {
+  min-height: 48px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.resume-game-actions button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.resume-game-continue {
+  border: 1px solid transparent;
+  background: var(--theme-primary-background);
+  color: var(--theme-primary-text);
+}
+
+.resume-game-new {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--theme-heading);
+}
+
 @media (max-width: 700px) {
   .scores-heading {
     align-items: stretch;
@@ -2894,5 +3021,18 @@ td small {
   .scores-menu {
     right: auto;
     left: 0;
+  }
+
+  .resume-game-backdrop {
+    padding: 14px;
+  }
+
+  .resume-game-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .resume-game-summary div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 }

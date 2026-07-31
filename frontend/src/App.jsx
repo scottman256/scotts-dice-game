@@ -11,8 +11,10 @@ import {
 import AppNavbar from './components/AppNavbar'
 import AuthLanding from './components/AuthLanding'
 import DiceRoller from './components/DiceRoller'
+import ResumeGameModal from './components/ResumeGameModal'
 import ScoreboardScreen from './components/ScoreboardScreen'
 import SettingsScreen from './components/SettingsScreen'
+import { getGameViewState, hasGameProgress } from './gameState'
 import {
   DEFAULT_GAME_SETTINGS,
   normalizeGameSettings,
@@ -45,15 +47,42 @@ export default function App({
   const [activeScreen, setActiveScreen] = useState('game')
   const [scoreMode, setScoreMode] = useState('personal')
   const [highScoreStatus, setHighScoreStatus] = useState(null)
+  const [gamePersistenceStatus, setGamePersistenceStatus] = useState('idle')
+  const [savedGameToResume, setSavedGameToResume] = useState(null)
+  const [resumeDecisionBusy, setResumeDecisionBusy] = useState(false)
+  const [gameBootstrap, setGameBootstrap] = useState({ key: 0, gameId: null, state: null })
   const settingsButtonRef = useRef(null)
   const shouldRestoreSettingsFocus = useRef(false)
+  const persistenceQueueRef = useRef(Promise.resolve())
+  const persistenceGenerationRef = useRef(0)
 
   function resetGamePresentation() {
+    persistenceGenerationRef.current += 1
+    persistenceQueueRef.current = Promise.resolve()
     setGameSettings({ ...DEFAULT_GAME_SETTINGS })
     setActiveScreen('game')
     setHighScoreStatus(null)
+    setGamePersistenceStatus('idle')
+    setSavedGameToResume(null)
+    setResumeDecisionBusy(false)
+    setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
     shouldRestoreSettingsFocus.current = false
   }
+
+  const enqueuePersistence = useCallback((operation, errorMessage) => {
+    const generation = persistenceGenerationRef.current
+    const pending = persistenceQueueRef.current.then(() => {
+      if (generation !== persistenceGenerationRef.current) return undefined
+      return operation()
+    })
+    const handled = pending.catch(() => {
+      if (generation === persistenceGenerationRef.current) {
+        setAuthError(errorMessage)
+      }
+    })
+    persistenceQueueRef.current = handled
+    return handled
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -128,6 +157,37 @@ export default function App({
   }, [authService, backendClient])
 
   useEffect(() => {
+    if (session.kind !== 'authenticated') return undefined
+
+    let active = true
+    setGamePersistenceStatus('loading')
+    setSavedGameToResume(null)
+
+    backendClient.getGameSession()
+      .then((gameSession) => {
+        if (!active) return
+        setGameSettings(normalizeGameSettings({ theme: gameSession?.theme }))
+        if (gameSession?.savedGame) {
+          setSavedGameToResume(gameSession.savedGame)
+          setGamePersistenceStatus('prompting')
+          return
+        }
+        setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
+        setGamePersistenceStatus('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
+        setGamePersistenceStatus('ready')
+        setAuthError('Your saved game could not be loaded. A new game was started.')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [backendClient, session.kind, session.user?.id])
+
+  useEffect(() => {
     if (activeScreen === 'game' && shouldRestoreSettingsFocus.current) {
       settingsButtonRef.current?.focus()
       shouldRestoreSettingsFocus.current = false
@@ -189,6 +249,7 @@ export default function App({
     setAuthError('')
 
     try {
+      await persistenceQueueRef.current
       await Promise.all([
         session.user?.providerId === 'google' || session.user?.providerId === 'facebook'
           ? authService.signOut()
@@ -221,13 +282,70 @@ export default function App({
   }
 
   function handleSaveSettings(settings) {
-    setGameSettings(normalizeGameSettings(settings))
+    const normalizedSettings = normalizeGameSettings(settings)
+    setGameSettings(normalizedSettings)
+    if (session.kind === 'authenticated') {
+      enqueuePersistence(
+        () => backendClient.saveTheme(normalizedSettings.theme),
+        'Your theme could not be saved. Please check the backend service.',
+      )
+    }
     returnToGame()
   }
+
+  function handleContinueSavedGame() {
+    if (!savedGameToResume) return
+    setGameBootstrap((current) => ({
+      key: current.key + 1,
+      gameId: savedGameToResume.gameId,
+      state: savedGameToResume,
+    }))
+    setSavedGameToResume(null)
+    setGamePersistenceStatus('ready')
+    setActiveScreen('game')
+  }
+
+  async function handleStartNewSavedGame() {
+    setResumeDecisionBusy(true)
+    setAuthError('')
+    try {
+      await backendClient.deleteSavedGame()
+      setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
+      setSavedGameToResume(null)
+      setGamePersistenceStatus('ready')
+      setActiveScreen('game')
+    } catch {
+      setAuthError('Your previous game could not be cleared. Please try again.')
+    } finally {
+      setResumeDecisionBusy(false)
+    }
+  }
+
+  const handleGameStateChange = useCallback(({ gameId, state }) => {
+    if (session.kind !== 'authenticated') return
+    if (!hasGameProgress(state) || getGameViewState(state).gameComplete) return
+    enqueuePersistence(
+      () => backendClient.saveGame(gameId, state),
+      'Your latest game progress could not be saved. Please check the backend service.',
+    )
+  }, [backendClient, enqueuePersistence, session.kind])
+
+  const handleNewGame = useCallback(() => {
+    setHighScoreStatus(null)
+    if (session.kind !== 'authenticated') return
+    enqueuePersistence(
+      () => backendClient.deleteSavedGame(),
+      'Your previous game could not be cleared. Please check the backend service.',
+    )
+  }, [backendClient, enqueuePersistence, session.kind])
 
   const handleGameComplete = useCallback(async ({ gameId, score }) => {
     if (session.kind !== 'authenticated') return
     setHighScoreStatus('saving')
+    const clearSavedGame = enqueuePersistence(
+      () => backendClient.deleteSavedGame(),
+      'Your completed game could not be cleared from saved progress.',
+    )
     try {
       const result = await backendClient.saveScore(gameId, score)
       setHighScoreStatus(result.newHighScore ? 'new' : 'saved')
@@ -235,7 +353,8 @@ export default function App({
       setHighScoreStatus('error')
       setAuthError('Your game is complete, but the score could not be saved. Please check the backend service.')
     }
-  }, [backendClient, session.kind])
+    await clearSavedGame
+  }, [backendClient, enqueuePersistence, session.kind])
 
   const loadScores = useCallback((mode) => (
     mode === 'personal'
@@ -268,6 +387,8 @@ export default function App({
     )
   }
 
+  const gameReady = session.kind === 'guest' || gamePersistenceStatus === 'ready'
+
   return (
     <div className="app-shell game-session" data-game-theme={gameSettings.theme}>
       <AppNavbar
@@ -284,27 +405,49 @@ export default function App({
         settingsButtonRef={settingsButtonRef}
       />
       {authError && <p className="session-error" role="alert">{authError}</p>}
-      <div className="app" hidden={activeScreen !== 'game'}>
-        <header className="app-header">
-          <h1>Scott's Dice Game</h1>
-          <p>Roll up to three times, cash in a category, and spend your three extra chances wisely.</p>
-        </header>
-        <DiceRoller
-          theme={gameSettings.theme}
-          highScoreStatus={highScoreStatus}
-          onGameComplete={handleGameComplete}
-          onNewGame={() => setHighScoreStatus(null)}
-        />
-      </div>
-      {activeScreen === 'settings' && (
-        <SettingsScreen
-          currentSettings={gameSettings}
-          onCancel={returnToGame}
-          onSave={handleSaveSettings}
+      {session.kind === 'authenticated' && gamePersistenceStatus === 'loading' && (
+        <main className="game-persistence-loading" aria-label="Loading saved game">
+          <span className="loading-die" aria-hidden="true">⚄</span>
+          <p role="status">Checking for saved game progress…</p>
+        </main>
+      )}
+      {session.kind === 'authenticated' && gamePersistenceStatus === 'prompting' && savedGameToResume && (
+        <ResumeGameModal
+          savedGame={savedGameToResume}
+          isStartingNew={resumeDecisionBusy}
+          onContinue={handleContinueSavedGame}
+          onStartNew={handleStartNewSavedGame}
         />
       )}
-      {activeScreen === 'scores' && (
-        <ScoreboardScreen mode={scoreMode} loadScores={loadScores} onBack={returnToGame} />
+      {gameReady && (
+        <>
+          <div className="app" hidden={activeScreen !== 'game'}>
+            <header className="app-header">
+              <h1>Scott's Dice Game</h1>
+              <p>Roll up to three times, cash in a category, and spend your three extra chances wisely.</p>
+            </header>
+            <DiceRoller
+              key={gameBootstrap.key}
+              theme={gameSettings.theme}
+              highScoreStatus={highScoreStatus}
+              initialGameId={gameBootstrap.gameId}
+              initialState={gameBootstrap.state}
+              onGameComplete={handleGameComplete}
+              onGameStateChange={handleGameStateChange}
+              onNewGame={handleNewGame}
+            />
+          </div>
+          {activeScreen === 'settings' && (
+            <SettingsScreen
+              currentSettings={gameSettings}
+              onCancel={returnToGame}
+              onSave={handleSaveSettings}
+            />
+          )}
+          {activeScreen === 'scores' && (
+            <ScoreboardScreen mode={scoreMode} loadScores={loadScores} onBack={returnToGame} />
+          )}
+        </>
       )}
     </div>
   )
