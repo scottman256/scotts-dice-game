@@ -131,6 +131,80 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void authenticatedUsersCanPersistOneGameAndThemeThenDeleteOnlyTheGame() throws Exception {
+        HttpResponse<String> login = post("/api/auth/login", """
+                {"username":"test","password":"test"}
+                """, null);
+        String token = extractToken(login.body());
+
+        HttpResponse<String> theme = put("/api/game-session/theme", """
+                {"theme":"cosmic-galaxy"}
+                """, token);
+        assertThat(theme.statusCode()).isEqualTo(200);
+        assertThat(theme.body()).contains("\"theme\":\"cosmic-galaxy\"");
+
+        UUID firstGameId = UUID.randomUUID();
+        HttpResponse<String> firstSave = put("/api/game-session/game", """
+                {
+                  "gameId":"%s",
+                  "dice":[6,6,3,2,1],
+                  "heldDice":[true,true,false,false,false],
+                  "rollCount":2,
+                  "scores":{"ones":2},
+                  "extraRollsUsed":1,
+                  "status":"Roll 2 of 3. Hold dice or cash in.",
+                  "statusTone":"normal"
+                }
+                """.formatted(firstGameId), token);
+        assertThat(firstSave.statusCode()).isEqualTo(200);
+        assertThat(firstSave.body()).contains(
+                "\"gameId\":\"" + firstGameId + "\"",
+                "\"dice\":[6,6,3,2,1]",
+                "\"heldDice\":[true,true,false,false,false]",
+                "\"scores\":{\"ones\":2}"
+        );
+
+        HttpResponse<String> restored = get("/api/game-session", token);
+        assertThat(restored.statusCode()).isEqualTo(200);
+        assertThat(restored.body()).contains(
+                "\"theme\":\"cosmic-galaxy\"",
+                "\"savedGame\":{",
+                "\"gameId\":\"" + firstGameId + "\""
+        );
+
+        UUID replacementGameId = UUID.randomUUID();
+        HttpResponse<String> replacement = put("/api/game-session/game", """
+                {
+                  "gameId":"%s",
+                  "dice":[1,2,3,4,5],
+                  "heldDice":[false,false,false,false,false],
+                  "rollCount":1,
+                  "scores":{},
+                  "extraRollsUsed":0,
+                  "status":"Roll 1 of 3.",
+                  "statusTone":"normal"
+                }
+                """.formatted(replacementGameId), token);
+        assertThat(replacement.statusCode()).isEqualTo(200);
+
+        Integer savedGameCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM saved_games g
+                JOIN user_accounts u ON u.id = g.user_id
+                WHERE u.normalized_username = 'test'
+                """, Integer.class);
+        assertThat(savedGameCount).isEqualTo(1);
+        assertThat(get("/api/game-session", token).body())
+                .contains("\"gameId\":\"" + replacementGameId + "\"")
+                .doesNotContain("\"gameId\":\"" + firstGameId + "\"");
+
+        HttpResponse<String> deleted = delete("/api/game-session/game", token);
+        assertThat(deleted.statusCode()).isEqualTo(204);
+        assertThat(get("/api/game-session", token).body())
+                .contains("\"theme\":\"cosmic-galaxy\"", "\"savedGame\":null");
+    }
+
+    @Test
     void registrationEnforcesPasswordStrengthAndCaseInsensitiveUsernameUniqueness() throws Exception {
         String username = "Player_" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> weakPassword = post("/api/auth/register", """
@@ -159,6 +233,7 @@ class ApiIntegrationTest {
         HttpResponse<String> response = get("/api/scores/me", null);
 
         assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(get("/api/game-session", null).statusCode()).isEqualTo(401);
     }
 
     private HttpResponse<String> get(String path, String token) throws IOException, InterruptedException {
@@ -172,6 +247,22 @@ class ApiIntegrationTest {
         HttpRequest.Builder request = HttpRequest.newBuilder(uri(path))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body));
+        authorize(request, token);
+        return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> put(String path, String body, String token)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder request = HttpRequest.newBuilder(uri(path))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body));
+        authorize(request, token);
+        return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> delete(String path, String token)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder request = HttpRequest.newBuilder(uri(path)).DELETE();
         authorize(request, token);
         return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

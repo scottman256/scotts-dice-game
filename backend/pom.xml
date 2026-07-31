@@ -15,7 +15,7 @@
     <artifactId>dice-game-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>Scott's Dice Game Backend</name>
-    <description>Authentication and high-score API for Scott's Dice Game</description>
+    <description>Authentication, resumable-game, theme, and high-score API for Scott's Dice Game</description>
 
     <properties>
         <java.version>17</java.version>

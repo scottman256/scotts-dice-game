@@ -30,7 +30,7 @@ public class ApiExceptionHandler {
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST,
-                "Please correct the highlighted account information."
+                "Please correct the invalid request information."
         );
         problem.setTitle("Invalid request");
         problem.setProperty("code", "VALIDATION_FAILED");

@@ -1,6 +1,6 @@
 # Scott's Dice Game backend
 
-Spring Boot service for local/manual authentication, verified Firebase identities, users, and completed-game high scores. It uses a conventional controller/service/repository split, stateless signed access tokens, Spring Data JPA/Hibernate, Flyway migrations, and an automatically started H2 database. Flyway also installs ten non-login system players with initial leaderboard scores from 499 down to 250.
+Spring Boot service for local/manual authentication, verified Firebase identities, users, resumable games, theme preferences, and completed-game high scores. It uses a conventional controller/service/repository split, stateless signed access tokens, Spring Data JPA/Hibernate, Flyway migrations, and an automatically started H2 database. Flyway also installs ten non-login system players with initial leaderboard scores from 499 down to 250.
 
 ## Run
 
@@ -34,6 +34,12 @@ Bearer-token endpoints:
 - `POST /api/scores`
 - `GET /api/scores/me`
 - `GET /api/scores/leaderboard`
+- `GET /api/game-session`
+- `PUT /api/game-session/theme`
+- `PUT /api/game-session/game`
+- `DELETE /api/game-session/game`
+
+Each user can have one resumable game. Dice and category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted.
 
 Run all unit and real HTTP/H2 integration tests with:
 
