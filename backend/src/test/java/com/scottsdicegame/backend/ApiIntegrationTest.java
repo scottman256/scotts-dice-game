@@ -43,6 +43,12 @@ class ApiIntegrationTest {
              "miniStraight":0,"smallStraight":0,"largeStraight":50,"fiveKind":75,
              "fiveKindBonus":0,"firstRollFiveKind":0}
             """;
+    private static final String SCORECARD_675 = """
+            {"ones":5,"twos":10,"threes":15,"fours":20,"fives":25,"sixes":0,"any":25,
+             "allEven":0,"allOdd":0,"twoPair":10,"threeKind":0,"fourKind":0,"fullHouse":0,
+             "miniStraight":0,"smallStraight":0,"largeStraight":50,"fiveKind":75,
+             "fiveKindBonus":150,"firstRollFiveKind":250}
+            """;
 
     @Value("${local.server.port}")
     private int port;
@@ -180,11 +186,60 @@ class ApiIntegrationTest {
         assertThat(achievements.body().indexOf("\"key\":\"golden-game\""))
                 .isLessThan(achievements.body().indexOf("\"key\":\"baseball-game\""));
 
-        Integer persistedAchievementCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM user_achievements",
+        Integer persistedAchievementCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM user_achievements achievement
+                JOIN user_accounts user_account ON user_account.id = achievement.user_id
+                WHERE user_account.normalized_username = 'test'
+                """,
                 Integer.class
         );
         assertThat(persistedAchievementCount).isEqualTo(4);
+    }
+
+    @Test
+    void compoundAndThemeAchievementsAreReconciledFromCompletedGameHistory() throws Exception {
+        String username = "Achiever_" + UUID.randomUUID().toString().substring(0, 8);
+        HttpResponse<String> registration = post("/api/auth/register", """
+                {"username":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(username), null);
+        assertThat(registration.statusCode()).isEqualTo(201);
+        String token = extractToken(registration.body());
+
+        assertThat(post("/api/scores", """
+                {"gameId":"%s","score":675,"theme":"world-traveler","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_675), token).statusCode()).isEqualTo(201);
+        assertThat(post("/api/scores", """
+                {"gameId":"%s","score":275,"theme":"halloween","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_275), token).statusCode()).isEqualTo(201);
+
+        HttpResponse<String> beforeChristmas = get("/api/achievements/me", token);
+        assertThat(beforeChristmas.body())
+                .contains("\"key\":\"triple-crown\"", "\"key\":\"world-traveler-game\"")
+                .doesNotContain("\"key\":\"holiday-wonder\"");
+
+        assertThat(post("/api/scores", """
+                {"gameId":"%s","score":275,"theme":"christmas","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_275), token).statusCode()).isEqualTo(201);
+        assertThat(get("/api/achievements/me", token).body()).contains(
+                "\"key\":\"triple-crown\"",
+                "\"key\":\"world-traveler-game\"",
+                "\"key\":\"holiday-wonder\""
+        );
+
+        jdbcTemplate.update("""
+                DELETE FROM user_achievements
+                WHERE user_id = (
+                    SELECT id FROM user_accounts WHERE normalized_username = ?
+                )
+                """, username.toLowerCase());
+
+        HttpResponse<String> reconciled = get("/api/achievements/me", token);
+        assertThat(reconciled.body()).contains(
+                "\"key\":\"triple-crown\"",
+                "\"key\":\"world-traveler-game\"",
+                "\"key\":\"holiday-wonder\""
+        );
     }
 
     @Test

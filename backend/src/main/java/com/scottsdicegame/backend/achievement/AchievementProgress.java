@@ -2,7 +2,9 @@ package com.scottsdicegame.backend.achievement;
 
 import com.scottsdicegame.backend.score.GameScore;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 final class AchievementProgress {
 
@@ -12,11 +14,13 @@ final class AchievementProgress {
     private long fiveOfAKinds;
     private long firstRollFiveOfAKinds;
     private long largeStraights;
+    private final Set<String> completedThemes = new HashSet<>();
 
     void record(GameScore game) {
         gamesPlayed++;
         totalPoints += game.getScore();
         if (game.getScore() >= 500) scoresAtLeast500++;
+        if (game.getTheme() != null) completedThemes.add(game.getTheme());
 
         Map<String, Integer> scores = game.getCategoryScores();
         fiveOfAKinds += scored(scores, "fiveKind")
@@ -48,6 +52,10 @@ final class AchievementProgress {
 
     long largeStraights() {
         return largeStraights;
+    }
+
+    boolean completedEveryTheme(String... themes) {
+        return completedThemes.containsAll(Set.of(themes));
     }
 
     private static int scored(Map<String, Integer> scores, String category) {

@@ -1,5 +1,7 @@
 package com.scottsdicegame.backend.achievement;
 
+import com.scottsdicegame.backend.score.GameScore;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,21 +25,35 @@ final class AchievementCatalog {
             scoreOver(9, "score-700", "700 Club", "Finished a game with more than 700 points.", 700),
             cumulative(10, "ten-scores-500", "High-Roller Ten", "Scored 500 or more in 10 games.",
                     progress -> progress.scoresAtLeast500() >= 10),
-            points(11, "points-50000", "50K Point Pile", "Scored 50,000 total points.", 50_000),
-            points(12, "points-100000", "100K Point Vault", "Scored 100,000 total points.", 100_000),
-            points(13, "points-500000", "Half-Million Hero", "Scored 500,000 total points.", 500_000),
-            points(14, "points-1000000", "Million-Point Legend", "Scored 1,000,000 total points.", 1_000_000),
-            fiveKinds(15, "five-kinds-50", "Fifty Fives", "Scored 50 total 5 of a kinds.", 50),
-            fiveKinds(16, "five-kinds-100", "Century of Fives", "Scored 100 total 5 of a kinds.", 100),
-            fiveKinds(17, "five-kinds-500", "Five-Kind Master", "Scored 500 total 5 of a kinds.", 500),
-            cumulative(18, "large-straights-1000", "Straight Thousand", "Scored 1,000 large straights.",
+            points(11, "points-5000", "5K Point Stash", "Scored 5,000 total points.", 5_000),
+            points(12, "points-10000", "10K Point Cache", "Scored 10,000 total points.", 10_000),
+            points(13, "points-25000", "25K Point Treasury", "Scored 25,000 total points.", 25_000),
+            points(14, "points-50000", "50K Point Pile", "Scored 50,000 total points.", 50_000),
+            points(15, "points-100000", "100K Point Vault", "Scored 100,000 total points.", 100_000),
+            points(16, "points-500000", "Half-Million Hero", "Scored 500,000 total points.", 500_000),
+            points(17, "points-1000000", "Million-Point Legend", "Scored 1,000,000 total points.", 1_000_000),
+            fiveKinds(18, "five-kinds-50", "Fifty Fives", "Scored 50 total 5 of a kinds.", 50),
+            fiveKinds(19, "five-kinds-100", "Century of Fives", "Scored 100 total 5 of a kinds.", 100),
+            fiveKinds(20, "five-kinds-500", "Five-Kind Master", "Scored 500 total 5 of a kinds.", 500),
+            cumulative(21, "large-straights-1000", "Straight Thousand", "Scored 1,000 large straights.",
                     progress -> progress.largeStraights() >= 1_000),
-            definition(19, "score-under-100", "Boo!", "Finished a game with fewer than 100 points.",
+            definition(22, "score-under-100", "Boo!", "Finished a game with fewer than 100 points.",
                     (progress, game) -> game.getScore() < 100),
-            definition(20, "golden-game", "Golden", "Completed a game with the Golden dice.",
+            definition(23, "golden-game", "Golden", "Completed a game with the Golden dice.",
                     (progress, game) -> "golden".equals(game.getTheme())),
-            definition(21, "baseball-game", "Sporty", "Completed a game with the Baseball dice.",
-                    (progress, game) -> "baseball".equals(game.getTheme()))
+            definition(24, "baseball-game", "Sporty", "Completed a game with the Baseball dice.",
+                    (progress, game) -> "baseball".equals(game.getTheme())),
+            definition(25, "triple-crown", "Triple Crown",
+                    "Scored a 5 of a kind, its bonus, and a first-roll 5 of a kind in one game.",
+                    (progress, game) -> scored(game, "fiveKind")
+                            && scored(game, "fiveKindBonus")
+                            && scored(game, "firstRollFiveKind")),
+            definition(26, "world-traveler-game", "World Traveler",
+                    "Completed a game with the World Traveler dice.",
+                    (progress, game) -> "world-traveler".equals(game.getTheme())),
+            cumulative(27, "holiday-wonder", "Holiday Wonder",
+                    "Completed games with both the Halloween and Christmas dice.",
+                    progress -> progress.completedEveryTheme("halloween", "christmas"))
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();
@@ -104,6 +120,10 @@ final class AchievementCatalog {
             AchievementRule rule
     ) {
         return new AchievementDefinition(order, key, title, description, rule);
+    }
+
+    private static boolean scored(GameScore game, String category) {
+        return game.getCategoryScores().getOrDefault(category, 0) > 0;
     }
 
     private static Map<String, AchievementDefinition> indexDefinitions() {
