@@ -6,8 +6,11 @@ import com.scottsdicegame.backend.user.UserAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,13 +24,15 @@ class ScoreServiceTest {
 
     private GameScoreRepository scoreRepository;
     private AuthenticationService authenticationService;
+    private ApplicationEventPublisher eventPublisher;
     private ScoreService scoreService;
 
     @BeforeEach
     void setUp() {
         scoreRepository = mock(GameScoreRepository.class);
         authenticationService = mock(AuthenticationService.class);
-        scoreService = new ScoreService(scoreRepository, authenticationService);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        scoreService = new ScoreService(scoreRepository, authenticationService, eventPublisher);
     }
 
     @Test
@@ -40,13 +45,20 @@ class ScoreServiceTest {
         when(scoreRepository.findTopByUserIdOrderByScoreDescCompletedAtAsc(userId)).thenReturn(Optional.empty());
         when(scoreRepository.saveAndFlush(any(GameScore.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = scoreService.submit(userId, new ScoreSubmissionRequest(gameId, 425));
+        var response = scoreService.submit(userId, new ScoreSubmissionRequest(
+                gameId,
+                425,
+                "golden",
+                scorecard(Map.of("any", 25, "fiveKindBonus", 150, "firstRollFiveKind", 250))
+        ));
 
         assertThat(response.newHighScore()).isTrue();
         assertThat(response.score()).isEqualTo(425);
         ArgumentCaptor<GameScore> scoreCaptor = ArgumentCaptor.forClass(GameScore.class);
         verify(scoreRepository).saveAndFlush(scoreCaptor.capture());
         assertThat(scoreCaptor.getValue().isNewPersonalBest()).isTrue();
+        assertThat(scoreCaptor.getValue().getTheme()).isEqualTo("golden");
+        verify(eventPublisher).publishEvent(new CompletedGameRecordedEvent(userId));
     }
 
     @Test
@@ -57,10 +69,23 @@ class ScoreServiceTest {
         GameScore existing = new GameScore(gameId, user, 350, true);
         when(scoreRepository.findByUserIdAndGameId(userId, gameId)).thenReturn(Optional.of(existing));
 
-        var response = scoreService.submit(userId, new ScoreSubmissionRequest(gameId, 999));
+        var response = scoreService.submit(userId, new ScoreSubmissionRequest(
+                gameId,
+                350,
+                "classic",
+                scorecard(Map.of("any", 25, "fiveKind", 75, "firstRollFiveKind", 250))
+        ));
 
         assertThat(response.score()).isEqualTo(350);
         assertThat(response.newHighScore()).isTrue();
         verify(scoreRepository, never()).saveAndFlush(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    private static Map<String, Integer> scorecard(Map<String, Integer> scoredCategories) {
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        ScoreCategories.ALL.forEach(category -> scores.put(category, 0));
+        scores.putAll(scoredCategories);
+        return scores;
     }
 }

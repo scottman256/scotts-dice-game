@@ -31,6 +31,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ApiIntegrationTest {
 
     private static final Pattern TOKEN_PATTERN = Pattern.compile("\\\"accessToken\\\":\\\"([^\\\"]+)\\\"");
+    private static final String SCORECARD_410 = """
+            {"ones":5,"twos":10,"threes":15,"fours":20,"fives":25,"sixes":30,"any":20,
+             "allEven":0,"allOdd":0,"twoPair":20,"threeKind":0,"fourKind":0,"fullHouse":0,
+             "miniStraight":0,"smallStraight":0,"largeStraight":50,"fiveKind":0,
+             "fiveKindBonus":150,"firstRollFiveKind":0}
+            """;
+    private static final String SCORECARD_275 = """
+            {"ones":5,"twos":10,"threes":15,"fours":20,"fives":25,"sixes":0,"any":25,
+             "allEven":0,"allOdd":0,"twoPair":10,"threeKind":0,"fourKind":0,"fullHouse":0,
+             "miniStraight":0,"smallStraight":0,"largeStraight":50,"fiveKind":75,
+             "fiveKindBonus":0,"firstRollFiveKind":0}
+            """;
 
     @Value("${local.server.port}")
     private int port;
@@ -89,6 +101,15 @@ class ApiIntegrationTest {
                 """, Integer.class);
         assertThat(credentialCount).isZero();
 
+        Integer historicalDetailCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM completed_game_category_scores detail
+                JOIN game_scores score ON score.id = detail.game_score_id
+                JOIN user_accounts user_account ON user_account.id = score.user_id
+                WHERE user_account.auth_provider = 'SYSTEM'
+                """, Integer.class);
+        assertThat(historicalDetailCount).isZero();
+
         HttpResponse<String> login = post("/api/auth/login", """
                 {"username":"Sir Rolls-a-Lot","password":"anything"}
                 """, null);
@@ -104,14 +125,14 @@ class ApiIntegrationTest {
         String token = extractToken(login.body());
 
         HttpResponse<String> firstScore = post("/api/scores", """
-                {"gameId":"%s","score":410}
-                """.formatted(UUID.randomUUID()), token);
+                {"gameId":"%s","score":410,"theme":"golden","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_410), token);
         assertThat(firstScore.statusCode()).isEqualTo(201);
         assertThat(firstScore.body()).contains("\"newHighScore\":true");
 
         HttpResponse<String> lowerScore = post("/api/scores", """
-                {"gameId":"%s","score":275}
-                """.formatted(UUID.randomUUID()), token);
+                {"gameId":"%s","score":275,"theme":"baseball","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_275), token);
         assertThat(lowerScore.statusCode()).isEqualTo(201);
         assertThat(lowerScore.body()).contains("\"newHighScore\":false");
 
@@ -128,6 +149,42 @@ class ApiIntegrationTest {
                 .isLessThan(leaderboard.body().indexOf("\"score\":410"));
         assertThat(leaderboard.body().indexOf("\"score\":410"))
                 .isLessThan(leaderboard.body().indexOf("\"score\":400"));
+
+        HttpResponse<String> stats = get("/api/stats/me", token);
+        assertThat(stats.statusCode()).isEqualTo(200);
+        assertThat(stats.body()).contains(
+                "\"gamesPlayed\":2",
+                "\"highScore\":410",
+                "\"lowScore\":275",
+                "\"averageScore\":342.5",
+                "\"medianScore\":342.5",
+                "\"fiveOfAKindsScored\":2",
+                "\"firstRollFiveOfAKinds\":0",
+                "\"firstTopBonuses\":2",
+                "\"secondTopBonuses\":1",
+                "\"fiveOfAKindBonuses\":1",
+                "\"totalPoints\":685"
+        );
+
+        HttpResponse<String> achievements = get("/api/achievements/me", token);
+        assertThat(achievements.statusCode()).isEqualTo(200);
+        assertThat(achievements.body()).contains(
+                "\"capacity\":36",
+                "\"key\":\"first-game\"",
+                "\"key\":\"first-five-kind\"",
+                "\"key\":\"golden-game\"",
+                "\"key\":\"baseball-game\""
+        );
+        assertThat(achievements.body().indexOf("\"key\":\"first-game\""))
+                .isLessThan(achievements.body().indexOf("\"key\":\"golden-game\""));
+        assertThat(achievements.body().indexOf("\"key\":\"golden-game\""))
+                .isLessThan(achievements.body().indexOf("\"key\":\"baseball-game\""));
+
+        Integer persistedAchievementCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user_achievements",
+                Integer.class
+        );
+        assertThat(persistedAchievementCount).isEqualTo(4);
     }
 
     @Test
@@ -234,6 +291,8 @@ class ApiIntegrationTest {
 
         assertThat(response.statusCode()).isEqualTo(401);
         assertThat(get("/api/game-session", null).statusCode()).isEqualTo(401);
+        assertThat(get("/api/stats/me", null).statusCode()).isEqualTo(401);
+        assertThat(get("/api/achievements/me", null).statusCode()).isEqualTo(401);
     }
 
     private HttpResponse<String> get(String path, String token) throws IOException, InterruptedException {

@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.scottsdicegame'
 version = '1.0.0-SNAPSHOT'
-description = "Authentication, resumable-game, theme, and high-score API for Scott's Dice Game"
+description = "Authentication, resumable-game, scoring, statistics, and achievement API for Scott's Dice Game"
 
 java {
 	toolchain {

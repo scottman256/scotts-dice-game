@@ -52,7 +52,7 @@ describe('backend client', () => {
     await expect(client.checkAvailability()).resolves.toMatchObject({ available: false })
   })
 
-  it('stores a login token and sends it with protected score requests', async () => {
+  it('stores a login token and sends completed scorecards with protected stats requests', async () => {
     const storage = storageMock()
     const fetchImpl = jest.fn()
       .mockResolvedValueOnce(response(200, {
@@ -60,13 +60,26 @@ describe('backend client', () => {
         user: { id: 'user-1', name: 'Scott' },
       }))
       .mockResolvedValueOnce(response(201, { score: 500, newHighScore: true }))
+      .mockResolvedValueOnce(response(200, { gamesPlayed: 1, highScore: 500 }))
+      .mockResolvedValueOnce(response(200, { capacity: 36, achievements: [] }))
     const client = createBackendClient({ fetchImpl, storage })
+    const categoryScores = { fiveKind: 75 }
 
     await expect(client.login({ username: 'test', password: 'test' }))
       .resolves.toMatchObject({ name: 'Scott' })
-    await expect(client.saveScore('game-1', 500))
+    await expect(client.saveScore('game-1', 500, categoryScores, 'golden'))
       .resolves.toMatchObject({ newHighScore: true })
+    await expect(client.getGameStats()).resolves.toMatchObject({ gamesPlayed: 1 })
+    await expect(client.getAchievements()).resolves.toMatchObject({ capacity: 36 })
     expect(fetchImpl.mock.calls[1][1].headers.Authorization).toBe('Bearer backend-token')
+    expect(fetchImpl.mock.calls[1][1].body).toBe(JSON.stringify({
+      gameId: 'game-1',
+      score: 500,
+      theme: 'golden',
+      categoryScores,
+    }))
+    expect(fetchImpl.mock.calls[2][0]).toBe('http://localhost:8080/api/stats/me')
+    expect(fetchImpl.mock.calls[3][0]).toBe('http://localhost:8080/api/achievements/me')
   })
 
   it('loads, saves, and deletes authenticated game progress and theme preferences', async () => {

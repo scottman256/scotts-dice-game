@@ -1,8 +1,10 @@
 package com.scottsdicegame.backend.game;
 
+import com.scottsdicegame.backend.score.ScoreCategories;
+
 import java.util.Set;
 
-final class GameCatalog {
+public final class GameCatalog {
 
     static final String DEFAULT_THEME = "classic";
 
@@ -12,13 +14,15 @@ final class GameCatalog {
             "world-traveler", "clockwork", "baseball"
     );
 
-    static final Set<String> SCORE_CATEGORIES = Set.of(
-            "ones", "twos", "threes", "fours", "fives", "sixes", "any", "allEven", "allOdd",
-            "twoPair", "threeKind", "fourKind", "fullHouse", "miniStraight", "smallStraight",
-            "largeStraight", "fiveKind", "fiveKindBonus", "firstRollFiveKind"
-    );
-
     static final Set<String> STATUS_TONES = Set.of("normal", "celebration", "legendary");
+
+    public static boolean isSupportedTheme(String theme) {
+        return THEMES.contains(theme);
+    }
+
+    static boolean containsOnlyScoreCategories(Set<String> categories) {
+        return ScoreCategories.ALL.containsAll(categories);
+    }
 
     private GameCatalog() {
     }

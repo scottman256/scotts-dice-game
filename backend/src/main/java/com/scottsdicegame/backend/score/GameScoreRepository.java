@@ -2,6 +2,8 @@ package com.scottsdicegame.backend.score;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +20,16 @@ public interface GameScoreRepository extends JpaRepository<GameScore, UUID> {
 
     @EntityGraph(attributePaths = "user")
     List<GameScore> findTop10ByOrderByScoreDescCompletedAtAsc();
+
+    @EntityGraph(attributePaths = "categoryScores")
+    List<GameScore> findByUserIdOrderByCompletedAtAscIdAsc(UUID userId);
+
+    @EntityGraph(attributePaths = "categoryScores")
+    @Query("""
+            SELECT score
+            FROM GameScore score
+            WHERE score.user.id = :userId
+              AND score.categoryScores IS NOT EMPTY
+            """)
+    List<GameScore> findStatTrackedByUserId(@Param("userId") UUID userId);
 }

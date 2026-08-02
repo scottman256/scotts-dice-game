@@ -2,6 +2,8 @@ package com.scottsdicegame.backend.score;
 
 import com.scottsdicegame.backend.user.UserAccount;
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -9,11 +11,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +42,18 @@ public class GameScore {
     @Column(name = "new_personal_best", nullable = false)
     private boolean newPersonalBest;
 
+    @Column(length = 40)
+    private String theme;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "completed_game_category_scores",
+            joinColumns = @JoinColumn(name = "game_score_id")
+    )
+    @MapKeyColumn(name = "category_id", length = 40)
+    @Column(name = "score", nullable = false)
+    private Map<String, Integer> categoryScores = new LinkedHashMap<>();
+
     @CreationTimestamp
     @Column(name = "completed_at", nullable = false, updatable = false)
     private Instant completedAt;
@@ -45,10 +62,33 @@ public class GameScore {
     }
 
     public GameScore(UUID gameId, UserAccount user, int score, boolean newPersonalBest) {
+        this(gameId, user, score, newPersonalBest, Map.of(), null);
+    }
+
+    public GameScore(
+            UUID gameId,
+            UserAccount user,
+            int score,
+            boolean newPersonalBest,
+            Map<String, Integer> categoryScores
+    ) {
+        this(gameId, user, score, newPersonalBest, categoryScores, null);
+    }
+
+    public GameScore(
+            UUID gameId,
+            UserAccount user,
+            int score,
+            boolean newPersonalBest,
+            Map<String, Integer> categoryScores,
+            String theme
+    ) {
         this.gameId = Objects.requireNonNull(gameId);
         this.user = Objects.requireNonNull(user);
         this.score = score;
         this.newPersonalBest = newPersonalBest;
+        this.categoryScores.putAll(Objects.requireNonNull(categoryScores));
+        this.theme = theme;
     }
 
     public UUID getId() {
@@ -69,6 +109,14 @@ public class GameScore {
 
     public boolean isNewPersonalBest() {
         return newPersonalBest;
+    }
+
+    public String getTheme() {
+        return theme;
+    }
+
+    public Map<String, Integer> getCategoryScores() {
+        return categoryScores;
     }
 
     public Instant getCompletedAt() {

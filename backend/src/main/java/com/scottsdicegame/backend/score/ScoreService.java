@@ -1,11 +1,15 @@
 package com.scottsdicegame.backend.score;
 
 import com.scottsdicegame.backend.auth.AuthenticationService;
+import com.scottsdicegame.backend.api.ApiException;
+import com.scottsdicegame.backend.game.GameCatalog;
 import com.scottsdicegame.backend.score.dto.LeaderboardEntry;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionResponse;
 import com.scottsdicegame.backend.user.UserAccount;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -17,17 +21,21 @@ public class ScoreService {
 
     private final GameScoreRepository scoreRepository;
     private final AuthenticationService authenticationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ScoreService(
             GameScoreRepository scoreRepository,
-            AuthenticationService authenticationService
+            AuthenticationService authenticationService,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.scoreRepository = scoreRepository;
         this.authenticationService = authenticationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
     public ScoreSubmissionResponse submit(UUID userId, ScoreSubmissionRequest request) {
+        validateCompletedScorecard(request);
         return scoreRepository.findByUserIdAndGameId(userId, request.gameId())
                 .map(ScoreSubmissionResponse::from)
                 .orElseGet(() -> saveNewScore(userId, request));
@@ -40,9 +48,41 @@ public class ScoreService {
                 .map(previousBest -> request.score() > previousBest.getScore())
                 .orElse(true);
         GameScore saved = scoreRepository.saveAndFlush(
-                new GameScore(request.gameId(), user, request.score(), newPersonalBest)
+                new GameScore(
+                        request.gameId(),
+                        user,
+                        request.score(),
+                        newPersonalBest,
+                        request.categoryScores(),
+                        request.theme()
+                )
         );
+        eventPublisher.publishEvent(new CompletedGameRecordedEvent(userId));
         return ScoreSubmissionResponse.from(saved);
+    }
+
+    private static void validateCompletedScorecard(ScoreSubmissionRequest request) {
+        if (!GameCatalog.isSupportedTheme(request.theme())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_GAME_THEME",
+                    "The completed game's theme is not supported."
+            );
+        }
+        if (!ScoreCategories.isCompleteScorecard(request.categoryScores())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_SCORECARD",
+                    "The completed game must include every score category."
+            );
+        }
+        if (ScoreCategories.grandTotal(request.categoryScores()) != request.score()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "SCORE_TOTAL_MISMATCH",
+                    "The final score does not match the completed scorecard."
+            );
+        }
     }
 
     @Transactional(readOnly = true)

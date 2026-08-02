@@ -1,6 +1,6 @@
 # Scott's Dice Game frontend
 
-React + Vite dice game with held dice, category scoring, bonus rolls, sixteen visual themes, guest play, username accounts, optional Google/Facebook authentication, resumable games, saved high scores, and personal/global leaderboards.
+React + Vite dice game with held dice, category scoring, bonus rolls, sixteen visual themes, guest play, username accounts, optional Google/Facebook authentication, resumable games, saved high scores, personal/global leaderboards, completed-game player stats, and an illustrated achievement collection.
 
 ## Run locally
 
@@ -13,7 +13,9 @@ npm run dev
 
 Open the Vite URL, normally `http://localhost:5173`. Run the Spring Boot service described in the [root README](../README.md) to enable accounts, saved progress, themes, and scores. Signed-in progress is saved after game changes and can be continued on the next sign-in. If the backend is unavailable, the app seamlessly presents Guest mode only; guest games remain local and never call protected APIs.
 
-Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in.
+For Docker, use the root [`compose.yaml`](../compose.yaml) and the concise instructions in the [project README](../README.md). The frontend Dockerfile creates a static production build and serves it from non-root Nginx on container port 8080. Nginx also proxies `/backend` to Spring Boot, so browsers use one origin and never need to resolve Docker service names. Firebase `VITE_*` values are build-time settings, so rebuild the frontend image after changing them.
+
+Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in. Signed-in players can open the Player Hub for their personal top ten, the overall top ten, completed-game stats, and achievements. Achievement evaluation replays available score history so compatible milestones can be awarded retroactively; older games cannot prove category- or theme-specific accomplishments when that detail was not recorded.
 
 ## Google and Facebook sign-in
 

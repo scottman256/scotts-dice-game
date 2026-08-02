@@ -1,0 +1,10 @@
+.gradle/
+build/
+data/
+out/
+target/
+*.class
+*.iml
+.idea/
+.vscode/
+README.md

@@ -392,9 +392,11 @@ describe('DiceRoller', () => {
 
   it('reports a completed game once and announces a confirmed new high score', async () => {
     const onGameComplete = jest.fn()
+    const scores = completeScores(1)
     renderGame({
-      initialState: { scores: completeScores(1) },
+      initialState: { scores },
       highScoreStatus: 'new',
+      theme: 'golden',
       onGameComplete,
     })
 
@@ -403,6 +405,8 @@ describe('DiceRoller', () => {
     expect(onGameComplete).toHaveBeenCalledWith({
       gameId: expect.any(String),
       score: expect.any(Number),
+      theme: 'golden',
+      categoryScores: scores,
     })
   })
 })

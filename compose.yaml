@@ -1,0 +1,59 @@
+name: scotts-dice-game
+
+services:
+  database:
+    build:
+      context: ./database
+    restart: unless-stopped
+    volumes:
+      - h2-data:/data
+    networks:
+      - dice-network
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DICE_DATABASE_URL: jdbc:h2:tcp://database:9092/dicegame
+      DICE_DATABASE_USERNAME: sa
+      DICE_DATABASE_PASSWORD: ""
+      DICE_H2_CONSOLE_ENABLED: "true"
+      DICE_SEED_TEST_USER: "true"
+      DICE_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-5173},http://127.0.0.1:${FRONTEND_PORT:-5173}
+      DICE_JWT_SECRET: ${DICE_JWT_SECRET:-c2NvdHRzLWRpY2UtZ2FtZS1kb2NrZXItand0LXNlY3JldC1rZXktMjAyNg==}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - dice-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /backend
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:8080"
+    networks:
+      - dice-network
+
+volumes:
+  h2-data:
+
+networks:
+  dice-network:
+    driver: bridge

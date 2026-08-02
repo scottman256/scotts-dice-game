@@ -272,9 +272,14 @@ export default function DiceRoller({
       && submittedGameRef.current !== gameIdRef.current
     ) {
       submittedGameRef.current = gameIdRef.current
-      onGameComplete({ gameId: gameIdRef.current, score: totals.grandTotal })
+      onGameComplete({
+        gameId: gameIdRef.current,
+        score: totals.grandTotal,
+        theme,
+        categoryScores: scores,
+      })
     }
-  }, [gameComplete, onGameComplete, totals.grandTotal])
+  }, [gameComplete, onGameComplete, scores, theme, totals.grandTotal])
 
   function handleRoll() {
     if (rollDisabled) return

@@ -61,6 +61,20 @@ function createMockBackendClient({
   saveScore = jest.fn(),
   getPersonalScores = jest.fn(() => Promise.resolve([])),
   getLeaderboard = jest.fn(() => Promise.resolve([])),
+  getGameStats = jest.fn(() => Promise.resolve({
+    gamesPlayed: 0,
+    highScore: null,
+    lowScore: null,
+    averageScore: null,
+    medianScore: null,
+    fiveOfAKindsScored: 0,
+    firstRollFiveOfAKinds: 0,
+    firstTopBonuses: 0,
+    secondTopBonuses: 0,
+    fiveOfAKindBonuses: 0,
+    totalPoints: 0,
+  })),
+  getAchievements = jest.fn(() => Promise.resolve({ capacity: 36, achievements: [] })),
   getGameSession = jest.fn(() => Promise.resolve({ theme: 'classic', savedGame: null })),
   saveTheme = jest.fn(() => Promise.resolve({ theme: 'classic' })),
   saveGame = jest.fn(() => Promise.resolve()),
@@ -77,6 +91,8 @@ function createMockBackendClient({
     saveScore,
     getPersonalScores,
     getLeaderboard,
+    getGameStats,
+    getAchievements,
     getGameSession,
     saveTheme,
     saveGame,
@@ -155,7 +171,7 @@ describe('App authentication shell', () => {
 
     expect(await screen.findByText('Ada Lovelace')).toBeVisible()
     expect(screen.getByText('ada@example.com')).toBeVisible()
-    expect(screen.getByRole('button', { name: /Scores/ })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Player Hub/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
     expect(screen.queryByRole('link', { name: /Return to sign in/ })).not.toBeInTheDocument()
   })
@@ -352,7 +368,7 @@ describe('App authentication shell', () => {
     expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
   })
 
-  it('switches from personal to overall high scores through the navbar menu', async () => {
+  it('switches among scores, stats, and achievements through the Player Hub', async () => {
     const getPersonalScores = jest.fn(() => Promise.resolve([{
       scoreId: 9,
       rank: 1,
@@ -367,22 +383,46 @@ describe('App authentication shell', () => {
       score: 499,
       completedAt: '2026-07-27T12:00:00Z',
     }]))
+    const getGameStats = jest.fn(() => Promise.resolve({
+      gamesPlayed: 2,
+      highScore: 410,
+      lowScore: 275,
+      averageScore: 342.5,
+      medianScore: 342.5,
+      fiveOfAKindsScored: 2,
+      firstRollFiveOfAKinds: 0,
+      firstTopBonuses: 2,
+      secondTopBonuses: 1,
+      fiveOfAKindBonuses: 1,
+      totalPoints: 685,
+    }))
+    const getAchievements = jest.fn(() => Promise.resolve({
+      capacity: 36,
+      achievements: [{
+        key: 'first-game',
+        title: 'First Finish',
+        description: 'Completed your first game.',
+        achievedAt: '2026-07-28T12:00:00Z',
+      }],
+    }))
     const backendClient = createMockBackendClient({
       restoredUser: authenticatedUser(),
       getPersonalScores,
       getLeaderboard,
+      getGameStats,
+      getAchievements,
     })
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
 
-    await user.click(await screen.findByRole('button', { name: /Scores/ }))
+    await user.click(await screen.findByRole('button', { name: /Player Hub/ }))
     await user.click(screen.getByRole('menuitem', { name: 'My Top 10' }))
 
     expect(await screen.findByRole('heading', { name: 'My Top 10 Scores' })).toBeVisible()
     expect(getPersonalScores).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('cell', { name: '842' })).toBeVisible()
 
-    await user.click(screen.getByRole('button', { name: /Scores/ }))
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
     expect(screen.getByRole('menuitem', { name: 'My Top 10' }))
       .toHaveAttribute('aria-current', 'page')
     await user.click(screen.getByRole('menuitem', { name: 'Top 10 Overall' }))
@@ -391,6 +431,21 @@ describe('App authentication shell', () => {
     expect(getLeaderboard).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('cell', { name: 'Sir Rolls-a-Lot' })).toBeVisible()
     expect(screen.getByRole('cell', { name: '499' })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Game Stats' }))
+
+    expect(await screen.findByRole('heading', { name: 'Game Stats' })).toBeVisible()
+    expect(getGameStats).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('685')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Achievements' }))
+
+    expect(await screen.findByRole('heading', { name: 'Achievements' })).toBeVisible()
+    expect(getAchievements).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('First Finish')).toBeVisible()
+    expect(screen.getAllByRole('cell')).toHaveLength(36)
   })
 
   it('changes theme mid-game without losing the current roll or held dice', async () => {

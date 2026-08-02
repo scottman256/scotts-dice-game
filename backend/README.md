@@ -1,8 +1,8 @@
 # Scott's Dice Game backend
 
-Spring Boot service for local/manual authentication, verified Firebase identities, users, resumable games, theme preferences, and completed-game high scores. It uses a conventional controller/service/repository split, stateless signed access tokens, Spring Data JPA/Hibernate, Flyway migrations, and an automatically started H2 database. Flyway also installs ten non-login system players with initial leaderboard scores from 499 down to 250.
+Spring Boot service for local/manual authentication, verified Firebase identities, users, resumable games, theme preferences, completed-game high scores, player statistics, and achievements. It uses a conventional controller/service/repository split, stateless signed access tokens, Spring Data JPA/Hibernate, Flyway migrations, and an automatically started H2 database. Flyway also installs ten non-login system players with initial leaderboard scores from 499 down to 250.
 
-## Run
+## Run without Docker
 
 ```powershell
 cd backend
@@ -11,6 +11,8 @@ cd backend
 
 The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The seed account is `test` / `test`.
 
+For the complete Docker deployment, use the root [`compose.yaml`](../compose.yaml) as documented in the [project README](../README.md). It builds this service as a non-root Java 17 container, connects it to the private H2 TCP service, and waits for database health before Spring Boot starts. The backend image is intentionally orchestrated through Compose rather than run alone because its Docker database hostname is provided there.
+
 Important optional environment variables:
 
 - `FIREBASE_PROJECT_ID` — enables verified Google/Facebook login for the matching Firebase project.
@@ -18,6 +20,8 @@ Important optional environment variables:
 - `DICE_JWT_SECRET` — Base64-encoded secret that decodes to at least 32 bytes. Always replace the development default outside local use.
 - `DICE_DATABASE_URL`, `DICE_DATABASE_USERNAME`, `DICE_DATABASE_PASSWORD` — override H2 for another JDBC deployment.
 - `DICE_SEED_TEST_USER=false` and `DICE_H2_CONSOLE_ENABLED=false` — disable local-only conveniences outside development.
+
+The H2 console uses `jdbc:h2:file:./data/dicegame` when the backend runs directly. In Docker it uses `jdbc:h2:tcp://database:9092/dicegame`; both use user `sa` with a blank local-development password.
 
 ## API
 
@@ -34,12 +38,16 @@ Bearer-token endpoints:
 - `POST /api/scores`
 - `GET /api/scores/me`
 - `GET /api/scores/leaderboard`
+- `GET /api/stats/me`
+- `GET /api/achievements/me`
 - `GET /api/game-session`
 - `PUT /api/game-session/theme`
 - `PUT /api/game-session/game`
 - `DELETE /api/game-session/game`
 
-Each user can have one resumable game. Dice and category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted.
+Each user can have one resumable game. Dice and in-progress category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted. New score submissions preserve their completed scorecard and completion theme. Stats exclude older score-only games, while the achievement engine replays all available history and can retroactively award milestones supported by the stored facts. Earned achievement keys and their qualifying games are persisted; definitions remain in a versionable catalog so future achievements can evaluate old data without one-off database backfills.
+
+## Tests and package
 
 Run all unit and real HTTP/H2 integration tests with:
 

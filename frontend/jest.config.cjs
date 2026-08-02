@@ -8,7 +8,7 @@ module.exports = {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
   moduleNameMapper: {
-    '\\.(svg|png)$': '<rootDir>/test/fileMock.cjs',
+    '\\.(svg|png|jpe?g)$': '<rootDir>/test/fileMock.cjs',
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',

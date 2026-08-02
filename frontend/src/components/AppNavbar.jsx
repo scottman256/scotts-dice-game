@@ -5,36 +5,36 @@ export default function AppNavbar({
   sessionKind,
   user,
   isSigningOut,
-  isScoresOpen,
-  activeScoreMode,
+  isPlayerSectionOpen,
+  activePlayerView,
   isSettingsOpen,
-  onOpenScores,
+  onOpenPlayerView,
   onReturnHome,
   onOpenSettings,
   onSignOut,
   settingsButtonRef,
 }) {
-  const [scoresMenuOpen, setScoresMenuOpen] = useState(false)
-  const scoresMenuRef = useRef(null)
-  const scoresMenuButtonRef = useRef(null)
+  const [playerMenuOpen, setPlayerMenuOpen] = useState(false)
+  const playerMenuRef = useRef(null)
+  const playerMenuButtonRef = useRef(null)
   const isGuest = sessionKind === 'guest'
   const accountDetail = isGuest
     ? 'Local guest session'
     : user.email || `${user.providerLabel} account`
 
   useEffect(() => {
-    if (!scoresMenuOpen) return undefined
+    if (!playerMenuOpen) return undefined
 
     function handleOutsidePointerDown(event) {
-      if (!scoresMenuRef.current?.contains(event.target)) {
-        setScoresMenuOpen(false)
+      if (!playerMenuRef.current?.contains(event.target)) {
+        setPlayerMenuOpen(false)
       }
     }
 
     function handleEscape(event) {
       if (event.key !== 'Escape') return
-      setScoresMenuOpen(false)
-      scoresMenuButtonRef.current?.focus()
+      setPlayerMenuOpen(false)
+      playerMenuButtonRef.current?.focus()
     }
 
     document.addEventListener('pointerdown', handleOutsidePointerDown)
@@ -43,11 +43,11 @@ export default function AppNavbar({
       document.removeEventListener('pointerdown', handleOutsidePointerDown)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [scoresMenuOpen])
+  }, [playerMenuOpen])
 
-  function openScores(mode) {
-    setScoresMenuOpen(false)
-    onOpenScores(mode)
+  function openPlayerView(view) {
+    setPlayerMenuOpen(false)
+    onOpenPlayerView(view)
   }
 
   return (
@@ -75,37 +75,54 @@ export default function AppNavbar({
           <small>{accountDetail}</small>
         </span>
         {!isGuest && (
-          <div className="scores-menu-wrap" ref={scoresMenuRef}>
+          <div className="player-menu-wrap" ref={playerMenuRef}>
             <button
               type="button"
-              className="scores-menu-button"
-              aria-expanded={scoresMenuOpen}
+              className="player-menu-button"
+              aria-expanded={playerMenuOpen}
               aria-haspopup="menu"
-              aria-pressed={isScoresOpen}
-              aria-controls={scoresMenuOpen ? 'scores-navigation-menu' : undefined}
-              onClick={() => setScoresMenuOpen((open) => !open)}
+              aria-pressed={isPlayerSectionOpen}
+              aria-controls={playerMenuOpen ? 'player-navigation-menu' : undefined}
+              onClick={() => setPlayerMenuOpen((open) => !open)}
               disabled={isSigningOut}
-              ref={scoresMenuButtonRef}
+              ref={playerMenuButtonRef}
             >
-              Scores <span aria-hidden="true">▾</span>
+              Player Hub <span aria-hidden="true">▾</span>
             </button>
-            {scoresMenuOpen && (
-              <div className="scores-menu" id="scores-navigation-menu" role="menu">
+            {playerMenuOpen && (
+              <div className="player-menu" id="player-navigation-menu" role="menu">
                 <button
                   type="button"
                   role="menuitem"
-                  aria-current={isScoresOpen && activeScoreMode === 'personal' ? 'page' : undefined}
-                  onClick={() => openScores('personal')}
+                  aria-current={isPlayerSectionOpen && activePlayerView === 'personal' ? 'page' : undefined}
+                  onClick={() => openPlayerView('personal')}
                 >
                   My Top 10
                 </button>
                 <button
                   type="button"
                   role="menuitem"
-                  aria-current={isScoresOpen && activeScoreMode === 'global' ? 'page' : undefined}
-                  onClick={() => openScores('global')}
+                  aria-current={isPlayerSectionOpen && activePlayerView === 'global' ? 'page' : undefined}
+                  onClick={() => openPlayerView('global')}
                 >
                   Top 10 Overall
+                </button>
+                <span className="player-menu-divider" role="separator" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-current={isPlayerSectionOpen && activePlayerView === 'stats' ? 'page' : undefined}
+                  onClick={() => openPlayerView('stats')}
+                >
+                  Game Stats
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-current={isPlayerSectionOpen && activePlayerView === 'achievements' ? 'page' : undefined}
+                  onClick={() => openPlayerView('achievements')}
+                >
+                  Achievements
                 </button>
               </div>
             )}

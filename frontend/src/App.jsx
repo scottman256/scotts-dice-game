@@ -9,8 +9,10 @@ import {
   getAuthErrorMessage,
 } from './auth/authModel'
 import AppNavbar from './components/AppNavbar'
+import AchievementsScreen from './components/AchievementsScreen'
 import AuthLanding from './components/AuthLanding'
 import DiceRoller from './components/DiceRoller'
+import GameStatsScreen from './components/GameStatsScreen'
 import ResumeGameModal from './components/ResumeGameModal'
 import ScoreboardScreen from './components/ScoreboardScreen'
 import SettingsScreen from './components/SettingsScreen'
@@ -45,7 +47,7 @@ export default function App({
   const [authError, setAuthError] = useState('')
   const [gameSettings, setGameSettings] = useState(() => ({ ...DEFAULT_GAME_SETTINGS }))
   const [activeScreen, setActiveScreen] = useState('game')
-  const [scoreMode, setScoreMode] = useState('personal')
+  const [playerView, setPlayerView] = useState('personal')
   const [highScoreStatus, setHighScoreStatus] = useState(null)
   const [gamePersistenceStatus, setGamePersistenceStatus] = useState('idle')
   const [savedGameToResume, setSavedGameToResume] = useState(null)
@@ -270,10 +272,10 @@ export default function App({
     setActiveScreen('settings')
   }
 
-  function handleOpenScores(mode) {
+  function handleOpenPlayerView(view) {
     setAuthError('')
-    setScoreMode(mode)
-    setActiveScreen('scores')
+    setPlayerView(view)
+    setActiveScreen('player')
   }
 
   function returnToGame() {
@@ -339,7 +341,7 @@ export default function App({
     )
   }, [backendClient, enqueuePersistence, session.kind])
 
-  const handleGameComplete = useCallback(async ({ gameId, score }) => {
+  const handleGameComplete = useCallback(async ({ gameId, score, theme, categoryScores }) => {
     if (session.kind !== 'authenticated') return
     setHighScoreStatus('saving')
     const clearSavedGame = enqueuePersistence(
@@ -347,7 +349,7 @@ export default function App({
       'Your completed game could not be cleared from saved progress.',
     )
     try {
-      const result = await backendClient.saveScore(gameId, score)
+      const result = await backendClient.saveScore(gameId, score, categoryScores, theme)
       setHighScoreStatus(result.newHighScore ? 'new' : 'saved')
     } catch {
       setHighScoreStatus('error')
@@ -361,6 +363,9 @@ export default function App({
       ? backendClient.getPersonalScores()
       : backendClient.getLeaderboard()
   ), [backendClient])
+
+  const loadGameStats = useCallback(() => backendClient.getGameStats(), [backendClient])
+  const loadAchievements = useCallback(() => backendClient.getAchievements(), [backendClient])
 
   if (session.kind === 'checking') {
     return (
@@ -395,11 +400,11 @@ export default function App({
         sessionKind={session.kind}
         user={session.user}
         isSigningOut={busyAction === 'signOut'}
-        isScoresOpen={activeScreen === 'scores'}
-        activeScoreMode={activeScreen === 'scores' ? scoreMode : null}
+        isPlayerSectionOpen={activeScreen === 'player'}
+        activePlayerView={activeScreen === 'player' ? playerView : null}
         isSettingsOpen={activeScreen === 'settings'}
         onReturnHome={handleReturnHome}
-        onOpenScores={handleOpenScores}
+        onOpenPlayerView={handleOpenPlayerView}
         onOpenSettings={handleOpenSettings}
         onSignOut={handleSignOut}
         settingsButtonRef={settingsButtonRef}
@@ -444,8 +449,14 @@ export default function App({
               onSave={handleSaveSettings}
             />
           )}
-          {activeScreen === 'scores' && (
-            <ScoreboardScreen mode={scoreMode} loadScores={loadScores} onBack={returnToGame} />
+          {activeScreen === 'player' && (playerView === 'personal' || playerView === 'global') && (
+            <ScoreboardScreen mode={playerView} loadScores={loadScores} onBack={returnToGame} />
+          )}
+          {activeScreen === 'player' && playerView === 'stats' && (
+            <GameStatsScreen loadStats={loadGameStats} onBack={returnToGame} />
+          )}
+          {activeScreen === 'player' && playerView === 'achievements' && (
+            <AchievementsScreen loadAchievements={loadAchievements} onBack={returnToGame} />
           )}
         </>
       )}

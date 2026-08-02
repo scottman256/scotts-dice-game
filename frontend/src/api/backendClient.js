@@ -149,14 +149,23 @@ export function createBackendClient({
       clearSession()
     },
     clearSession,
-    async saveScore(gameId, score) {
-      return request('/api/scores', { method: 'POST', body: { gameId, score } })
+    async saveScore(gameId, score, categoryScores, theme) {
+      return request('/api/scores', {
+        method: 'POST',
+        body: { gameId, score, theme, categoryScores },
+      })
     },
     async getPersonalScores() {
       return request('/api/scores/me')
     },
     async getLeaderboard() {
       return request('/api/scores/leaderboard')
+    },
+    async getGameStats() {
+      return request('/api/stats/me')
+    },
+    async getAchievements() {
+      return request('/api/achievements/me')
     },
     async getGameSession() {
       return request('/api/game-session')
@@ -199,6 +208,8 @@ export function createUnavailableBackendClient() {
     saveScore: unavailable,
     getPersonalScores: unavailable,
     getLeaderboard: unavailable,
+    getGameStats: unavailable,
+    getAchievements: unavailable,
     getGameSession: unavailable,
     saveTheme: unavailable,
     saveGame: unavailable,

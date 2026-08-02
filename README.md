@@ -4,7 +4,7 @@ Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott bu
 
 ## The game
 
-Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players have their theme and current game saved automatically, can resume that game after returning, and can compare their personal top ten with the overall leaderboard. Guest play remains fully local. A new database starts with ten fictional dice-themed leaderboard players whose scores range from 499 to 250, giving every player an immediate target to beat.
+Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players have their theme and current game saved automatically, can resume that game after returning, and can use the Player Hub to view scores, stats, and a 36-slot achievement collection. Guest play remains fully local. A new database starts with ten fictional dice-themed leaderboard players whose scores range from 499 to 250, giving every player an immediate target to beat.
 
 Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler.
 
@@ -12,11 +12,33 @@ Open the gear-shaped Settings menu during a game to switch themes without losing
 
 - `frontend/` — React and Vite web application
 - `backend/` — Spring Boot, Spring Security, JPA/Hibernate, Flyway, and H2 service
+- `database/` — minimal H2 TCP-server container used by Docker Compose
+- `compose.yaml` — complete local container stack
 
-## Run both services locally
+## Run with Docker
 
-The backend targets Java 17 and works with the currently installed Java `17.0.10`. Gradle 9.3 is supplied through the project wrapper, following the same wrapper-based approach as the `st-hellfire2/api` project, so a separate Gradle installation is not required.
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another Docker Engine with Compose v2) is the only prerequisite. From the project root, run:
 
+Stop any locally running frontend or backend first so the default host ports `5173` and `8080` are available.
+
+```powershell
+docker compose up --build
+```
+
+Compose builds and starts the H2 database, waits for it to become healthy, starts the backend and runs its Flyway migrations, then starts the frontend. Open `http://localhost:5173` and sign in with `test` / `test`, create an account, or play as a guest. The backend and H2 console are available at `http://localhost:8080` and `http://localhost:8080/h2-console`; for the Docker H2 console use JDBC URL `jdbc:h2:tcp://database:9092/dicegame`, user `sa`, and a blank password.
+
+Database files survive container restarts in the `h2-data` named volume. Stop the stack with `docker compose down`. Use `docker compose down -v` only when you intentionally want to delete that volume and start with a fresh database.
+
+Docker works without an environment file. To change the host ports, JWT key, or enable social sign-in, copy `.env.docker.example` to `.env`, edit the values, and rebuild:
+
+```powershell
+Copy-Item .env.docker.example .env
+docker compose up --build
+```
+
+## Run without Docker
+
+The backend targets Java 17 and works with the currently installed Java `17.0.10`. Gradle 9.3 is supplied through the project wrapper.
 Start the backend from one PowerShell window:
 
 ```powershell
@@ -39,7 +61,7 @@ Open the Vite URL, normally `http://localhost:5173`. `VITE_API_BASE_URL` default
 
 ## Optional social sign-in
 
-Configure the Firebase web values in `frontend/.env.local`, enable Google and/or Facebook in Firebase Authentication, and give the backend the same project ID before starting it:
+Enable Google and/or Facebook in Firebase Authentication and use the same Firebase project ID in both services. For Docker, set `FIREBASE_PROJECT_ID` and the public `VITE_FIREBASE_*` values in the root `.env` described above. Without Docker, configure the public values in `frontend/.env.local` and set the backend project ID before starting it:
 
 ```powershell
 $env:FIREBASE_PROJECT_ID='your-project-id'
@@ -48,9 +70,9 @@ $env:FIREBASE_PROJECT_ID='your-project-id'
 
 The frontend sends the Firebase ID token to the backend, which verifies its signature, issuer, audience, and provider before creating or updating the linked local user. Keep provider secrets and Firebase service-account keys out of Vite environment files.
 
-## H2 console and tests
+## Local H2 console and tests
 
-While the backend is running, the local H2 console is at `http://localhost:8080/h2-console`. Use JDBC URL `jdbc:h2:file:./data/dicegame`, user `sa`, and a blank password.
+When running without Docker, the H2 console is at `http://localhost:8080/h2-console`. Use JDBC URL `jdbc:h2:file:./data/dicegame`, user `sa`, and a blank password.
 
 ```powershell
 # Backend unit and integration tests

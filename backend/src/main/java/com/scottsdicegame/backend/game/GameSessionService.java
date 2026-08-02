@@ -74,7 +74,7 @@ public class GameSessionService {
     }
 
     private static void validateTheme(String theme) {
-        if (!GameCatalog.THEMES.contains(theme)) {
+        if (!GameCatalog.isSupportedTheme(theme)) {
             throw invalidState("The selected game theme is not supported.");
         }
     }
@@ -83,7 +83,7 @@ public class GameSessionService {
         if (!GameCatalog.STATUS_TONES.contains(request.statusTone())) {
             throw invalidState("The game status tone is invalid.");
         }
-        if (!GameCatalog.SCORE_CATEGORIES.containsAll(request.scores().keySet())) {
+        if (!GameCatalog.containsOnlyScoreCategories(request.scores().keySet())) {
             throw invalidState("The saved game contains an unknown score category.");
         }
 
