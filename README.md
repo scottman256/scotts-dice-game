@@ -89,6 +89,5 @@ npm run build
 
 The [pull-request workflow](.github/workflows/ci.yml) runs independent frontend and backend jobs on every pull request. It installs dependencies from the committed lockfiles, runs all unit and integration tests, enforces the configured 90% coverage gates, verifies the frontend production build, and retains the generated test and coverage reports as workflow artifacts for seven days.
 
-Configure `Frontend tests and coverage` and `Backend tests and coverage` as required status checks in the GitHub ruleset for `main` to prevent merging a failing pull request. GitHub ruleset bypass permissions can be granted to the repository administrator when an explicit override is needed.
 
 See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration and API details.
