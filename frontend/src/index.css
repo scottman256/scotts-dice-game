@@ -2114,9 +2114,101 @@ a:focus-visible {
   line-height: 1.5;
 }
 
-.score-table-wrap {
-  overflow-x: auto;
+.scorecard-body {
+  position: relative;
+  padding: clamp(12px, 2.3vw, 20px);
   border-top: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--teal) 8%, transparent), transparent 32%),
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 34%),
+    rgba(0, 0, 0, 0.08);
+}
+
+.score-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.6vw, 16px);
+}
+
+.score-section-panel,
+.score-summary-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 17px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 13px 28px rgba(0, 0, 0, 0.14);
+}
+
+.score-section-heading {
+  display: flex;
+  min-height: 70px;
+  padding: 12px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line-strong);
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 56%),
+    var(--panel-strong);
+}
+
+.bottom-section-panel .score-section-heading {
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--teal) 10%, transparent), transparent 56%),
+    var(--panel-strong);
+}
+
+.score-section-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-section-title > div {
+  min-width: 0;
+}
+
+.score-section-index {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-light);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.bottom-section-panel .score-section-index {
+  border-color: color-mix(in srgb, var(--teal) 40%, var(--line));
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
+  color: var(--teal);
+}
+
+.score-section-title small,
+.score-summary-heading small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.score-section-title h3,
+.score-summary-heading h3 {
+  margin: 2px 0 0;
+  color: var(--theme-heading);
+  font-size: 0.98rem;
+  letter-spacing: -0.015em;
 }
 
 table {
@@ -2152,24 +2244,6 @@ thead th:last-child {
   text-align: center;
 }
 
-.section-row th {
-  padding-top: 14px;
-  padding-bottom: 10px;
-  border-bottom-color: var(--line-strong);
-  background: var(--panel-strong);
-  color: var(--accent-light);
-  font-size: 0.79rem;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-}
-
 .section-progress {
   flex: 0 0 auto;
   padding: 4px 8px;
@@ -2184,8 +2258,57 @@ thead th:last-child {
   white-space: nowrap;
 }
 
-.final-section-row th {
-  color: var(--teal);
+.score-section-panel table {
+  table-layout: fixed;
+}
+
+.score-section-panel thead th {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.14);
+  font-size: 0.6rem;
+}
+
+.score-section-panel tbody tr:not(.qualifying-row):not(.bonus-row):nth-child(even) {
+  background: rgba(255, 255, 255, 0.014);
+}
+
+.score-section-panel tbody tr:not(.bonus-row) {
+  transition: background 140ms ease;
+}
+
+.score-section-panel tbody tr:not(.bonus-row):hover {
+  background: color-mix(in srgb, var(--teal) 6%, transparent);
+}
+
+.score-section-panel tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.score-section-panel td {
+  padding: 9px 12px;
+}
+
+.score-section-panel .score-column,
+.score-section-panel .score-cell {
+  width: 98px;
+}
+
+.score-section-panel .score-action {
+  min-width: 64px;
+  gap: 5px;
+}
+
+.score-section-panel .score-coin {
+  width: 34px;
+  height: 34px;
+  font-size: 1.08rem;
+}
+
+.score-section-panel td small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .category-name {
@@ -2281,6 +2404,15 @@ td small {
   background: var(--theme-qualifying-background);
 }
 
+.scratch-blocked-row .category-name {
+  color: #b8c8cd;
+}
+
+.scratch-blocked-row td small {
+  color: var(--accent-light);
+  font-weight: 750;
+}
+
 .bonus-row {
   background: rgba(255, 255, 255, 0.018);
 }
@@ -2301,12 +2433,61 @@ td small {
   color: var(--accent-light);
 }
 
-.score-spacer td {
-  height: 14px;
-  padding: 0;
-  border-top: 1px solid var(--line-strong);
+.score-summary-panel {
+  margin-top: clamp(10px, 1.6vw, 16px);
+}
+
+.score-summary-heading {
+  display: flex;
+  min-height: 64px;
+  padding: 11px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   border-bottom: 1px solid var(--line-strong);
-  background: rgba(0, 0, 0, 0.22);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--teal) 7%, transparent)),
+    var(--panel-strong);
+}
+
+.score-summary-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-summary-heading > div > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--teal) 42%, var(--line));
+  border-radius: 10px;
+  place-items: center;
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
+  color: var(--teal);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.score-summary-heading > span {
+  color: var(--muted);
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.score-summary-table {
+  table-layout: fixed;
+}
+
+.score-summary-table .score-column,
+.score-summary-table .score-cell {
+  width: 118px;
+}
+
+.score-summary-table .total-row:last-child th,
+.score-summary-table .total-row:last-child td {
+  border-bottom: 0;
 }
 
 .total-row th,
@@ -2476,6 +2657,10 @@ td small {
   .theme-options {
     grid-template-columns: 1fr;
   }
+
+  .score-sections-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -2608,6 +2793,20 @@ td small {
   .score-coin {
     width: 36px;
     height: 36px;
+  }
+
+  .scorecard-body {
+    padding: 10px;
+  }
+
+  .score-section-heading,
+  .score-summary-heading {
+    padding-right: 11px;
+    padding-left: 11px;
+  }
+
+  .score-summary-heading > span {
+    max-width: 130px;
   }
 }
 

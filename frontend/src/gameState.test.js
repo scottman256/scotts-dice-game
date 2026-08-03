@@ -9,6 +9,7 @@ import {
   SPECTACULAR_SCORE_THRESHOLD,
   createInitialGameState,
   gameReducer,
+  getCategoryScoreAvailability,
   getGameViewState,
   hasGameProgress,
   hasSavedScore,
@@ -97,6 +98,42 @@ describe('hasSavedScore', () => {
     expect(hasSavedScore(scores, 'twos')).toBe(true)
     expect(hasSavedScore(scores, 'ones')).toBe(false)
     expect(hasSavedScore(scores, 'threes')).toBe(false)
+  })
+})
+
+describe('getCategoryScoreAvailability', () => {
+  it('requires the bonus category to be closed before 5 of a Kind can be scratched', () => {
+    const fiveKind = category('fiveKind')
+    const unqualifiedRoll = {
+      dice: [1, 1, 1, 1, 2],
+      rollCount: 3,
+      scores: {},
+    }
+
+    expect(getCategoryScoreAvailability(fiveKind, unqualifiedRoll)).toMatchObject({
+      scratchBlockedByBonus: true,
+      canScratch: false,
+      canScore: false,
+      preview: null,
+    })
+    expect(getCategoryScoreAvailability(fiveKind, {
+      ...unqualifiedRoll,
+      scores: { fiveKindBonus: 0 },
+    })).toMatchObject({
+      scratchBlockedByBonus: false,
+      canScratch: true,
+      canScore: true,
+      preview: 0,
+    })
+    expect(getCategoryScoreAvailability(fiveKind, {
+      ...unqualifiedRoll,
+      dice: [6, 6, 6, 6, 6],
+    })).toMatchObject({
+      scratchBlockedByBonus: false,
+      canScratch: false,
+      canScore: true,
+      preview: 75,
+    })
   })
 })
 
@@ -371,6 +408,26 @@ describe('gameReducer score actions', () => {
 
     expect(next.scores.largeStraight).toBe(0)
     expect(next.extraRollsUsed).toBe(1)
+  })
+
+  it('rejects scratching 5 of a Kind until its bonus category has been scratched', () => {
+    const blocked = createInitialGameState({
+      dice: [1, 1, 1, 1, 2],
+      rollCount: 3,
+    })
+    const action = { type: GAME_ACTIONS.score, category: category('fiveKind') }
+
+    expect(gameReducer(blocked, action)).toBe(blocked)
+
+    const allowed = createInitialGameState({
+      dice: [1, 1, 1, 1, 2],
+      rollCount: 3,
+      scores: { fiveKindBonus: 0 },
+    })
+    expect(gameReducer(allowed, action).scores).toEqual({
+      fiveKindBonus: 0,
+      fiveKind: 0,
+    })
   })
 
   it.each([

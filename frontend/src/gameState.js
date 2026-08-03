@@ -56,6 +56,36 @@ export function hasSavedScore(scores, categoryId) {
   return Object.prototype.hasOwnProperty.call(scores, categoryId)
 }
 
+export function getCategoryScoreAvailability(category, {
+  dice,
+  rollCount,
+  scores,
+  gameComplete = false,
+}) {
+  const saved = hasSavedScore(scores, category.id)
+  const result = evaluateCategory(category.id, dice, { rollCount, scores })
+  const scratchBlockedByBonus = category.id === 'fiveKind'
+    && !hasSavedScore(scores, 'fiveKindBonus')
+    && rollCount >= NORMAL_ROLL_LIMIT
+    && !result.qualifies
+  const canScratch = rollCount >= NORMAL_ROLL_LIMIT
+    && !result.qualifies
+    && !scratchBlockedByBonus
+  const canScore = !gameComplete
+    && !saved
+    && rollCount > 0
+    && (result.qualifies || canScratch)
+
+  return {
+    saved,
+    result,
+    scratchBlockedByBonus,
+    canScratch,
+    canScore,
+    preview: result.qualifies ? result.points : canScratch ? 0 : null,
+  }
+}
+
 export function hasGameProgress(state) {
   return state.rollCount > 0 || Object.keys(state.scores).length > 0
 }
@@ -144,21 +174,15 @@ export function gameReducer(state, action) {
     case GAME_ACTIONS.score: {
       const category = action.category
       const { gameComplete } = getGameViewState(state)
-      if (
-        gameComplete
-        || state.rollCount === 0
-        || !category
-        || hasSavedScore(state.scores, category.id)
-      ) {
-        return state
-      }
+      if (!category) return state
 
-      const result = evaluateCategory(category.id, state.dice, {
+      const { result, canScore } = getCategoryScoreAvailability(category, {
+        dice: state.dice,
         rollCount: state.rollCount,
         scores: state.scores,
+        gameComplete,
       })
-      const canScratch = state.rollCount >= NORMAL_ROLL_LIMIT && !result.qualifies
-      if (!result.qualifies && !canScratch) return state
+      if (!canScore) return state
 
       const points = result.qualifies ? result.points : 0
       const nextScores = { ...state.scores, [category.id]: points }

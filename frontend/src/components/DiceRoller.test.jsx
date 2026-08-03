@@ -38,12 +38,18 @@ describe('DiceRoller', () => {
       expect(die).toBeDisabled()
     })
 
-    const scorecard = screen.getByRole('table', {
+    const scorecard = screen.getByRole('group', {
       name: 'Dice game scoring categories and saved scores',
     })
     const scoreButtons = within(scorecard).getAllByRole('button')
     expect(scoreButtons).toHaveLength(ALL_CATEGORIES.length)
     scoreButtons.forEach((button) => expect(button).toBeDisabled())
+
+    expect(within(scorecard).getByRole('table', { name: 'Top Section scoring categories' }))
+      .toBeVisible()
+    expect(within(scorecard).getByRole('table', { name: 'Bottom Section scoring categories' }))
+      .toBeVisible()
+    expect(within(scorecard).getByRole('table', { name: 'Score totals' })).toBeVisible()
 
     expect(screen.getByText('0/19 filled')).toBeVisible()
     expect(screen.getByText('0/9 filled')).toBeVisible()
@@ -190,6 +196,36 @@ describe('DiceRoller', () => {
     expect(screen.getByLabelText('Large Straight: 0 points')).toHaveTextContent('0')
     expect(screen.getByText('Large Straight scored 0 points. Roll to start the next turn.')).toBeVisible()
     expect(screen.getByText('1/10 filled')).toBeVisible()
+  })
+
+  it('keeps the 5 of a Kind scratch locked until its bonus category is closed', () => {
+    const blockedGame = renderGame({
+      initialState: {
+        dice: [1, 1, 1, 1, 2],
+        rollCount: 3,
+      },
+    })
+
+    expect(screen.getByText('Scratch the 5 of a Kind Bonus first')).toBeVisible()
+    expect(screen.getByRole('button', {
+      name: 'Scratch the 5 of a Kind Bonus first',
+    })).toBeDisabled()
+    expect(screen.getByRole('button', {
+      name: 'Record zero points in 5 of a Kind Bonus',
+    })).toBeEnabled()
+
+    blockedGame.unmount()
+    renderGame({
+      initialState: {
+        dice: [1, 1, 1, 1, 2],
+        rollCount: 3,
+        scores: { fiveKindBonus: 0 },
+      },
+    })
+
+    expect(screen.getByRole('button', {
+      name: 'Record zero points in 5 of a Kind',
+    })).toBeEnabled()
   })
 
   it('spends a fourth-roll chance, locks further rolls, and preserves usage next turn', async () => {
