@@ -2,7 +2,7 @@
 
 Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott built when he first got into coding. This version was created with ChatGPT 5.6 (Sol), carrying the original idea into a polished contemporary experience.
 
-## The game
+## The Game
 
 Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players have their theme and current game saved automatically, can resume that game after returning, and can use the Player Hub to view scores, stats, and a 36-slot achievement collection. Guest play remains fully local. A new database starts with ten fictional dice-themed leaderboard players whose scores range from 499 to 250, giving every player an immediate target to beat.
 
