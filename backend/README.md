@@ -55,6 +55,14 @@ Run all unit and real HTTP/H2 integration tests with:
 .\gradlew.bat test
 ```
 
+Run the same suite and enforce the 90% line-coverage requirement with:
+
+```powershell
+.\gradlew.bat check
+```
+
+JaCoCo writes its HTML report to `backend/build/reports/jacoco/test/html/`. The pull-request CI workflow uses `check`, so a test or coverage failure fails the backend status check.
+
 Create the executable Spring Boot JAR with:
 
 ```powershell

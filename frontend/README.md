@@ -38,4 +38,4 @@ npm run test:coverage
 npm run build
 ```
 
-`npm run test:ci` runs the complete test suite once with coverage thresholds enforced.
+`npm run test:ci` runs the complete test suite once and requires at least 90% global statement, branch, function, and line coverage. The HTML coverage report is written to `frontend/coverage/`.

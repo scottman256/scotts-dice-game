@@ -37,4 +37,20 @@ describe('ScoreboardScreen', () => {
     )
     expect(await screen.findByRole('alert')).toHaveTextContent('We could not load scores right now.')
   })
+
+  it('uses a placeholder for missing or invalid completion dates', async () => {
+    render(
+      <ScoreboardScreen
+        mode="global"
+        loadScores={() => Promise.resolve([
+          { scoreId: 1, rank: 1, playerName: 'No Date', score: 500, completedAt: null },
+          { scoreId: 2, rank: 2, playerName: 'Bad Date', score: 450, completedAt: 'not-a-date' },
+        ])}
+        onBack={jest.fn()}
+      />,
+    )
+
+    expect(await screen.findByRole('cell', { name: '500' })).toBeVisible()
+    expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(2)
+  })
 })

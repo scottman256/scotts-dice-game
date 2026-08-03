@@ -75,14 +75,20 @@ The frontend sends the Firebase ID token to the backend, which verifies its sign
 When running without Docker, the H2 console is at `http://localhost:8080/h2-console`. Use JDBC URL `jdbc:h2:file:./data/dicegame`, user `sa`, and a blank password.
 
 ```powershell
-# Backend unit and integration tests
+# Backend unit and integration tests with the coverage gate
 cd backend
-.\gradlew.bat test
+.\gradlew.bat check
 
-# Frontend tests and production build
+# Frontend tests with the coverage gate, then a production build
 cd ..\frontend
-npm test -- --runInBand
+npm run test:ci -- --runInBand
 npm run build
 ```
+
+## Continuous integration
+
+The [pull-request workflow](.github/workflows/ci.yml) runs independent frontend and backend jobs on every pull request. It installs dependencies from the committed lockfiles, runs all unit and integration tests, enforces the configured 90% coverage gates, verifies the frontend production build, and retains the generated test and coverage reports as workflow artifacts for seven days.
+
+Configure `Frontend tests and coverage` and `Backend tests and coverage` as required status checks in the GitHub ruleset for `main` to prevent merging a failing pull request. GitHub ruleset bypass permissions can be granted to the repository administrator when an explicit override is needed.
 
 See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration and API details.

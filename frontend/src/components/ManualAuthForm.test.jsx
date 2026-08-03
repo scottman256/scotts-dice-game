@@ -50,6 +50,17 @@ describe('ManualAuthForm', () => {
     })
   })
 
+  it('can switch back to sign-in after opening account creation', async () => {
+    const user = userEvent.setup()
+    render(<ManualAuthForm busyAction={null} errorMessage="" onBack={jest.fn()} onSubmit={jest.fn()} />)
+
+    await user.click(screen.getByRole('tab', { name: 'Create account' }))
+    await user.click(screen.getByRole('tab', { name: 'Sign in' }))
+
+    expect(screen.getByRole('tab', { name: 'Sign in' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByLabelText('Enter password again')).not.toBeInTheDocument()
+  })
+
   it('uses the same strong-password rule described to the player', () => {
     expect(isStrongPassword('StrongPassword1!')).toBe(true)
     expect(isStrongPassword('weakpassword')).toBe(false)

@@ -81,6 +81,17 @@ describe('AuthLanding', () => {
     expect(screen.getByRole('tab', { name: 'Create account' })).toBeVisible()
   })
 
+  it('returns from username authentication to all sign-in options', async () => {
+    const user = userEvent.setup()
+    render(<AuthLanding {...defaultProps()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Continue with Username' }))
+    await user.click(screen.getByRole('button', { name: 'All sign-in options' }))
+
+    expect(screen.getByRole('heading', { name: 'Choose how to play' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Continue with Username' })).toBeEnabled()
+  })
+
   it.each([
     [AUTH_PROVIDERS.google, 'Connecting to Google…'],
     [AUTH_PROVIDERS.facebook, 'Connecting to Facebook…'],

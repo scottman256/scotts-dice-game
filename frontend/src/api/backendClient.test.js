@@ -3,6 +3,7 @@ import {
   BackendApiError,
   createBackendClient,
   createUnavailableBackendClient,
+  getBackendErrorMessage,
 } from './backendClient'
 
 function response(status, body) {
@@ -125,6 +126,35 @@ describe('backend client', () => {
     expect(fetchImpl.mock.calls[4][1]).toEqual(expect.objectContaining({ method: 'DELETE' }))
   })
 
+  it('supports social login, session restoration, score views, and sign-out', async () => {
+    const storage = storageMock()
+    const fetchImpl = jest.fn()
+      .mockResolvedValueOnce(response(200, {
+        accessToken: 'firebase-backend-token',
+        user: { id: 'user-1', name: 'Cosmic Roller' },
+      }))
+      .mockResolvedValueOnce(response(200, { id: 'user-1', name: 'Cosmic Roller' }))
+      .mockResolvedValueOnce(response(200, [{ rank: 1, score: 640 }]))
+      .mockResolvedValueOnce(response(200, [{ rank: 1, score: 700 }]))
+    const client = createBackendClient({ fetchImpl, storage })
+
+    await expect(client.loginWithFirebase('firebase-id-token'))
+      .resolves.toMatchObject({ name: 'Cosmic Roller' })
+    await expect(client.restoreSession()).resolves.toMatchObject({ id: 'user-1' })
+    await expect(client.getPersonalScores()).resolves.toEqual([{ rank: 1, score: 640 }])
+    await expect(client.getLeaderboard()).resolves.toEqual([{ rank: 1, score: 700 }])
+    await expect(client.signOut()).resolves.toBeUndefined()
+
+    expect(fetchImpl.mock.calls[0][1]).toEqual(expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ idToken: 'firebase-id-token' }),
+    }))
+    expect(fetchImpl.mock.calls[1][1].headers.Authorization).toBe('Bearer firebase-backend-token')
+    expect(fetchImpl.mock.calls[2][0]).toBe('http://localhost:8080/api/scores/me')
+    expect(fetchImpl.mock.calls[3][0]).toBe('http://localhost:8080/api/scores/leaderboard')
+    expect(storage.removeItem).toHaveBeenCalledWith('scotts-dice-game.access-token')
+  })
+
   it('surfaces backend problem details such as duplicate usernames', async () => {
     const client = createBackendClient({
       fetchImpl: jest.fn(() => Promise.resolve(response(409, {
@@ -142,11 +172,108 @@ describe('backend client', () => {
     }))
   })
 
+  it('uses safe fallbacks for non-JSON, malformed, and incomplete responses', async () => {
+    expect(getBackendErrorMessage(new TypeError('network failed')))
+      .toBe('We could not reach the game service. You can continue as a guest.')
+
+    const noContentClient = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve({ ok: true, status: 204 })),
+      storage: storageMock(),
+    })
+    await expect(noContentClient.checkAvailability()).resolves.toEqual({
+      available: false,
+      manualAuthEnabled: false,
+      socialAuthEnabled: false,
+    })
+
+    const malformedJsonClient = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => { throw new SyntaxError('invalid JSON') },
+      })),
+      storage: storageMock(),
+    })
+    await expect(malformedJsonClient.getLeaderboard()).resolves.toBeNull()
+
+    const incompleteErrorClient = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve({
+        ok: false,
+        status: 503,
+        headers: { get: () => 'text/plain' },
+      })),
+      storage: storageMock(),
+    })
+    await expect(incompleteErrorClient.getPersonalScores()).rejects.toEqual(expect.objectContaining({
+      code: 'BACKEND_ERROR',
+      status: 503,
+      message: 'The game service could not complete that request.',
+      errors: {},
+    }))
+  })
+
+  it('restores safely with no token and clears an expired authenticated session', async () => {
+    const emptyStorage = storageMock()
+    const unusedFetch = jest.fn()
+    const signedOutClient = createBackendClient({ fetchImpl: unusedFetch, storage: emptyStorage })
+
+    await expect(signedOutClient.restoreSession()).resolves.toBeNull()
+    expect(unusedFetch).not.toHaveBeenCalled()
+
+    const expiredStorage = storageMock()
+    expiredStorage.setItem('scotts-dice-game.access-token', 'expired-token')
+    const expiredClient = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve(response(401, {
+        code: 'INVALID_TOKEN',
+        detail: 'The access token is invalid.',
+      }))),
+      storage: expiredStorage,
+    })
+
+    await expect(expiredClient.restoreSession()).resolves.toBeNull()
+    expect(expiredStorage.removeItem).toHaveBeenCalledWith('scotts-dice-game.access-token')
+  })
+
+  it('preserves non-authentication errors while restoring a session', async () => {
+    const storage = storageMock()
+    storage.setItem('scotts-dice-game.access-token', 'backend-token')
+    const client = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve(response(503, {
+        code: 'SERVICE_BUSY',
+        detail: 'Try again shortly.',
+      }))),
+      storage,
+    })
+
+    await expect(client.restoreSession()).rejects.toEqual(expect.objectContaining({
+      code: 'SERVICE_BUSY',
+      status: 503,
+    }))
+    expect(storage.removeItem).not.toHaveBeenCalled()
+  })
+
+  it('can register when persistent browser storage is unavailable', async () => {
+    const client = createBackendClient({
+      fetchImpl: jest.fn(() => Promise.resolve(response(201, {
+        accessToken: 'temporary-token',
+        user: { id: 'user-1', name: 'Private Roller' },
+      }))),
+      storage: null,
+    })
+
+    await expect(client.register({ username: 'private-roller' }))
+      .resolves.toMatchObject({ name: 'Private Roller' })
+  })
+
   it('provides a deterministic unavailable implementation for guest-only mode', async () => {
     const client = createUnavailableBackendClient()
 
     expect(client.knownUnavailable).toBe(true)
     await expect(client.checkAvailability()).resolves.toMatchObject({ available: false })
+    await expect(client.restoreSession()).resolves.toBeNull()
+    await expect(client.signOut()).resolves.toBeUndefined()
+    expect(client.clearSession()).toBeUndefined()
     await expect(client.login({})).rejects.toBeInstanceOf(BackendApiError)
   })
 })
