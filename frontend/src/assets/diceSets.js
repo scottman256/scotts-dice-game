@@ -94,6 +94,18 @@ import baseball3 from './baseball/dice-3.svg'
 import baseball4 from './baseball/dice-4.svg'
 import baseball5 from './baseball/dice-5.svg'
 import baseball6 from './baseball/dice-6.svg'
+import candyKingdom1 from './candy-kingdom/dice-1.svg'
+import candyKingdom2 from './candy-kingdom/dice-2.svg'
+import candyKingdom3 from './candy-kingdom/dice-3.svg'
+import candyKingdom4 from './candy-kingdom/dice-4.svg'
+import candyKingdom5 from './candy-kingdom/dice-5.svg'
+import candyKingdom6 from './candy-kingdom/dice-6.svg'
+import frozenCrystal1 from './frozen-crystal/dice-1.svg'
+import frozenCrystal2 from './frozen-crystal/dice-2.svg'
+import frozenCrystal3 from './frozen-crystal/dice-3.svg'
+import frozenCrystal4 from './frozen-crystal/dice-4.svg'
+import frozenCrystal5 from './frozen-crystal/dice-5.svg'
+import frozenCrystal6 from './frozen-crystal/dice-6.svg'
 
 function createDiceSet(id, faces) {
   return Object.freeze({ id, faces: Object.freeze(faces) })
@@ -136,6 +148,14 @@ export const DICE_SETS = Object.freeze({
   ]),
   baseball: createDiceSet('baseball', [
     baseball1, baseball2, baseball3, baseball4, baseball5, baseball6,
+  ]),
+  'candy-kingdom': createDiceSet('candy-kingdom', [
+    candyKingdom1, candyKingdom2, candyKingdom3,
+    candyKingdom4, candyKingdom5, candyKingdom6,
+  ]),
+  'frozen-crystal': createDiceSet('frozen-crystal', [
+    frozenCrystal1, frozenCrystal2, frozenCrystal3,
+    frozenCrystal4, frozenCrystal5, frozenCrystal6,
   ]),
 })
 

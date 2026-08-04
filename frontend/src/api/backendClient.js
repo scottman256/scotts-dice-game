@@ -105,9 +105,15 @@ export function createBackendClient({
           available: status?.status === 'UP',
           manualAuthEnabled: Boolean(status?.manualAuthEnabled),
           socialAuthEnabled: Boolean(status?.socialAuthEnabled),
+          enabledThemes: Array.isArray(status?.enabledThemes) ? status.enabledThemes : null,
         }
       } catch {
-        return { available: false, manualAuthEnabled: false, socialAuthEnabled: false }
+        return {
+          available: false,
+          manualAuthEnabled: false,
+          socialAuthEnabled: false,
+          enabledThemes: null,
+        }
       } finally {
         clearTimeout(timeout)
       }
@@ -182,6 +188,36 @@ export function createBackendClient({
     async deleteSavedGame() {
       return request('/api/game-session/game', { method: 'DELETE' })
     },
+    async getAdminThemes() {
+      return request('/api/admin/themes')
+    },
+    async updateAdminTheme(themeId, enabled) {
+      return request(`/api/admin/themes/${encodeURIComponent(themeId)}`, {
+        method: 'PUT',
+        body: { enabled },
+      })
+    },
+    async getAdminUsers() {
+      return request('/api/admin/users')
+    },
+    async deleteAdminUser(userId) {
+      return request(`/api/admin/users/${encodeURIComponent(userId)}`, { method: 'DELETE' })
+    },
+    async changeAdminUserPassword(userId, credentials) {
+      return request(`/api/admin/users/${encodeURIComponent(userId)}/password`, {
+        method: 'PUT',
+        body: credentials,
+      })
+    },
+    async addAdminSystemScore(entry) {
+      return request('/api/admin/scores', { method: 'POST', body: entry })
+    },
+    async deleteAdminScore(scoreId) {
+      return request(`/api/admin/scores/${encodeURIComponent(scoreId)}`, { method: 'DELETE' })
+    },
+    async resetAdminGameData() {
+      return request('/api/admin/game-data/reset', { method: 'POST' })
+    },
   })
 }
 
@@ -198,6 +234,7 @@ export function createUnavailableBackendClient() {
       available: false,
       manualAuthEnabled: false,
       socialAuthEnabled: false,
+      enabledThemes: null,
     }),
     restoreSession: async () => null,
     register: unavailable,
@@ -214,5 +251,13 @@ export function createUnavailableBackendClient() {
     saveTheme: unavailable,
     saveGame: unavailable,
     deleteSavedGame: unavailable,
+    getAdminThemes: unavailable,
+    updateAdminTheme: unavailable,
+    getAdminUsers: unavailable,
+    deleteAdminUser: unavailable,
+    changeAdminUserPassword: unavailable,
+    addAdminSystemScore: unavailable,
+    deleteAdminScore: unavailable,
+    resetAdminGameData: unavailable,
   })
 }

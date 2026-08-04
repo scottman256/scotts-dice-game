@@ -11,7 +11,8 @@ public record UserResponse(
         String email,
         String photoUrl,
         String providerId,
-        String providerLabel
+        String providerLabel,
+        boolean admin
 ) {
     public static UserResponse from(UserAccount user) {
         return new UserResponse(
@@ -26,7 +27,8 @@ public record UserResponse(
                     case GOOGLE -> "Google";
                     case FACEBOOK -> "Facebook";
                     case SYSTEM -> "Leaderboard";
-                }
+                },
+                user.isAdmin()
         );
     }
 }

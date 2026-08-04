@@ -20,15 +20,18 @@ public class GameSessionService {
     private final SavedGameRepository savedGameRepository;
     private final UserGamePreferencesRepository preferencesRepository;
     private final AuthenticationService authenticationService;
+    private final ThemeAvailabilityService themeAvailabilityService;
 
     public GameSessionService(
             SavedGameRepository savedGameRepository,
             UserGamePreferencesRepository preferencesRepository,
-            AuthenticationService authenticationService
+            AuthenticationService authenticationService,
+            ThemeAvailabilityService themeAvailabilityService
     ) {
         this.savedGameRepository = savedGameRepository;
         this.preferencesRepository = preferencesRepository;
         this.authenticationService = authenticationService;
+        this.themeAvailabilityService = themeAvailabilityService;
     }
 
     @Transactional(readOnly = true)
@@ -73,8 +76,8 @@ public class GameSessionService {
         savedGameRepository.deleteByUserId(userId);
     }
 
-    private static void validateTheme(String theme) {
-        if (!GameCatalog.isSupportedTheme(theme)) {
+    private void validateTheme(String theme) {
+        if (!GameCatalog.isSupportedTheme(theme) || !themeAvailabilityService.isEnabled(theme)) {
             throw invalidState("The selected game theme is not supported.");
         }
     }

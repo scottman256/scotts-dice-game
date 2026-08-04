@@ -66,6 +66,26 @@ public class AchievementService {
         return new AchievementCollectionResponse(AchievementCatalog.DISPLAY_CAPACITY, responses);
     }
 
+    @Transactional
+    public void rebuildForUser(UUID userId) {
+        UserAccount user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "That user account no longer exists."
+                ));
+        achievementRepository.deleteByUserId(userId);
+        achievementRepository.flush();
+
+        List<GameScore> history = scoreRepository.findByUserIdOrderByCompletedAtAscIdAsc(userId);
+        List<UserAchievement> rebuilt = AchievementEvaluator.evaluate(history, Set.of()).stream()
+                .map(unlock -> new UserAchievement(user, unlock))
+                .toList();
+        if (!rebuilt.isEmpty()) {
+            achievementRepository.saveAll(rebuilt);
+        }
+    }
+
     private static int catalogOrder(UserAchievement achievement) {
         return AchievementCatalog.find(achievement.getAchievementKey())
                 .map(AchievementDefinition::catalogOrder)

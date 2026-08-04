@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface UserAchievementRepository extends JpaRepository<UserAchievement, UUID> {
 
     List<UserAchievement> findByUserId(UUID userId);
+
+    void deleteByUserId(UUID userId);
 }

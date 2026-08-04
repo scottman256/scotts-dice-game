@@ -7,34 +7,39 @@ export default function AppNavbar({
   isSigningOut,
   isPlayerSectionOpen,
   activePlayerView,
+  isAdminSectionOpen,
+  activeAdminView,
   isSettingsOpen,
   onOpenPlayerView,
+  onOpenAdminView,
   onReturnHome,
   onOpenSettings,
   onSignOut,
   settingsButtonRef,
 }) {
-  const [playerMenuOpen, setPlayerMenuOpen] = useState(false)
-  const playerMenuRef = useRef(null)
+  const [openMenu, setOpenMenu] = useState(null)
+  const menusRef = useRef(null)
   const playerMenuButtonRef = useRef(null)
+  const adminMenuButtonRef = useRef(null)
   const isGuest = sessionKind === 'guest'
   const accountDetail = isGuest
     ? 'Local guest session'
     : user.email || `${user.providerLabel} account`
 
   useEffect(() => {
-    if (!playerMenuOpen) return undefined
+    if (!openMenu) return undefined
 
     function handleOutsidePointerDown(event) {
-      if (!playerMenuRef.current?.contains(event.target)) {
-        setPlayerMenuOpen(false)
+      if (!menusRef.current?.contains(event.target)) {
+        setOpenMenu(null)
       }
     }
 
     function handleEscape(event) {
       if (event.key !== 'Escape') return
-      setPlayerMenuOpen(false)
-      playerMenuButtonRef.current?.focus()
+      const button = openMenu === 'admin' ? adminMenuButtonRef.current : playerMenuButtonRef.current
+      setOpenMenu(null)
+      button?.focus()
     }
 
     document.addEventListener('pointerdown', handleOutsidePointerDown)
@@ -43,11 +48,21 @@ export default function AppNavbar({
       document.removeEventListener('pointerdown', handleOutsidePointerDown)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [playerMenuOpen])
+  }, [openMenu])
 
   function openPlayerView(view) {
-    setPlayerMenuOpen(false)
+    setOpenMenu(null)
     onOpenPlayerView(view)
+  }
+
+  function openAdminView(view) {
+    setOpenMenu(null)
+    onOpenAdminView(view)
+  }
+
+  function openSettings() {
+    setOpenMenu(null)
+    onOpenSettings()
   }
 
   return (
@@ -75,21 +90,22 @@ export default function AppNavbar({
           <small>{accountDetail}</small>
         </span>
         {!isGuest && (
-          <div className="player-menu-wrap" ref={playerMenuRef}>
+          <div className="nav-menus" ref={menusRef}>
+          <div className="player-menu-wrap">
             <button
               type="button"
               className="player-menu-button"
-              aria-expanded={playerMenuOpen}
+              aria-expanded={openMenu === 'player'}
               aria-haspopup="menu"
               aria-pressed={isPlayerSectionOpen}
-              aria-controls={playerMenuOpen ? 'player-navigation-menu' : undefined}
-              onClick={() => setPlayerMenuOpen((open) => !open)}
+              aria-controls={openMenu === 'player' ? 'player-navigation-menu' : undefined}
+              onClick={() => setOpenMenu((current) => current === 'player' ? null : 'player')}
               disabled={isSigningOut}
               ref={playerMenuButtonRef}
             >
               Player Hub <span aria-hidden="true">▾</span>
             </button>
-            {playerMenuOpen && (
+            {openMenu === 'player' && (
               <div className="player-menu" id="player-navigation-menu" role="menu">
                 <button
                   type="button"
@@ -127,11 +143,49 @@ export default function AppNavbar({
               </div>
             )}
           </div>
+          {user.admin && (
+            <div className="player-menu-wrap admin-menu-wrap">
+              <button
+                type="button"
+                className="player-menu-button admin-menu-button"
+                aria-expanded={openMenu === 'admin'}
+                aria-haspopup="menu"
+                aria-pressed={isAdminSectionOpen}
+                aria-controls={openMenu === 'admin' ? 'admin-navigation-menu' : undefined}
+                onClick={() => setOpenMenu((current) => current === 'admin' ? null : 'admin')}
+                disabled={isSigningOut}
+                ref={adminMenuButtonRef}
+              >
+                Admin <span aria-hidden="true">▾</span>
+              </button>
+              {openMenu === 'admin' && (
+                <div className="player-menu admin-menu" id="admin-navigation-menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    aria-current={isAdminSectionOpen && activeAdminView === 'settings' ? 'page' : undefined}
+                    onClick={() => openAdminView('settings')}
+                  >
+                    Admin Settings
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    aria-current={isAdminSectionOpen && activeAdminView === 'users' ? 'page' : undefined}
+                    onClick={() => openAdminView('users')}
+                  >
+                    User Accounts
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          </div>
         )}
         <button
           type="button"
           className="settings-icon-button"
-          onClick={onOpenSettings}
+          onClick={openSettings}
           disabled={isSigningOut}
           aria-label="Game settings"
           aria-pressed={isSettingsOpen}

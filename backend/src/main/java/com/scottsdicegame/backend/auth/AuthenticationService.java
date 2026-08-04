@@ -109,6 +109,15 @@ public class AuthenticationService {
                 ));
     }
 
+    @Transactional(readOnly = true)
+    public UserAccount requireAdmin(UUID userId) {
+        UserAccount user = requireUser(userId);
+        if (!user.isAdmin()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ADMIN_REQUIRED", "Administrator access is required.");
+        }
+        return user;
+    }
+
     public static UUID parseUserId(String subject) {
         try {
             return UUID.fromString(subject);

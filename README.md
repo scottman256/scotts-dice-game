@@ -6,7 +6,7 @@ Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott bu
 
 Roll five dice, hold the ones you want to keep, and chase scoring combinations to complete the scorecard, earn bonuses, and build the highest total possible. Signed-in players have their theme and current game saved automatically, can resume that game after returning, and can use the Player Hub to view scores, stats, and a 36-slot achievement collection. Guest play remains fully local. A new database starts with ten fictional dice-themed leaderboard players whose scores range from 499 to 250, giving every player an immediate target to beat.
 
-Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Clockwork, Baseball, and World Traveler.
+Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, and World Traveler.
 
 ## Project structure
 
@@ -25,7 +25,7 @@ Stop any locally running frontend or backend first so the default host ports `51
 docker compose up --build
 ```
 
-Compose builds and starts the H2 database, waits for it to become healthy, starts the backend and runs its Flyway migrations, then starts the frontend. Open `http://localhost:5173` and sign in with `test` / `test`, create an account, or play as a guest. The backend and H2 console are available at `http://localhost:8080` and `http://localhost:8080/h2-console`; for the Docker H2 console use JDBC URL `jdbc:h2:tcp://database:9092/dicegame`, user `sa`, and a blank password.
+Compose builds and starts the H2 database, waits for it to become healthy, starts the backend and runs its Flyway migrations, then starts the frontend. Open `http://localhost:5173` and sign in with `test` / `test`, use the local administrator `admin` / `admin`, create an account, or play as a guest. The backend and H2 console are available at `http://localhost:8080` and `http://localhost:8080/h2-console`; for the Docker H2 console use JDBC URL `jdbc:h2:tcp://database:9092/dicegame`, user `sa`, and a blank password.
 
 Database files survive container restarts in the `h2-data` named volume. Stop the stack with `docker compose down`. Use `docker compose down -v` only when you intentionally want to delete that volume and start with a fresh database.
 
@@ -46,7 +46,7 @@ cd backend
 .\gradlew.bat bootRun
 ```
 
-On first startup, H2 creates `backend/data/dicegame`, Flyway creates the tables and default leaderboard, and the application seeds the local account `test` / `test`. The fictional leaderboard identities are system accounts with no login credentials. The deliberately weak test password is a development-only exception; every newly registered account must meet the strong-password policy.
+On first startup, H2 creates `backend/data/dicegame`, Flyway creates the tables and default leaderboard, and the application seeds `test` / `test` plus the local administrator `admin` / `admin`. The administrator can manage theme availability, user accounts, and leaderboard/game data from admin-only screens. The fictional leaderboard identities are system accounts with no login credentials. Both weak seed passwords are development-only exceptions; every newly registered account and admin-initiated password change must meet the strong-password policy.
 
 Start the frontend from a second PowerShell window:
 

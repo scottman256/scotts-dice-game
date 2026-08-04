@@ -69,7 +69,7 @@ describe('DiceRoller', () => {
     'retro-arcade', 'vegas',
     'american', 'cosmic-galaxy',
     'sixties-tie-dye', 'world-traveler',
-    'clockwork', 'baseball',
+    'clockwork', 'baseball', 'candy-kingdom', 'frozen-crystal',
   ])(
     'selects the %s dice artwork',
     (theme) => {

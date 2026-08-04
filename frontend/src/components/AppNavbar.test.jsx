@@ -164,4 +164,38 @@ describe('AppNavbar', () => {
     expect(screen.getByRole('button', { name: 'Game settings' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Signing out…' })).toBeDisabled()
   })
+
+  it('shows a separate admin menu only for administrators', async () => {
+    const onOpenAdminView = jest.fn()
+    const user = userEvent.setup()
+    render(
+      <AppNavbar
+        sessionKind="authenticated"
+        user={{
+          id: 'admin-user',
+          name: 'admin',
+          email: '',
+          photoUrl: null,
+          providerId: 'manual',
+          providerLabel: 'Username',
+          admin: true,
+        }}
+        isSigningOut={false}
+        isPlayerSectionOpen={false}
+        isAdminSectionOpen
+        activeAdminView="settings"
+        isSettingsOpen={false}
+        onOpenPlayerView={jest.fn()}
+        onOpenAdminView={onOpenAdminView}
+        onReturnHome={jest.fn()}
+        onOpenSettings={jest.fn()}
+        onSignOut={jest.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /^Admin/ }))
+    expect(screen.getByRole('menuitem', { name: 'Admin Settings' })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('menuitem', { name: 'User Accounts' }))
+    expect(onOpenAdminView).toHaveBeenCalledWith('users')
+  })
 })

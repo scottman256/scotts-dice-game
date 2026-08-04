@@ -39,3 +39,5 @@ dice:
   cors:
     allowed-origins: ${DICE_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   seed-test-user: ${DICE_SEED_TEST_USER:true}
+  seed-admin-user: ${DICE_SEED_ADMIN_USER:true}
+  admin-password: ${DICE_ADMIN_PASSWORD:admin}

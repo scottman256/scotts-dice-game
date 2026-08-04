@@ -10,6 +10,8 @@ import com.scottsdicegame.backend.user.UserAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class GameSessionServiceTest {
@@ -37,13 +40,22 @@ class GameSessionServiceTest {
     @Mock
     private AuthenticationService authenticationService;
 
+    @Mock
+    private ThemeAvailabilityService themeAvailabilityService;
+
     private GameSessionService service;
     private UUID userId;
     private UserAccount user;
 
     @BeforeEach
     void setUp() {
-        service = new GameSessionService(savedGameRepository, preferencesRepository, authenticationService);
+        service = new GameSessionService(
+                savedGameRepository,
+                preferencesRepository,
+                authenticationService,
+                themeAvailabilityService
+        );
+        lenient().when(themeAvailabilityService.isEnabled(any())).thenReturn(true);
         userId = UUID.randomUUID();
         user = UserAccount.manual("player", "player", "encoded-password");
     }
@@ -75,6 +87,18 @@ class GameSessionServiceTest {
         assertThat(response.heldDice()).containsExactly(true, true, false, false, false);
         assertThat(response.scores()).containsEntry("ones", 2);
         verify(savedGameRepository).saveAndFlush(any(SavedGame.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"candy-kingdom", "frozen-crystal"})
+    void savesEachNewThemeAsAUserPreference(String theme) {
+        when(authenticationService.requireUser(userId)).thenReturn(user);
+        when(preferencesRepository.findById(userId)).thenReturn(Optional.empty());
+
+        var response = service.saveTheme(userId, new ThemePreferenceRequest(theme));
+
+        assertThat(response.theme()).isEqualTo(theme);
+        verify(preferencesRepository).save(any(UserGamePreferences.class));
     }
 
     @Test

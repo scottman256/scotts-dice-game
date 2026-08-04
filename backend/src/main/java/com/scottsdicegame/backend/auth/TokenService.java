@@ -45,6 +45,7 @@ public class TokenService {
                 .expiresAt(expiresAt)
                 .subject(user.getId().toString())
                 .claim("provider", user.getAuthProvider().name())
+                .claim("role", user.getAccountRole().name())
                 .claim("name", user.getDisplayName())
                 .build();
         JwsHeader headers = JwsHeader.with(MacAlgorithm.HS256).type("JWT").build();

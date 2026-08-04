@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "spring.datasource.url=jdbc:h2:file:./build/test-data/dice-integration-${random.uuid}",
                 "spring.h2.console.enabled=false",
                 "dice.seed-test-user=true",
+                "dice.seed-admin-user=true",
+                "dice.admin-password=admin",
                 "dice.firebase.project-id="
         }
 )
@@ -66,6 +68,7 @@ class ApiIntegrationTest {
         assertThat(response.body()).contains("\"status\":\"UP\"");
         assertThat(response.body()).contains("\"manualAuthEnabled\":true");
         assertThat(response.body()).contains("\"socialAuthEnabled\":false");
+        assertThat(response.body()).contains("\"enabledThemes\":[\"classic\"");
     }
 
     @Test
@@ -317,6 +320,30 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void newThemesPassApiValidationAndDatabaseConstraints() throws Exception {
+        String username = "ThemePlayer_" + UUID.randomUUID().toString().substring(0, 8);
+        HttpResponse<String> registration = post("/api/auth/register", """
+                {"username":"%s","password":"CandyIce!2026","passwordConfirmation":"CandyIce!2026"}
+                """.formatted(username), null);
+        assertThat(registration.statusCode()).isEqualTo(201);
+        String token = extractToken(registration.body());
+
+        HttpResponse<String> preference = put("/api/game-session/theme", """
+                {"theme":"frozen-crystal"}
+                """, token);
+        assertThat(preference.statusCode()).isEqualTo(200);
+        assertThat(preference.body()).contains("\"theme\":\"frozen-crystal\"");
+
+        HttpResponse<String> score = post("/api/scores", """
+                {"gameId":"%s","score":275,"theme":"candy-kingdom","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_275), token);
+        assertThat(score.statusCode()).isEqualTo(201);
+
+        assertThat(get("/api/game-session", token).body())
+                .contains("\"theme\":\"frozen-crystal\"");
+    }
+
+    @Test
     void registrationEnforcesPasswordStrengthAndCaseInsensitiveUsernameUniqueness() throws Exception {
         String username = "Player_" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> weakPassword = post("/api/auth/register", """
@@ -338,6 +365,94 @@ class ApiIntegrationTest {
         assertThat(duplicate.statusCode()).isEqualTo(409);
         assertThat(duplicate.body()).contains("\"code\":\"USERNAME_TAKEN\"");
         assertThat(duplicate.body()).contains("That username is already taken");
+    }
+
+    @Test
+    void administratorCanManageThemesUsersScoresAndRestoreOriginalGameData() throws Exception {
+        HttpResponse<String> adminLogin = post("/api/auth/login", """
+                {"username":"admin","password":"admin"}
+                """, null);
+        assertThat(adminLogin.statusCode()).isEqualTo(200);
+        assertThat(adminLogin.body()).contains("\"admin\":true");
+        String adminToken = extractToken(adminLogin.body());
+
+        String managedUsername = "Managed_" + UUID.randomUUID().toString().substring(0, 8);
+        HttpResponse<String> registration = post("/api/auth/register", """
+                {"username":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(managedUsername), null);
+        String managedToken = extractToken(registration.body());
+        String managedUserId = extractJsonString(registration.body(), "id");
+
+        assertThat(get("/api/admin/users", managedToken).statusCode()).isEqualTo(403);
+        assertThat(get("/api/admin/users", adminToken).body())
+                .contains("\"username\":\"" + managedUsername + "\"")
+                .doesNotContain("Sir Rolls-a-Lot");
+
+        HttpResponse<String> playerScore = post("/api/scores", """
+                {"gameId":"%s","score":410,"theme":"golden","categoryScores":%s}
+                """.formatted(UUID.randomUUID(), SCORECARD_410), managedToken);
+        String playerScoreId = extractJsonString(playerScore.body(), "id");
+        assertThat(get("/api/achievements/me", managedToken).body()).contains("\"key\":\"golden-game\"");
+
+        assertThat(delete("/api/admin/scores/" + playerScoreId, adminToken).statusCode()).isEqualTo(204);
+        assertThat(get("/api/achievements/me", managedToken).body()).contains("\"achievements\":[]");
+
+        HttpResponse<String> customScore = post("/api/admin/scores", """
+                {"playerName":"Fishman","score":999}
+                """, adminToken);
+        assertThat(customScore.statusCode()).isEqualTo(201);
+        String customScoreId = extractJsonString(customScore.body(), "scoreId");
+        assertThat(get("/api/scores/leaderboard", adminToken).body())
+                .contains("\"playerName\":\"Fishman\"", "\"score\":999");
+        assertThat(delete("/api/admin/scores/" + customScoreId, adminToken).statusCode()).isEqualTo(204);
+        assertThat(get("/api/scores/leaderboard", adminToken).body()).doesNotContain("Fishman");
+
+        assertThat(put("/api/admin/users/" + managedUserId + "/password", """
+                {"password":"ManagedPassword!2026","passwordConfirmation":"ManagedPassword!2026"}
+                """, adminToken).statusCode()).isEqualTo(204);
+        assertThat(post("/api/auth/login", """
+                {"username":"%s","password":"ManagedPassword!2026"}
+                """.formatted(managedUsername), null).statusCode()).isEqualTo(200);
+        assertThat(delete("/api/admin/users/" + managedUserId, adminToken).statusCode()).isEqualTo(204);
+        assertThat(post("/api/auth/login", """
+                {"username":"%s","password":"ManagedPassword!2026"}
+                """.formatted(managedUsername), null).statusCode()).isEqualTo(401);
+
+        HttpResponse<String> testLogin = post("/api/auth/login", """
+                {"username":"test","password":"test"}
+                """, null);
+        String testToken = extractToken(testLogin.body());
+        assertThat(put("/api/game-session/theme", """
+                {"theme":"rainbow"}
+                """, testToken).statusCode()).isEqualTo(200);
+        assertThat(put("/api/admin/themes/rainbow", """
+                {"enabled":false}
+                """, adminToken).statusCode()).isEqualTo(200);
+        assertThat(get("/api/game-session", testToken).body()).contains("\"theme\":\"classic\"");
+        assertThat(put("/api/game-session/theme", """
+                {"theme":"rainbow"}
+                """, testToken).statusCode()).isEqualTo(400);
+        assertThat(put("/api/admin/themes/classic", """
+                {"enabled":false}
+                """, adminToken).body()).contains("\"code\":\"CLASSIC_THEME_REQUIRED\"");
+        assertThat(put("/api/admin/themes/rainbow", """
+                {"enabled":true}
+                """, adminToken).statusCode()).isEqualTo(200);
+
+        assertThat(delete("/api/admin/scores/10000000-0000-4000-8000-000000000001", adminToken).statusCode())
+                .isEqualTo(204);
+        assertThat(get("/api/scores/leaderboard", adminToken).body()).doesNotContain("Sir Rolls-a-Lot");
+        assertThat(post("/api/admin/scores", """
+                {"playerName":"Fishman","score":999}
+                """, adminToken).statusCode()).isEqualTo(201);
+
+        HttpResponse<String> reset = post("/api/admin/game-data/reset", "", adminToken);
+        assertThat(reset.statusCode()).isEqualTo(200);
+        assertThat(reset.body()).contains("\"defaultsRestored\":1");
+        assertThat(get("/api/scores/leaderboard", adminToken).body())
+                .contains("Sir Rolls-a-Lot")
+                .doesNotContain("Fishman");
+        assertThat(get("/api/admin/users", adminToken).body()).contains("\"username\":\"admin\"");
     }
 
     @Test
@@ -394,6 +509,13 @@ class ApiIntegrationTest {
     private static String extractToken(String body) {
         Matcher matcher = TOKEN_PATTERN.matcher(body);
         assertThat(matcher.find()).as("access token in response: %s", body).isTrue();
+        return matcher.group(1);
+    }
+
+    private static String extractJsonString(String body, String field) {
+        Pattern pattern = Pattern.compile("\\\"" + Pattern.quote(field) + "\\\":\\\"([^\\\"]+)\\\"");
+        Matcher matcher = pattern.matcher(body);
+        assertThat(matcher.find()).as("%s in response: %s", field, body).isTrue();
         return matcher.group(1);
     }
 }

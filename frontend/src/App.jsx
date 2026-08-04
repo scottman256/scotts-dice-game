@@ -9,6 +9,8 @@ import {
   getAuthErrorMessage,
 } from './auth/authModel'
 import AppNavbar from './components/AppNavbar'
+import AdminSettingsScreen from './components/AdminSettingsScreen'
+import AdminUsersScreen from './components/AdminUsersScreen'
 import AchievementsScreen from './components/AchievementsScreen'
 import AuthLanding from './components/AuthLanding'
 import DiceRoller from './components/DiceRoller'
@@ -19,6 +21,7 @@ import SettingsScreen from './components/SettingsScreen'
 import { getGameViewState, hasGameProgress } from './gameState'
 import {
   DEFAULT_GAME_SETTINGS,
+  GAME_THEMES,
   normalizeGameSettings,
 } from './settings/gameThemes'
 
@@ -28,7 +31,9 @@ const OFFLINE_BACKEND = Object.freeze({
   available: false,
   manualAuthEnabled: false,
   socialAuthEnabled: false,
+  enabledThemes: null,
 })
+const ALL_THEME_IDS = Object.freeze(GAME_THEMES.map(({ id }) => id))
 
 function getInitialSession(backendClient) {
   return {
@@ -48,6 +53,8 @@ export default function App({
   const [gameSettings, setGameSettings] = useState(() => ({ ...DEFAULT_GAME_SETTINGS }))
   const [activeScreen, setActiveScreen] = useState('game')
   const [playerView, setPlayerView] = useState('personal')
+  const [adminView, setAdminView] = useState('settings')
+  const [enabledThemeIds, setEnabledThemeIds] = useState(ALL_THEME_IDS)
   const [highScoreStatus, setHighScoreStatus] = useState(null)
   const [gamePersistenceStatus, setGamePersistenceStatus] = useState('idle')
   const [savedGameToResume, setSavedGameToResume] = useState(null)
@@ -100,6 +107,7 @@ export default function App({
       const status = await backendClient.checkAvailability()
       if (!active) return
       setBackendStatus(status)
+      setEnabledThemeIds(status.enabledThemes ?? ALL_THEME_IDS)
 
       if (!status.available) {
         setSession({ kind: 'signedOut', user: null })
@@ -168,7 +176,10 @@ export default function App({
     backendClient.getGameSession()
       .then((gameSession) => {
         if (!active) return
-        setGameSettings(normalizeGameSettings({ theme: gameSession?.theme }))
+        const restoredSettings = normalizeGameSettings({ theme: gameSession?.theme })
+        setGameSettings(enabledThemeIds.includes(restoredSettings.theme)
+          ? restoredSettings
+          : { ...DEFAULT_GAME_SETTINGS })
         if (gameSession?.savedGame) {
           setSavedGameToResume(gameSession.savedGame)
           setGamePersistenceStatus('prompting')
@@ -276,6 +287,29 @@ export default function App({
     setAuthError('')
     setPlayerView(view)
     setActiveScreen('player')
+  }
+
+  function handleOpenAdminView(view) {
+    setAuthError('')
+    setAdminView(view)
+    setActiveScreen('admin')
+  }
+
+  function handleThemeAvailabilityChange(themes) {
+    const enabled = themes.filter((theme) => theme.enabled).map((theme) => theme.id)
+    setEnabledThemeIds(enabled)
+    setGameSettings((current) => enabled.includes(current.theme)
+      ? current
+      : { ...DEFAULT_GAME_SETTINGS })
+  }
+
+  function handleAdminGameDataReset() {
+    persistenceGenerationRef.current += 1
+    persistenceQueueRef.current = Promise.resolve()
+    setHighScoreStatus(null)
+    setSavedGameToResume(null)
+    setGamePersistenceStatus('ready')
+    setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
   }
 
   function returnToGame() {
@@ -402,9 +436,12 @@ export default function App({
         isSigningOut={busyAction === 'signOut'}
         isPlayerSectionOpen={activeScreen === 'player'}
         activePlayerView={activeScreen === 'player' ? playerView : null}
+        isAdminSectionOpen={activeScreen === 'admin'}
+        activeAdminView={activeScreen === 'admin' ? adminView : null}
         isSettingsOpen={activeScreen === 'settings'}
         onReturnHome={handleReturnHome}
         onOpenPlayerView={handleOpenPlayerView}
+        onOpenAdminView={handleOpenAdminView}
         onOpenSettings={handleOpenSettings}
         onSignOut={handleSignOut}
         settingsButtonRef={settingsButtonRef}
@@ -445,18 +482,46 @@ export default function App({
           {activeScreen === 'settings' && (
             <SettingsScreen
               currentSettings={gameSettings}
+              availableThemeIds={enabledThemeIds}
               onCancel={returnToGame}
               onSave={handleSaveSettings}
             />
           )}
           {activeScreen === 'player' && (playerView === 'personal' || playerView === 'global') && (
-            <ScoreboardScreen mode={playerView} loadScores={loadScores} onBack={returnToGame} />
+            <ScoreboardScreen
+              mode={playerView}
+              loadScores={loadScores}
+              isAdmin={Boolean(session.user.admin)}
+              deleteScore={backendClient.deleteAdminScore}
+              resetGameData={backendClient.resetAdminGameData}
+              addSystemScore={backendClient.addAdminSystemScore}
+              onGameDataReset={handleAdminGameDataReset}
+              onBack={returnToGame}
+            />
           )}
           {activeScreen === 'player' && playerView === 'stats' && (
             <GameStatsScreen loadStats={loadGameStats} onBack={returnToGame} />
           )}
           {activeScreen === 'player' && playerView === 'achievements' && (
             <AchievementsScreen loadAchievements={loadAchievements} onBack={returnToGame} />
+          )}
+          {activeScreen === 'admin' && adminView === 'settings' && session.user.admin && (
+            <AdminSettingsScreen
+              loadSettings={backendClient.getAdminThemes}
+              updateTheme={backendClient.updateAdminTheme}
+              resetGameData={backendClient.resetAdminGameData}
+              onThemeAvailabilityChange={handleThemeAvailabilityChange}
+              onGameDataReset={handleAdminGameDataReset}
+              onBack={returnToGame}
+            />
+          )}
+          {activeScreen === 'admin' && adminView === 'users' && session.user.admin && (
+            <AdminUsersScreen
+              loadUsers={backendClient.getAdminUsers}
+              deleteUser={backendClient.deleteAdminUser}
+              changePassword={backendClient.changeAdminUserPassword}
+              onBack={returnToGame}
+            />
           )}
         </>
       )}

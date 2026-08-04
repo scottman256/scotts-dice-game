@@ -79,6 +79,14 @@ function createMockBackendClient({
   saveTheme = jest.fn(() => Promise.resolve({ theme: 'classic' })),
   saveGame = jest.fn(() => Promise.resolve()),
   deleteSavedGame = jest.fn(() => Promise.resolve()),
+  getAdminThemes = jest.fn(() => Promise.resolve({ themes: [] })),
+  updateAdminTheme = jest.fn(() => Promise.resolve({ themes: [] })),
+  getAdminUsers = jest.fn(() => Promise.resolve([])),
+  deleteAdminUser = jest.fn(() => Promise.resolve()),
+  changeAdminUserPassword = jest.fn(() => Promise.resolve()),
+  addAdminSystemScore = jest.fn(() => Promise.resolve()),
+  deleteAdminScore = jest.fn(() => Promise.resolve()),
+  resetAdminGameData = jest.fn(() => Promise.resolve()),
 } = {}) {
   return {
     knownUnavailable: false,
@@ -97,6 +105,14 @@ function createMockBackendClient({
     saveTheme,
     saveGame,
     deleteSavedGame,
+    getAdminThemes,
+    updateAdminTheme,
+    getAdminUsers,
+    deleteAdminUser,
+    changeAdminUserPassword,
+    addAdminSystemScore,
+    deleteAdminScore,
+    resetAdminGameData,
   }
 }
 
@@ -448,6 +464,64 @@ describe('App authentication shell', () => {
     expect(screen.getAllByRole('cell')).toHaveLength(36)
   })
 
+  it('exposes admin settings and user management only to an admin account', async () => {
+    const getAdminThemes = jest.fn(() => Promise.resolve({
+      themes: [
+        { id: 'classic', enabled: true },
+        { id: 'candy-kingdom', enabled: true },
+      ],
+    }))
+    const getAdminUsers = jest.fn(() => Promise.resolve([{
+      id: 'admin-user',
+      name: 'admin',
+      username: 'admin',
+      email: '',
+      providerId: 'manual',
+      providerLabel: 'Username',
+      admin: true,
+      canChangePassword: true,
+      canDelete: false,
+      createdAt: '2026-08-03T12:00:00Z',
+    }]))
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser({
+        id: 'admin-user', name: 'admin', providerId: 'manual', providerLabel: 'Username', admin: true,
+      }),
+      getAdminThemes,
+      getAdminUsers,
+    })
+    const user = userEvent.setup()
+    render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: /^Admin/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Admin Settings' }))
+    expect(await screen.findByRole('heading', { name: 'Admin Settings' })).toBeVisible()
+    expect(getAdminThemes).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: /^Admin/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'User Accounts' }))
+    expect(await screen.findByRole('heading', { name: 'User Accounts' })).toBeVisible()
+    expect(await screen.findByText('Current account')).toBeVisible()
+    expect(getAdminUsers).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns a persisted disabled theme to Classic when the session loads', async () => {
+    const backendClient = createMockBackendClient({
+      status: {
+        available: true,
+        manualAuthEnabled: true,
+        socialAuthEnabled: false,
+        enabledThemes: ['classic'],
+      },
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn(() => Promise.resolve({ theme: 'fire', savedGame: null })),
+    })
+    const { container } = render(<App backendClient={backendClient} />)
+
+    expect(await screen.findByRole('button', { name: 'Roll Dice' })).toBeVisible()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+  })
+
   it('changes theme mid-game without losing the current roll or held dice', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
@@ -498,6 +572,8 @@ describe('App authentication shell', () => {
     ['World Traveler', 'world-traveler'],
     ['Clockwork', 'clockwork'],
     ['Baseball', 'baseball'],
+    ['Candy Kingdom', 'candy-kingdom'],
+    ['Frozen Crystal', 'frozen-crystal'],
   ])('applies the %s style after it is saved', async (themeLabel, themeId) => {
     const user = userEvent.setup()
     const { container } = render(<App />)

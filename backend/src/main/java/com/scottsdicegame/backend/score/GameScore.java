@@ -42,6 +42,9 @@ public class GameScore {
     @Column(name = "new_personal_best", nullable = false)
     private boolean newPersonalBest;
 
+    @Column(name = "default_seed", nullable = false)
+    private boolean defaultSeed;
+
     @Column(length = 40)
     private String theme;
 
@@ -91,6 +94,19 @@ public class GameScore {
         this.theme = theme;
     }
 
+    public static GameScore systemScore(
+            UUID id,
+            UUID gameId,
+            UserAccount user,
+            int score,
+            boolean defaultSeed
+    ) {
+        GameScore gameScore = new GameScore(gameId, user, score, true);
+        gameScore.id = id;
+        gameScore.defaultSeed = defaultSeed;
+        return gameScore;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -109,6 +125,10 @@ public class GameScore {
 
     public boolean isNewPersonalBest() {
         return newPersonalBest;
+    }
+
+    public boolean isDefaultSeed() {
+        return defaultSeed;
     }
 
     public String getTheme() {

@@ -9,7 +9,7 @@ cd backend
 .\gradlew.bat bootRun
 ```
 
-The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The seed account is `test` / `test`.
+The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The local seed accounts are `test` / `test` and administrator `admin` / `admin`.
 
 For the complete Docker deployment, use the root [`compose.yaml`](../compose.yaml) as documented in the [project README](../README.md). It builds this service as a non-root Java 17 container, connects it to the private H2 TCP service, and waits for database health before Spring Boot starts. The backend image is intentionally orchestrated through Compose rather than run alone because its Docker database hostname is provided there.
 
@@ -18,8 +18,9 @@ Important optional environment variables:
 - `FIREBASE_PROJECT_ID` — enables verified Google/Facebook login for the matching Firebase project.
 - `DICE_ALLOWED_ORIGINS` — comma-separated frontend origins; defaults to the local Vite origins.
 - `DICE_JWT_SECRET` — Base64-encoded secret that decodes to at least 32 bytes. Always replace the development default outside local use.
+- `DICE_ADMIN_PASSWORD` — password used only when bootstrapping the local administrator; defaults to `admin`. Set a strong value outside local H2 development.
 - `DICE_DATABASE_URL`, `DICE_DATABASE_USERNAME`, `DICE_DATABASE_PASSWORD` — override H2 for another JDBC deployment.
-- `DICE_SEED_TEST_USER=false` and `DICE_H2_CONSOLE_ENABLED=false` — disable local-only conveniences outside development.
+- `DICE_SEED_TEST_USER=false`, `DICE_SEED_ADMIN_USER=false`, and `DICE_H2_CONSOLE_ENABLED=false` — disable local-only conveniences outside development. Disable admin seeding after provisioning production administration through your deployment process.
 
 The H2 console uses `jdbc:h2:file:./data/dicegame` when the backend runs directly. In Docker it uses `jdbc:h2:tcp://database:9092/dicegame`; both use user `sa` with a blank local-development password.
 
@@ -45,7 +46,15 @@ Bearer-token endpoints:
 - `PUT /api/game-session/game`
 - `DELETE /api/game-session/game`
 
+Administrator-role endpoints:
+
+- `GET /api/admin/themes` and `PUT /api/admin/themes/{themeId}`
+- `GET /api/admin/users`, `PUT /api/admin/users/{userId}/password`, and `DELETE /api/admin/users/{userId}`
+- `POST /api/admin/scores`, `DELETE /api/admin/scores/{scoreId}`, and `POST /api/admin/game-data/reset`
+
 Each user can have one resumable game. Dice and in-progress category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted. New score submissions preserve their completed scorecard and completion theme. Stats exclude older score-only games, while the achievement engine replays all available history and can retroactively award milestones supported by the stored facts. Earned achievement keys and their qualifying games are persisted; definitions remain in a versionable catalog so future achievements can evaluate old data without one-off database backfills.
+
+Classic is permanently available. Disabling another theme changes affected saved preferences to Classic and prevents new saves or completed games from using the disabled theme. Deleting a player's score rebuilds that player's achievements from the remaining completed-game history. A full game-data reset removes player scores, stats, achievements, and saved games without deleting accounts, then restores any missing original fictional leaderboard entries.
 
 ## Tests and package
 

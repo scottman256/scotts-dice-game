@@ -19,11 +19,12 @@ function ThemePreview({ themeId }) {
   )
 }
 
-export default function SettingsScreen({ currentSettings, onCancel, onSave }) {
+export default function SettingsScreen({ currentSettings, availableThemeIds, onCancel, onSave }) {
   const [draftSettings, setDraftSettings] = useState(() => (
     normalizeGameSettings(currentSettings)
   ))
   const headingRef = useRef(null)
+  const availableThemes = availableThemeIds ? new Set(availableThemeIds) : null
 
   useEffect(() => {
     headingRef.current?.focus()
@@ -57,7 +58,9 @@ export default function SettingsScreen({ currentSettings, onCancel, onSave }) {
               <legend>{setting.label}</legend>
               <p id={`${setting.id}-setting-help`}>{setting.description}</p>
               <div className="theme-options">
-                {setting.options.map((option) => {
+                {setting.options
+                  .filter((option) => setting.id !== 'theme' || !availableThemes || availableThemes.has(option.id))
+                  .map((option) => {
                   const selected = draftSettings[setting.id] === option.id
                   return (
                     <label
@@ -78,7 +81,7 @@ export default function SettingsScreen({ currentSettings, onCancel, onSave }) {
                       </span>
                     </label>
                   )
-                })}
+                  })}
               </div>
             </fieldset>
           ))}

@@ -3,6 +3,7 @@ package com.scottsdicegame.backend.score;
 import com.scottsdicegame.backend.auth.AuthenticationService;
 import com.scottsdicegame.backend.api.ApiException;
 import com.scottsdicegame.backend.game.GameCatalog;
+import com.scottsdicegame.backend.game.ThemeAvailabilityService;
 import com.scottsdicegame.backend.score.dto.LeaderboardEntry;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionResponse;
@@ -22,15 +23,18 @@ public class ScoreService {
     private final GameScoreRepository scoreRepository;
     private final AuthenticationService authenticationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ThemeAvailabilityService themeAvailabilityService;
 
     public ScoreService(
             GameScoreRepository scoreRepository,
             AuthenticationService authenticationService,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            ThemeAvailabilityService themeAvailabilityService
     ) {
         this.scoreRepository = scoreRepository;
         this.authenticationService = authenticationService;
         this.eventPublisher = eventPublisher;
+        this.themeAvailabilityService = themeAvailabilityService;
     }
 
     @Transactional
@@ -61,8 +65,8 @@ public class ScoreService {
         return ScoreSubmissionResponse.from(saved);
     }
 
-    private static void validateCompletedScorecard(ScoreSubmissionRequest request) {
-        if (!GameCatalog.isSupportedTheme(request.theme())) {
+    private void validateCompletedScorecard(ScoreSubmissionRequest request) {
+        if (!GameCatalog.isSupportedTheme(request.theme()) || !themeAvailabilityService.isEnabled(request.theme())) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "INVALID_GAME_THEME",

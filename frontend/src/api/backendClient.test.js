@@ -30,6 +30,7 @@ describe('backend client', () => {
       status: 'UP',
       manualAuthEnabled: true,
       socialAuthEnabled: false,
+      enabledThemes: ['classic', 'golden'],
     })))
     const client = createBackendClient({ fetchImpl, storage: storageMock() })
 
@@ -37,6 +38,7 @@ describe('backend client', () => {
       available: true,
       manualAuthEnabled: true,
       socialAuthEnabled: false,
+      enabledThemes: ['classic', 'golden'],
     })
     expect(fetchImpl).toHaveBeenCalledWith(
       'http://localhost:8080/api/public/status',
@@ -155,6 +157,50 @@ describe('backend client', () => {
     expect(storage.removeItem).toHaveBeenCalledWith('scotts-dice-game.access-token')
   })
 
+  it('provides all administrator theme, user, score, and reset operations', async () => {
+    const storage = storageMock()
+    storage.setItem('scotts-dice-game.access-token', 'admin-token')
+    const fetchImpl = jest.fn()
+      .mockResolvedValueOnce(response(200, { themes: [{ id: 'classic', enabled: true }] }))
+      .mockResolvedValueOnce(response(200, { themes: [{ id: 'rainbow', enabled: false }] }))
+      .mockResolvedValueOnce(response(200, [{ id: 'user-1', name: 'Player' }]))
+      .mockResolvedValueOnce(response(204, null))
+      .mockResolvedValueOnce(response(204, null))
+      .mockResolvedValueOnce(response(201, { scoreId: 'score-1', playerName: 'Fishman', score: 999 }))
+      .mockResolvedValueOnce(response(204, null))
+      .mockResolvedValueOnce(response(200, { scoresDeleted: 3 }))
+    const client = createBackendClient({ fetchImpl, storage })
+
+    await client.getAdminThemes()
+    await client.updateAdminTheme('rainbow', false)
+    await client.getAdminUsers()
+    await client.deleteAdminUser('user/1')
+    await client.changeAdminUserPassword('user/1', {
+      password: 'NewPassword!2026',
+      passwordConfirmation: 'NewPassword!2026',
+    })
+    await client.addAdminSystemScore({ playerName: 'Fishman', score: 999 })
+    await client.deleteAdminScore('score/1')
+    await client.resetAdminGameData()
+
+    expect(fetchImpl.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost:8080/api/admin/themes',
+      'http://localhost:8080/api/admin/themes/rainbow',
+      'http://localhost:8080/api/admin/users',
+      'http://localhost:8080/api/admin/users/user%2F1',
+      'http://localhost:8080/api/admin/users/user%2F1/password',
+      'http://localhost:8080/api/admin/scores',
+      'http://localhost:8080/api/admin/scores/score%2F1',
+      'http://localhost:8080/api/admin/game-data/reset',
+    ])
+    expect(fetchImpl.mock.calls[1][1]).toEqual(expect.objectContaining({
+      method: 'PUT', body: JSON.stringify({ enabled: false }),
+    }))
+    expect(fetchImpl.mock.calls[5][1]).toEqual(expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ playerName: 'Fishman', score: 999 }),
+    }))
+  })
+
   it('surfaces backend problem details such as duplicate usernames', async () => {
     const client = createBackendClient({
       fetchImpl: jest.fn(() => Promise.resolve(response(409, {
@@ -184,6 +230,7 @@ describe('backend client', () => {
       available: false,
       manualAuthEnabled: false,
       socialAuthEnabled: false,
+      enabledThemes: null,
     })
 
     const malformedJsonClient = createBackendClient({

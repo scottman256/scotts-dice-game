@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.LockModeType;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,10 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
     boolean existsByNormalizedUsername(String normalizedUsername);
 
     Optional<UserAccount> findByAuthProviderAndExternalSubject(AuthProvider authProvider, String externalSubject);
+
+    List<UserAccount> findByAuthProviderNotOrderByCreatedAtAsc(AuthProvider authProvider);
+
+    long deleteByAuthProviderAndExternalSubjectStartingWith(AuthProvider authProvider, String prefix);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT user FROM UserAccount user WHERE user.id = :userId")

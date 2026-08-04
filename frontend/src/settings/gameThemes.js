@@ -83,6 +83,16 @@ export const GAME_THEMES = Object.freeze([
     label: 'Baseball',
     description: 'Vintage leather baseball dice with red seams, ball pips, and ballpark details.',
   }),
+  Object.freeze({
+    id: 'candy-kingdom',
+    label: 'Candy Kingdom',
+    description: 'Frosted candy tiles with striped sweets, sugar sparkle, and peppermint pips.',
+  }),
+  Object.freeze({
+    id: 'frozen-crystal',
+    label: 'Frozen Crystal',
+    description: 'Faceted translucent ice dice with frosted edges and snow-crystal pips.',
+  }),
 ])
 
 export const GAME_SETTING_DEFINITIONS = Object.freeze([

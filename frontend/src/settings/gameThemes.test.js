@@ -8,7 +8,7 @@ import {
 } from './gameThemes'
 
 describe('game theme settings', () => {
-  it('defines the sixteen requested themes in display order', () => {
+  it('defines the eighteen requested themes in display order', () => {
     expect(GAME_THEMES.map(({ id, label }) => ({ id, label }))).toEqual([
       { id: 'classic', label: 'Classic' },
       { id: 'rainbow', label: 'Rainbow' },
@@ -26,8 +26,10 @@ describe('game theme settings', () => {
       { id: 'world-traveler', label: 'World Traveler' },
       { id: 'clockwork', label: 'Clockwork' },
       { id: 'baseball', label: 'Baseball' },
+      { id: 'candy-kingdom', label: 'Candy Kingdom' },
+      { id: 'frozen-crystal', label: 'Frozen Crystal' },
     ])
-    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 16)
+    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 18)
     GAME_THEMES.forEach((theme) => expect(theme.description).not.toHaveLength(0))
   })
 
@@ -46,6 +48,7 @@ describe('game theme settings', () => {
     'retro-arcade', 'vegas',
     'american', 'cosmic-galaxy',
     'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
+    'candy-kingdom', 'frozen-crystal',
   ])(
     'recognizes %s as a supported theme',
     (themeId) => expect(isGameTheme(themeId)).toBe(true),

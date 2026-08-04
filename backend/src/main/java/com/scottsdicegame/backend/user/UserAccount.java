@@ -45,6 +45,10 @@ public class UserAccount {
     @Column(name = "auth_provider", nullable = false, length = 20)
     private AuthProvider authProvider;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_role", nullable = false, length = 20)
+    private AccountRole accountRole;
+
     @Column(name = "external_subject", length = 128)
     private String externalSubject;
 
@@ -66,6 +70,13 @@ public class UserAccount {
         account.passwordHash = Objects.requireNonNull(passwordHash);
         account.displayName = username;
         account.authProvider = AuthProvider.MANUAL;
+        account.accountRole = AccountRole.USER;
+        return account;
+    }
+
+    public static UserAccount admin(String username, String normalizedUsername, String passwordHash) {
+        UserAccount account = manual(username, normalizedUsername, passwordHash);
+        account.accountRole = AccountRole.ADMIN;
         return account;
     }
 
@@ -81,17 +92,31 @@ public class UserAccount {
         }
         UserAccount account = new UserAccount();
         account.authProvider = Objects.requireNonNull(provider);
+        account.accountRole = AccountRole.USER;
         account.externalSubject = Objects.requireNonNull(externalSubject);
         account.updateSocialProfile(displayName, email, photoUrl);
         return account;
     }
 
     public static UserAccount system(String systemKey, String displayName) {
+        return system(null, systemKey, displayName);
+    }
+
+    public static UserAccount system(UUID id, String systemKey, String displayName) {
         UserAccount account = new UserAccount();
+        account.id = id;
         account.authProvider = AuthProvider.SYSTEM;
+        account.accountRole = AccountRole.USER;
         account.externalSubject = Objects.requireNonNull(systemKey);
         account.displayName = Objects.requireNonNull(displayName);
         return account;
+    }
+
+    public void changePasswordHash(String passwordHash) {
+        if (authProvider != AuthProvider.MANUAL) {
+            throw new IllegalStateException("Only username accounts have local passwords.");
+        }
+        this.passwordHash = Objects.requireNonNull(passwordHash);
     }
 
     public void updateSocialProfile(String displayName, String email, String photoUrl) {
@@ -134,6 +159,14 @@ public class UserAccount {
 
     public AuthProvider getAuthProvider() {
         return authProvider;
+    }
+
+    public AccountRole getAccountRole() {
+        return accountRole;
+    }
+
+    public boolean isAdmin() {
+        return accountRole.isAdmin();
     }
 
     public String getExternalSubject() {

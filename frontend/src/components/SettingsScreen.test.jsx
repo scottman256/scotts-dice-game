@@ -15,7 +15,7 @@ function renderSettings(overrides = {}) {
 }
 
 describe('SettingsScreen', () => {
-  it('renders an accessible, focused settings page with all sixteen style choices', () => {
+  it('renders an accessible, focused settings page with all eighteen style choices', () => {
     const { container } = renderSettings()
 
     expect(screen.getByRole('heading', { level: 1, name: 'Game settings' })).toHaveFocus()
@@ -27,17 +27,19 @@ describe('SettingsScreen', () => {
       'Retro Arcade', 'Vegas',
       'American', 'Cosmic Galaxy',
       '60s Tie-Dye', 'World Traveler', 'Clockwork', 'Baseball',
+      'Candy Kingdom', 'Frozen Crystal',
     ]
     expectedThemes.forEach((theme) => {
       expect(screen.getByRole('radio', { name: new RegExp(`^${theme}`) })).toBeVisible()
     })
-    expect(screen.getAllByRole('radio')).toHaveLength(16)
+    expect(screen.getAllByRole('radio')).toHaveLength(18)
     expect(screen.getByRole('radio', { name: /^Classic/ })).toBeChecked()
     ;[
       'classic', 'rainbow', 'fire', 'beach', 'sky', 'christmas', 'halloween', 'golden',
       'retro-arcade', 'vegas',
       'american', 'cosmic-galaxy',
       'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
+      'candy-kingdom', 'frozen-crystal',
     ]
       .forEach((themeId) => {
       expect(container.querySelector(`[data-preview-theme="${themeId}"] img.preview-die`))
@@ -62,6 +64,8 @@ describe('SettingsScreen', () => {
     ['World Traveler', 'world-traveler'],
     ['Clockwork', 'clockwork'],
     ['Baseball', 'baseball'],
+    ['Candy Kingdom', 'candy-kingdom'],
+    ['Frozen Crystal', 'frozen-crystal'],
   ])('saves the %s selection as normalized settings', async (label, themeId) => {
     const { props, user } = renderSettings({ currentSettings: { theme: 'fire' } })
 
@@ -87,5 +91,21 @@ describe('SettingsScreen', () => {
     renderSettings({ currentSettings: { theme: 'not-a-theme' } })
 
     expect(screen.getByRole('radio', { name: /^Classic/ })).toBeChecked()
+  })
+
+  it('hides themes disabled by an administrator while always showing Classic', () => {
+    render(
+      <SettingsScreen
+        currentSettings={{ theme: 'classic' }}
+        availableThemeIds={['classic', 'frozen-crystal']}
+        onCancel={jest.fn()}
+        onSave={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('radio', { name: /^Classic/ })).toBeVisible()
+    expect(screen.getByRole('radio', { name: /^Frozen Crystal/ })).toBeVisible()
+    expect(screen.queryByRole('radio', { name: /^Candy Kingdom/ })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('radio')).toHaveLength(2)
   })
 })

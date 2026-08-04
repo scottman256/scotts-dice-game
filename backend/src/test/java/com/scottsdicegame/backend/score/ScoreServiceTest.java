@@ -3,6 +3,7 @@ package com.scottsdicegame.backend.score;
 import com.scottsdicegame.backend.auth.AuthenticationService;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.user.UserAccount;
+import com.scottsdicegame.backend.game.ThemeAvailabilityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -26,13 +27,21 @@ class ScoreServiceTest {
     private AuthenticationService authenticationService;
     private ApplicationEventPublisher eventPublisher;
     private ScoreService scoreService;
+    private ThemeAvailabilityService themeAvailabilityService;
 
     @BeforeEach
     void setUp() {
         scoreRepository = mock(GameScoreRepository.class);
         authenticationService = mock(AuthenticationService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
-        scoreService = new ScoreService(scoreRepository, authenticationService, eventPublisher);
+        themeAvailabilityService = mock(ThemeAvailabilityService.class);
+        when(themeAvailabilityService.isEnabled(any())).thenReturn(true);
+        scoreService = new ScoreService(
+                scoreRepository,
+                authenticationService,
+                eventPublisher,
+                themeAvailabilityService
+        );
     }
 
     @Test
