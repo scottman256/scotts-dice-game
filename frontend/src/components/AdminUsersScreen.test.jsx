@@ -32,7 +32,11 @@ function renderScreen(overrides = {}) {
     onBack: jest.fn(),
     ...overrides,
   }
-  return { props, user: userEvent.setup(), ...render(<AdminUsersScreen {...props} />) }
+  return {
+    props,
+    user: userEvent.setup(),
+    ...render(<div className="game-session"><AdminUsersScreen {...props} /></div>),
+  }
 }
 
 describe('AdminUsersScreen', () => {
@@ -57,6 +61,9 @@ describe('AdminUsersScreen', () => {
 
     const playerRow = screen.getByText('Dice Player').closest('tr')
     await user.click(within(playerRow).getByRole('button', { name: 'Change password' }))
+    const passwordDialog = screen.getByRole('dialog', { name: "Change Dice Player's password" })
+    expect(passwordDialog.closest('.admin-page')).toBeNull()
+    expect(passwordDialog.closest('.game-session')).toBeInTheDocument()
     await user.type(screen.getByLabelText('New password'), 'BetterPassword!2026')
     await user.type(screen.getByLabelText('Confirm new password'), 'BetterPassword!2026')
     await user.click(screen.getByRole('button', { name: 'Update password' }))
@@ -78,6 +85,9 @@ describe('AdminUsersScreen', () => {
     await screen.findByText('Dice Player')
     const playerRow = screen.getByText('Dice Player').closest('tr')
     await user.click(within(playerRow).getByRole('button', { name: 'Change email' }))
+    const emailDialog = screen.getByRole('dialog', { name: "Change Dice Player's email" })
+    expect(emailDialog.closest('.admin-page')).toBeNull()
+    expect(emailDialog.closest('.game-session')).toBeInTheDocument()
 
     const emailInput = screen.getByLabelText('Email address')
     await user.clear(emailInput)
