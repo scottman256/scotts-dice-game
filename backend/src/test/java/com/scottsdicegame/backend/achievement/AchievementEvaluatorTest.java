@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AchievementEvaluatorTest {
 
-    private final UserAccount user = UserAccount.manual("player", "player", "encoded-password");
+    private final UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
 
     @Test
     void retroactivelyAwardsMilestonesSupportedByLegacyScoreOnlyHistory() {

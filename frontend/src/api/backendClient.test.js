@@ -166,6 +166,7 @@ describe('backend client', () => {
       .mockResolvedValueOnce(response(200, [{ id: 'user-1', name: 'Player' }]))
       .mockResolvedValueOnce(response(204, null))
       .mockResolvedValueOnce(response(204, null))
+      .mockResolvedValueOnce(response(204, null))
       .mockResolvedValueOnce(response(201, { scoreId: 'score-1', playerName: 'Fishman', score: 999 }))
       .mockResolvedValueOnce(response(204, null))
       .mockResolvedValueOnce(response(200, { scoresDeleted: 3 }))
@@ -179,6 +180,7 @@ describe('backend client', () => {
       password: 'NewPassword!2026',
       passwordConfirmation: 'NewPassword!2026',
     })
+    await client.changeAdminUserEmail('user/1', { email: 'player@example.com' })
     await client.addAdminSystemScore({ playerName: 'Fishman', score: 999 })
     await client.deleteAdminScore('score/1')
     await client.resetAdminGameData()
@@ -189,6 +191,7 @@ describe('backend client', () => {
       'http://localhost:8080/api/admin/users',
       'http://localhost:8080/api/admin/users/user%2F1',
       'http://localhost:8080/api/admin/users/user%2F1/password',
+      'http://localhost:8080/api/admin/users/user%2F1/email',
       'http://localhost:8080/api/admin/scores',
       'http://localhost:8080/api/admin/scores/score%2F1',
       'http://localhost:8080/api/admin/game-data/reset',
@@ -197,6 +200,9 @@ describe('backend client', () => {
       method: 'PUT', body: JSON.stringify({ enabled: false }),
     }))
     expect(fetchImpl.mock.calls[5][1]).toEqual(expect.objectContaining({
+      method: 'PUT', body: JSON.stringify({ email: 'player@example.com' }),
+    }))
+    expect(fetchImpl.mock.calls[6][1]).toEqual(expect.objectContaining({
       method: 'POST', body: JSON.stringify({ playerName: 'Fishman', score: 999 }),
     }))
   })

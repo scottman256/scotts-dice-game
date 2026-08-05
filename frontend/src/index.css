@@ -3862,8 +3862,12 @@ td small {
 
 .admin-users-table {
   width: 100%;
-  min-width: 720px;
+  min-width: 900px;
   border-collapse: collapse;
+}
+
+.admin-user-email {
+  overflow-wrap: anywhere;
 }
 
 .admin-users-table th,

@@ -38,6 +38,9 @@ public class UserAccount {
     @Column(length = 254)
     private String email;
 
+    @Column(name = "normalized_email", length = 254, unique = true)
+    private String normalizedEmail;
+
     @Column(name = "photo_url", length = 1000)
     private String photoUrl;
 
@@ -63,7 +66,12 @@ public class UserAccount {
     protected UserAccount() {
     }
 
-    public static UserAccount manual(String username, String normalizedUsername, String passwordHash) {
+    public static UserAccount manual(
+            String username,
+            String normalizedUsername,
+            String email,
+            String passwordHash
+    ) {
         UserAccount account = new UserAccount();
         account.username = Objects.requireNonNull(username);
         account.normalizedUsername = Objects.requireNonNull(normalizedUsername);
@@ -71,11 +79,17 @@ public class UserAccount {
         account.displayName = username;
         account.authProvider = AuthProvider.MANUAL;
         account.accountRole = AccountRole.USER;
+        account.changeEmail(email);
         return account;
     }
 
-    public static UserAccount admin(String username, String normalizedUsername, String passwordHash) {
-        UserAccount account = manual(username, normalizedUsername, passwordHash);
+    public static UserAccount admin(
+            String username,
+            String normalizedUsername,
+            String email,
+            String passwordHash
+    ) {
+        UserAccount account = manual(username, normalizedUsername, email, passwordHash);
         account.accountRole = AccountRole.ADMIN;
         return account;
     }
@@ -119,9 +133,17 @@ public class UserAccount {
         this.passwordHash = Objects.requireNonNull(passwordHash);
     }
 
+    public void changeEmail(String email) {
+        if (authProvider == AuthProvider.SYSTEM) {
+            throw new IllegalStateException("System accounts do not have email addresses.");
+        }
+        this.email = EmailAddress.clean(email);
+        this.normalizedEmail = EmailAddress.normalize(email);
+    }
+
     public void updateSocialProfile(String displayName, String email, String photoUrl) {
         this.displayName = displayName == null || displayName.isBlank() ? "Player" : displayName.trim();
-        this.email = normalizeNullable(email);
+        changeEmail(email);
         this.photoUrl = normalizeNullable(photoUrl);
     }
 
@@ -151,6 +173,10 @@ public class UserAccount {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getNormalizedEmail() {
+        return normalizedEmail;
     }
 
     public String getPhotoUrl() {

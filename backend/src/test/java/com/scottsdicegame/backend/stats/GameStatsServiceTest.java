@@ -46,7 +46,7 @@ class GameStatsServiceTest {
 
     @Test
     void calculatesScoreDistributionBonusesAndFiveOfAKindCounts() {
-        UserAccount user = UserAccount.manual("player", "player", "encoded-password");
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
         Map<String, Integer> firstScores = scorecard(Map.ofEntries(
                 Map.entry("ones", 5),
                 Map.entry("twos", 10),

@@ -2,6 +2,7 @@ package com.scottsdicegame.backend.auth;
 
 import com.scottsdicegame.backend.api.ApiException;
 import com.scottsdicegame.backend.user.AuthProvider;
+import com.scottsdicegame.backend.user.EmailAddress;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
@@ -55,6 +56,9 @@ public class FirebaseIdentityVerifier {
             };
 
             String email = jwt.getClaimAsString("email");
+            if (!EmailAddress.isValid(email)) {
+                throw invalidToken();
+            }
             String name = jwt.getClaimAsString("name");
             if (name == null || name.isBlank()) {
                 name = email != null && email.contains("@") ? email.substring(0, email.indexOf('@')) : "Player";

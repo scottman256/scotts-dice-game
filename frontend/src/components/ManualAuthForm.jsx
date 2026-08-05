@@ -1,4 +1,9 @@
 import React, { useState } from 'react'
+import {
+  EMAIL_GUIDANCE,
+  EMAIL_MAX_LENGTH,
+  isValidEmail,
+} from '../auth/emailValidation'
 
 export const PASSWORD_GUIDANCE = 'Use 12–72 characters with uppercase, lowercase, a number, and a symbol.'
 
@@ -16,6 +21,7 @@ export function isStrongPassword(password) {
 export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSubmit }) {
   const [mode, setMode] = useState('login')
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [formError, setFormError] = useState('')
@@ -26,6 +32,7 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
     setMode(nextMode)
     setPassword('')
     setPasswordConfirmation('')
+    setEmail('')
     setFormError('')
   }
 
@@ -33,6 +40,10 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
     event.preventDefault()
     setFormError('')
 
+    if (isRegistering && !isValidEmail(email)) {
+      setFormError(EMAIL_GUIDANCE)
+      return
+    }
     if (isRegistering && password !== passwordConfirmation) {
       setFormError('The two passwords do not match.')
       return
@@ -44,6 +55,7 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
 
     await onSubmit(mode, {
       username: username.trim(),
+      ...(isRegistering ? { email: email.trim() } : {}),
       password,
       ...(isRegistering ? { passwordConfirmation } : {}),
     })
@@ -92,6 +104,21 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
             disabled={isBusy}
           />
         </label>
+        {isRegistering && (
+          <label>
+            Email address
+            <input
+              name="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              maxLength={EMAIL_MAX_LENGTH}
+              required
+              disabled={isBusy}
+            />
+          </label>
+        )}
         <label>
           Password
           <input

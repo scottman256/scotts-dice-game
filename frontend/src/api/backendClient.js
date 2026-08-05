@@ -209,6 +209,12 @@ export function createBackendClient({
         body: credentials,
       })
     },
+    async changeAdminUserEmail(userId, update) {
+      return request(`/api/admin/users/${encodeURIComponent(userId)}/email`, {
+        method: 'PUT',
+        body: update,
+      })
+    },
     async addAdminSystemScore(entry) {
       return request('/api/admin/scores', { method: 'POST', body: entry })
     },
@@ -256,6 +262,7 @@ export function createUnavailableBackendClient() {
     getAdminUsers: unavailable,
     deleteAdminUser: unavailable,
     changeAdminUserPassword: unavailable,
+    changeAdminUserEmail: unavailable,
     addAdminSystemScore: unavailable,
     deleteAdminScore: unavailable,
     resetAdminGameData: unavailable,

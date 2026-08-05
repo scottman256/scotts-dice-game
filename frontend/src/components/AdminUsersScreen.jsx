@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ConfirmActionModal from './ConfirmActionModal'
+import EmailChangeModal from './EmailChangeModal'
 import PasswordChangeModal from './PasswordChangeModal'
 
 function formatCreatedAt(value) {
@@ -7,11 +8,19 @@ function formatCreatedAt(value) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString()
 }
 
-export default function AdminUsersScreen({ loadUsers, deleteUser, changePassword, onBack }) {
+export default function AdminUsersScreen({
+  loadUsers,
+  deleteUser,
+  changeEmail,
+  changePassword,
+  onEmailChanged,
+  onBack,
+}) {
   const [users, setUsers] = useState([])
   const [status, setStatus] = useState('loading')
   const [selectedDelete, setSelectedDelete] = useState(null)
   const [selectedPassword, setSelectedPassword] = useState(null)
+  const [selectedEmail, setSelectedEmail] = useState(null)
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [modalError, setModalError] = useState('')
@@ -60,13 +69,30 @@ export default function AdminUsersScreen({ loadUsers, deleteUser, changePassword
     }
   }
 
+  async function handleEmailSave(update) {
+    setBusy(true)
+    setModalError('')
+    try {
+      await changeEmail(selectedEmail.id, update)
+      setUsers((current) => current.map((user) => (
+        user.id === selectedEmail.id ? { ...user, email: update.email } : user
+      )))
+      onEmailChanged?.(selectedEmail.id, update.email)
+      setSelectedEmail(null)
+    } catch (error) {
+      setModalError(error?.message || 'The email address could not be changed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <main className="admin-page" aria-labelledby="admin-users-title">
       <header className="admin-page-heading">
         <div>
           <p className="eyebrow">Administration</p>
           <h1 id="admin-users-title">User Accounts</h1>
-          <p>Review players, manage username passwords, or remove an account and its game data.</p>
+          <p>Review players, manage username credentials, or remove an account and its game data.</p>
         </div>
         <button type="button" className="scores-back-button" onClick={onBack}>Back to game</button>
       </header>
@@ -77,16 +103,22 @@ export default function AdminUsersScreen({ loadUsers, deleteUser, changePassword
         {status === 'ready' && (
           <table className="admin-users-table">
             <caption className="visually-hidden">Registered user accounts</caption>
-            <thead><tr><th scope="col">User</th><th scope="col">Sign-in</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
+            <thead><tr><th scope="col">User</th><th scope="col">E-mail address</th><th scope="col">Sign-in</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
             <tbody>
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td><strong>{user.name}</strong><small>{user.username || user.email || 'No public identifier'}{user.admin ? ' · Admin' : ''}</small></td>
+                  <td><strong>{user.name}</strong><small>{user.username || 'Social account'}{user.admin ? ' · Admin' : ''}</small></td>
+                  <td className="admin-user-email">{user.email || 'Not available'}</td>
                   <td><span className={`admin-provider admin-provider-${user.providerId}`}>{user.providerLabel}</span></td>
                   <td>{formatCreatedAt(user.createdAt)}</td>
                   <td>
                     <div className="admin-row-actions">
-                      {user.canChangePassword && <button type="button" onClick={() => setSelectedPassword(user)}>Change password</button>}
+                      {user.canChangePassword && (
+                        <button type="button" onClick={() => { setModalError(''); setSelectedPassword(user) }}>Change password</button>
+                      )}
+                      {user.canChangeEmail && (
+                        <button type="button" onClick={() => { setModalError(''); setSelectedEmail(user) }}>Change email</button>
+                      )}
                       {user.canDelete && <button type="button" className="admin-delete-link" onClick={() => setSelectedDelete(user)}>Delete</button>}
                       {!user.canDelete && <span>Current account</span>}
                     </div>
@@ -116,6 +148,15 @@ export default function AdminUsersScreen({ loadUsers, deleteUser, changePassword
           errorMessage={modalError}
           onCancel={() => setSelectedPassword(null)}
           onSave={handlePasswordSave}
+        />
+      )}
+      {selectedEmail && (
+        <EmailChangeModal
+          user={selectedEmail}
+          isBusy={busy}
+          errorMessage={modalError}
+          onCancel={() => setSelectedEmail(null)}
+          onSave={handleEmailSave}
         />
       )}
     </main>

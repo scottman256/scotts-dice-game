@@ -250,6 +250,12 @@ export default function App({
     setSession({ kind: 'guest', user: createGuestUser() })
   }
 
+  function handleAdminUserEmailChanged(userId, email) {
+    setSession((current) => current.user?.id === userId
+      ? { ...current, user: { ...current.user, email } }
+      : current)
+  }
+
   function handleReturnHome(event) {
     event.preventDefault()
     setAuthError('')
@@ -519,7 +525,9 @@ export default function App({
             <AdminUsersScreen
               loadUsers={backendClient.getAdminUsers}
               deleteUser={backendClient.deleteAdminUser}
+              changeEmail={backendClient.changeAdminUserEmail}
               changePassword={backendClient.changeAdminUserPassword}
+              onEmailChanged={handleAdminUserEmailChanged}
               onBack={returnToGame}
             />
           )}

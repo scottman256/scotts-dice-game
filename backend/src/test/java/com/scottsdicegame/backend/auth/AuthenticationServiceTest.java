@@ -59,16 +59,18 @@ class AuthenticationServiceTest {
         when(firebaseVerifier.verify("firebase-token")).thenReturn(identity);
         when(userRepository.findByAuthProviderAndExternalSubject(AuthProvider.GOOGLE, "firebase-subject"))
                 .thenReturn(Optional.empty());
-        when(userRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.saveAndFlush(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         authenticationService.loginWithFirebase("firebase-token");
 
         ArgumentCaptor<UserAccount> userCaptor = ArgumentCaptor.forClass(UserAccount.class);
-        verify(userRepository).save(userCaptor.capture());
+        verify(userRepository).saveAndFlush(userCaptor.capture());
         UserAccount saved = userCaptor.getValue();
         assertThat(saved.getAuthProvider()).isEqualTo(AuthProvider.GOOGLE);
         assertThat(saved.getExternalSubject()).isEqualTo("firebase-subject");
         assertThat(saved.getDisplayName()).isEqualTo("Ada Player");
+        assertThat(saved.getEmail()).isEqualTo("ada@example.com");
+        assertThat(saved.getNormalizedEmail()).isEqualTo("ada@example.com");
         verify(tokenService).issue(saved);
     }
 
@@ -78,7 +80,7 @@ class AuthenticationServiceTest {
                 AuthProvider.FACEBOOK,
                 "facebook-subject",
                 "Old Name",
-                null,
+                "old@example.com",
                 null
         );
         FirebaseIdentity identity = new FirebaseIdentity(
@@ -91,11 +93,11 @@ class AuthenticationServiceTest {
         when(firebaseVerifier.verify("firebase-token")).thenReturn(identity);
         when(userRepository.findByAuthProviderAndExternalSubject(AuthProvider.FACEBOOK, "facebook-subject"))
                 .thenReturn(Optional.of(existing));
-        when(userRepository.save(existing)).thenReturn(existing);
+        when(userRepository.saveAndFlush(existing)).thenReturn(existing);
 
         authenticationService.loginWithFirebase("firebase-token");
 
-        verify(userRepository).save(existing);
+        verify(userRepository).saveAndFlush(existing);
         assertThat(existing.getDisplayName()).isEqualTo("Updated Name");
         assertThat(existing.getEmail()).isEqualTo("player@example.com");
         assertThat(existing.getPhotoUrl()).isEqualTo("https://example.com/player.png");
@@ -106,6 +108,7 @@ class AuthenticationServiceTest {
     void rejectsRegistrationWhenThePasswordsDoNotMatch() {
         RegisterRequest request = new RegisterRequest(
                 "player",
+                "player@example.com",
                 "DiceGame!2026",
                 "Different!2026"
         );
@@ -114,9 +117,10 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void convertsAConcurrentUsernameConflictIntoThePublicApiError() {
+    void convertsAConcurrentRegistrationConflictIntoThePublicApiError() {
         RegisterRequest request = new RegisterRequest(
                 "  Player  ",
+                "player@example.com",
                 "DiceGame!2026",
                 "DiceGame!2026"
         );
@@ -125,16 +129,64 @@ class AuthenticationServiceTest {
         when(userRepository.saveAndFlush(any(UserAccount.class)))
                 .thenThrow(new DataIntegrityViolationException("unique constraint"));
 
-        assertApiError(() -> authenticationService.register(request), "USERNAME_TAKEN");
+        assertApiError(() -> authenticationService.register(request), "ACCOUNT_ALREADY_EXISTS");
+    }
+
+    @Test
+    void registersTrimmedEmailAndRejectsAnEmailUsedByAnotherAccount() {
+        RegisterRequest request = new RegisterRequest(
+                "Player",
+                "  Player@Example.com  ",
+                "DiceGame!2026",
+                "DiceGame!2026"
+        );
+        when(passwordEncoder.encode(request.password())).thenReturn("encoded-password");
+        when(userRepository.saveAndFlush(any(UserAccount.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        authenticationService.register(request);
+
+        ArgumentCaptor<UserAccount> captor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(userRepository).existsByNormalizedEmail("player@example.com");
+        verify(userRepository).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo("Player@Example.com");
+        assertThat(captor.getValue().getNormalizedEmail()).isEqualTo("player@example.com");
+
+        when(userRepository.existsByNormalizedEmail("player@example.com")).thenReturn(true);
+        assertApiError(() -> authenticationService.register(request), "EMAIL_TAKEN");
+    }
+
+    @Test
+    void rejectsAFirebaseEmailAlreadyUsedByAnotherAccount() {
+        FirebaseIdentity identity = new FirebaseIdentity(
+                AuthProvider.GOOGLE,
+                "firebase-subject",
+                "Ada Player",
+                "ada@example.com",
+                null
+        );
+        UserAccount manual = UserAccount.manual("ada", "ada", "ada@example.com", "hash");
+        when(firebaseVerifier.verify("firebase-token")).thenReturn(identity);
+        when(userRepository.findByAuthProviderAndExternalSubject(AuthProvider.GOOGLE, "firebase-subject"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByNormalizedEmail("ada@example.com")).thenReturn(Optional.of(manual));
+
+        assertApiError(() -> authenticationService.loginWithFirebase("firebase-token"), "EMAIL_TAKEN");
     }
 
     @Test
     void returnsTheCurrentUserAndRejectsAMissingAccount() {
         UUID existingId = UUID.randomUUID();
-        UserAccount existing = UserAccount.manual("player", "player", "encoded-password");
+        UserAccount existing = UserAccount.manual(
+                "player",
+                "player",
+                "player@example.com",
+                "encoded-password"
+        );
         when(userRepository.findById(existingId)).thenReturn(Optional.of(existing));
 
         assertThat(authenticationService.getCurrentUser(existingId).name()).isEqualTo("player");
+        assertThat(authenticationService.getCurrentUser(existingId).email()).isEqualTo("player@example.com");
         assertThat(authenticationService.getCurrentUser(existingId).providerLabel()).isEqualTo("Username");
 
         UUID missingId = UUID.randomUUID();

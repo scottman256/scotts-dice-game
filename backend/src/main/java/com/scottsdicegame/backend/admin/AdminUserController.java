@@ -1,5 +1,6 @@
 package com.scottsdicegame.backend.admin;
 
+import com.scottsdicegame.backend.admin.dto.AdminEmailChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminPasswordChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminUserResponse;
 import com.scottsdicegame.backend.auth.AuthenticationService;
@@ -47,6 +48,16 @@ public class AdminUserController {
             @Valid @RequestBody AdminPasswordChangeRequest request
     ) {
         adminUserService.changePassword(adminId(authentication), userId, request);
+    }
+
+    @PutMapping("/{userId}/email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void changeEmail(
+            Authentication authentication,
+            @PathVariable UUID userId,
+            @Valid @RequestBody AdminEmailChangeRequest request
+    ) {
+        adminUserService.changeEmail(adminId(authentication), userId, request);
     }
 
     private static UUID adminId(Authentication authentication) {

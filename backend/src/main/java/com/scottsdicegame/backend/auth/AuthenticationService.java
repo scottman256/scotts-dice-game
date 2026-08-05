@@ -5,6 +5,7 @@ import com.scottsdicegame.backend.auth.dto.AuthResponse;
 import com.scottsdicegame.backend.auth.dto.LoginRequest;
 import com.scottsdicegame.backend.auth.dto.RegisterRequest;
 import com.scottsdicegame.backend.auth.dto.UserResponse;
+import com.scottsdicegame.backend.user.EmailAddress;
 import com.scottsdicegame.backend.user.UserAccount;
 import com.scottsdicegame.backend.user.UserAccountRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,6 +44,8 @@ public class AuthenticationService {
     public AuthResponse register(RegisterRequest request) {
         String username = request.username().trim();
         String normalizedUsername = normalizeUsername(username);
+        String email = EmailAddress.clean(request.email());
+        String normalizedEmail = EmailAddress.normalize(email);
         if (!request.password().equals(request.passwordConfirmation())) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
@@ -54,16 +57,20 @@ public class AuthenticationService {
         if (userRepository.existsByNormalizedUsername(normalizedUsername)) {
             throw usernameTaken();
         }
+        if (userRepository.existsByNormalizedEmail(normalizedEmail)) {
+            throw emailTaken();
+        }
 
         UserAccount user = UserAccount.manual(
                 username,
                 normalizedUsername,
+                email,
                 passwordEncoder.encode(request.password())
         );
         try {
             return tokenService.issue(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException exception) {
-            throw usernameTaken();
+            throw accountAlreadyExists();
         }
     }
 
@@ -78,20 +85,29 @@ public class AuthenticationService {
     @Transactional
     public AuthResponse loginWithFirebase(String idToken) {
         FirebaseIdentity identity = firebaseVerifier.verify(idToken);
+        String normalizedEmail = EmailAddress.normalize(identity.email());
         UserAccount user = userRepository
                 .findByAuthProviderAndExternalSubject(identity.provider(), identity.subject())
                 .map(existing -> {
+                    requireAvailableEmail(normalizedEmail, existing);
                     existing.updateSocialProfile(identity.displayName(), identity.email(), identity.photoUrl());
                     return existing;
                 })
-                .orElseGet(() -> UserAccount.social(
-                        identity.provider(),
-                        identity.subject(),
-                        identity.displayName(),
-                        identity.email(),
-                        identity.photoUrl()
-                ));
-        return tokenService.issue(userRepository.save(user));
+                .orElseGet(() -> {
+                    requireAvailableEmail(normalizedEmail, null);
+                    return UserAccount.social(
+                            identity.provider(),
+                            identity.subject(),
+                            identity.displayName(),
+                            identity.email(),
+                            identity.photoUrl()
+                    );
+                });
+        try {
+            return tokenService.issue(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException exception) {
+            throw accountAlreadyExists();
+        }
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +151,33 @@ public class AuthenticationService {
                 HttpStatus.CONFLICT,
                 "USERNAME_TAKEN",
                 "That username is already taken. Please choose another one."
+        );
+    }
+
+    private void requireAvailableEmail(String normalizedEmail, UserAccount currentUser) {
+        userRepository.findByNormalizedEmail(normalizedEmail)
+                .filter(existing -> existing != currentUser)
+                .filter(existing -> currentUser == null
+                        || existing.getId() == null
+                        || !existing.getId().equals(currentUser.getId()))
+                .ifPresent(existing -> {
+                    throw emailTaken();
+                });
+    }
+
+    private static ApiException emailTaken() {
+        return new ApiException(
+                HttpStatus.CONFLICT,
+                "EMAIL_TAKEN",
+                "An account already exists for that email address."
+        );
+    }
+
+    private static ApiException accountAlreadyExists() {
+        return new ApiException(
+                HttpStatus.CONFLICT,
+                "ACCOUNT_ALREADY_EXISTS",
+                "An account already exists for that username or email address."
         );
     }
 

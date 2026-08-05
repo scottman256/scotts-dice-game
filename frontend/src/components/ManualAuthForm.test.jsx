@@ -3,6 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ManualAuthForm, { PASSWORD_GUIDANCE, isStrongPassword } from './ManualAuthForm'
+import { EMAIL_GUIDANCE, isValidEmail } from '../auth/emailValidation'
 
 describe('ManualAuthForm', () => {
   it('submits an existing username account', async () => {
@@ -24,6 +25,7 @@ describe('ManualAuthForm', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Create account' }))
     await user.type(screen.getByLabelText('Username'), 'new-player')
+    await user.type(screen.getByLabelText('Email address'), 'new-player@example.com')
     await user.type(screen.getByLabelText('Password'), 'StrongPassword1!')
     await user.type(screen.getByLabelText('Enter password again'), 'DifferentPassword1!')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
@@ -39,12 +41,14 @@ describe('ManualAuthForm', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Create account' }))
     await user.type(screen.getByLabelText('Username'), 'new-player')
+    await user.type(screen.getByLabelText('Email address'), ' new-player@example.com ')
     await user.type(screen.getByLabelText('Password'), 'StrongPassword1!')
     await user.type(screen.getByLabelText('Enter password again'), 'StrongPassword1!')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
 
     expect(onSubmit).toHaveBeenCalledWith('register', {
       username: 'new-player',
+      email: 'new-player@example.com',
       password: 'StrongPassword1!',
       passwordConfirmation: 'StrongPassword1!',
     })
@@ -58,12 +62,32 @@ describe('ManualAuthForm', () => {
     await user.click(screen.getByRole('tab', { name: 'Sign in' }))
 
     expect(screen.getByRole('tab', { name: 'Sign in' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Enter password again')).not.toBeInTheDocument()
+  })
+
+  it('validates email addresses before registration reaches the backend', async () => {
+    const onSubmit = jest.fn()
+    const user = userEvent.setup()
+    render(<ManualAuthForm busyAction={null} errorMessage="" onBack={jest.fn()} onSubmit={onSubmit} />)
+
+    await user.click(screen.getByRole('tab', { name: 'Create account' }))
+    await user.type(screen.getByLabelText('Username'), 'new-player')
+    await user.type(screen.getByLabelText('Email address'), 'player@example')
+    await user.type(screen.getByLabelText('Password'), 'StrongPassword1!')
+    await user.type(screen.getByLabelText('Enter password again'), 'StrongPassword1!')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(isValidEmail('player@example')).toBe(false)
+    expect(EMAIL_GUIDANCE).toMatch(/valid email address/)
   })
 
   it('uses the same strong-password rule described to the player', () => {
     expect(isStrongPassword('StrongPassword1!')).toBe(true)
     expect(isStrongPassword('weakpassword')).toBe(false)
     expect(PASSWORD_GUIDANCE).toMatch(/12–72 characters/)
+    expect(isValidEmail('player.name+scores@example.com')).toBe(true)
+    expect(isValidEmail('player..name@example.com')).toBe(false)
   })
 })

@@ -84,6 +84,7 @@ function createMockBackendClient({
   getAdminUsers = jest.fn(() => Promise.resolve([])),
   deleteAdminUser = jest.fn(() => Promise.resolve()),
   changeAdminUserPassword = jest.fn(() => Promise.resolve()),
+  changeAdminUserEmail = jest.fn(() => Promise.resolve()),
   addAdminSystemScore = jest.fn(() => Promise.resolve()),
   deleteAdminScore = jest.fn(() => Promise.resolve()),
   resetAdminGameData = jest.fn(() => Promise.resolve()),
@@ -110,6 +111,7 @@ function createMockBackendClient({
     getAdminUsers,
     deleteAdminUser,
     changeAdminUserPassword,
+    changeAdminUserEmail,
     addAdminSystemScore,
     deleteAdminScore,
     resetAdminGameData,
@@ -310,7 +312,7 @@ describe('App authentication shell', () => {
     const manualUser = authenticatedUser({
       id: 'manual-user',
       name: 'test',
-      email: '',
+      email: 'test@test.com',
       providerId: 'manual',
       providerLabel: 'Username',
     })
@@ -329,7 +331,7 @@ describe('App authentication shell', () => {
 
     expect(login).toHaveBeenCalledWith({ username: 'test', password: 'test' })
     expect(await screen.findByText('test')).toBeVisible()
-    expect(screen.getByText('Username account')).toBeVisible()
+    expect(screen.getByText('test@test.com')).toBeVisible()
   })
 
   it('exchanges a Firebase token with the backend after Google sign-in', async () => {
@@ -475,20 +477,23 @@ describe('App authentication shell', () => {
       id: 'admin-user',
       name: 'admin',
       username: 'admin',
-      email: '',
+      email: 'admin@admin.com',
       providerId: 'manual',
       providerLabel: 'Username',
       admin: true,
       canChangePassword: true,
+      canChangeEmail: true,
       canDelete: false,
       createdAt: '2026-08-03T12:00:00Z',
     }]))
+    const changeAdminUserEmail = jest.fn(() => Promise.resolve())
     const backendClient = createMockBackendClient({
       restoredUser: authenticatedUser({
-        id: 'admin-user', name: 'admin', providerId: 'manual', providerLabel: 'Username', admin: true,
+        id: 'admin-user', name: 'admin', email: 'admin@admin.com', providerId: 'manual', providerLabel: 'Username', admin: true,
       }),
       getAdminThemes,
       getAdminUsers,
+      changeAdminUserEmail,
     })
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
@@ -503,6 +508,14 @@ describe('App authentication shell', () => {
     expect(await screen.findByRole('heading', { name: 'User Accounts' })).toBeVisible()
     expect(await screen.findByText('Current account')).toBeVisible()
     expect(getAdminUsers).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Change email' }))
+    const emailInput = screen.getByLabelText('Email address')
+    await user.clear(emailInput)
+    await user.type(emailInput, 'new-admin@example.com')
+    await user.click(screen.getByRole('button', { name: 'Update email' }))
+    expect(changeAdminUserEmail).toHaveBeenCalledWith('admin-user', { email: 'new-admin@example.com' })
+    expect(await screen.findAllByText('new-admin@example.com')).toHaveLength(2)
   })
 
   it('returns a persisted disabled theme to Classic when the session loads', async () => {

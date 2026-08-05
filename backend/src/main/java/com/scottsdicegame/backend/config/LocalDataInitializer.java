@@ -36,11 +36,21 @@ public class LocalDataInitializer implements CommandLineRunner {
     public void run(String... args) {
         if (seedTestUser && !userRepository.existsByNormalizedUsername("test")) {
             // Deliberate local-only password-policy exception requested for development and integration testing.
-            userRepository.save(UserAccount.manual("test", "test", passwordEncoder.encode("test")));
+            userRepository.save(UserAccount.manual(
+                    "test",
+                    "test",
+                    "test@test.com",
+                    passwordEncoder.encode("test")
+            ));
         }
         if (seedAdminUser && !userRepository.existsByNormalizedUsername("admin")) {
             // Deliberate local/H2 bootstrap exception. Production must supply a secure DICE_ADMIN_PASSWORD.
-            userRepository.save(UserAccount.admin("admin", "admin", passwordEncoder.encode(adminPassword)));
+            userRepository.save(UserAccount.admin(
+                    "admin",
+                    "admin",
+                    "admin@admin.com",
+                    passwordEncoder.encode(adminPassword)
+            ));
         }
     }
 }

@@ -57,7 +57,7 @@ class GameSessionServiceTest {
         );
         lenient().when(themeAvailabilityService.isEnabled(any())).thenReturn(true);
         userId = UUID.randomUUID();
-        user = UserAccount.manual("player", "player", "encoded-password");
+        user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
     }
 
     @Test

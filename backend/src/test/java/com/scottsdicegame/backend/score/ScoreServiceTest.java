@@ -48,7 +48,7 @@ class ScoreServiceTest {
     void marksTheFirstSubmittedScoreAsANewPersonalBest() {
         UUID userId = UUID.randomUUID();
         UUID gameId = UUID.randomUUID();
-        UserAccount user = UserAccount.manual("player", "player", "encoded-password");
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
         when(scoreRepository.findByUserIdAndGameId(userId, gameId)).thenReturn(Optional.empty());
         when(authenticationService.requireUser(userId)).thenReturn(user);
         when(scoreRepository.findTopByUserIdOrderByScoreDescCompletedAtAsc(userId)).thenReturn(Optional.empty());
@@ -74,7 +74,7 @@ class ScoreServiceTest {
     void returnsAnExistingGameSubmissionWithoutSavingItTwice() {
         UUID userId = UUID.randomUUID();
         UUID gameId = UUID.randomUUID();
-        UserAccount user = UserAccount.manual("player", "player", "encoded-password");
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
         GameScore existing = new GameScore(gameId, user, 350, true);
         when(scoreRepository.findByUserIdAndGameId(userId, gameId)).thenReturn(Optional.of(existing));
 

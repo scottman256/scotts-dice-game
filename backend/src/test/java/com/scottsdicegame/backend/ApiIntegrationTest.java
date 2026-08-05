@@ -204,8 +204,8 @@ class ApiIntegrationTest {
     void compoundAndThemeAchievementsAreReconciledFromCompletedGameHistory() throws Exception {
         String username = "Achiever_" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> registration = post("/api/auth/register", """
-                {"username":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
-                """.formatted(username), null);
+                {"username":"%s","email":"%s@example.com","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(username, username.toLowerCase()), null);
         assertThat(registration.statusCode()).isEqualTo(201);
         String token = extractToken(registration.body());
 
@@ -323,8 +323,8 @@ class ApiIntegrationTest {
     void newThemesPassApiValidationAndDatabaseConstraints() throws Exception {
         String username = "ThemePlayer_" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> registration = post("/api/auth/register", """
-                {"username":"%s","password":"CandyIce!2026","passwordConfirmation":"CandyIce!2026"}
-                """.formatted(username), null);
+                {"username":"%s","email":"%s@example.com","password":"CandyIce!2026","passwordConfirmation":"CandyIce!2026"}
+                """.formatted(username, username.toLowerCase()), null);
         assertThat(registration.statusCode()).isEqualTo(201);
         String token = extractToken(registration.body());
 
@@ -344,27 +344,48 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void registrationEnforcesPasswordStrengthAndCaseInsensitiveUsernameUniqueness() throws Exception {
+    void registrationRequiresAValidUniqueEmailAndEnforcesAccountRules() throws Exception {
         String username = "Player_" + UUID.randomUUID().toString().substring(0, 8);
+        String email = username.toLowerCase() + "@example.com";
         HttpResponse<String> weakPassword = post("/api/auth/register", """
-                {"username":"%s","password":"weak","passwordConfirmation":"weak"}
-                """.formatted(username), null);
+                {"username":"%s","email":"%s","password":"weak","passwordConfirmation":"weak"}
+                """.formatted(username, email), null);
         assertThat(weakPassword.statusCode()).isEqualTo(400);
         assertThat(weakPassword.body()).contains("\"code\":\"WEAK_PASSWORD\"");
 
+        HttpResponse<String> missingEmail = post("/api/auth/register", """
+                {"username":"MissingEmail","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """, null);
+        assertThat(missingEmail.statusCode()).isEqualTo(400);
+        assertThat(missingEmail.body()).contains("\"email\":\"Enter an email address.\"");
+
+        HttpResponse<String> invalidEmail = post("/api/auth/register", """
+                {"username":"InvalidEmail","email":"not-an-email","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """, null);
+        assertThat(invalidEmail.statusCode()).isEqualTo(400);
+        assertThat(invalidEmail.body()).contains("\"email\":\"Enter a valid email address.\"");
+
         String registrationBody = """
-                {"username":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
-                """.formatted(username);
+                {"username":"%s","email":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(username, email.toUpperCase());
         HttpResponse<String> registered = post("/api/auth/register", registrationBody, null);
         assertThat(registered.statusCode()).isEqualTo(201);
-        assertThat(registered.body()).contains("\"username\":\"" + username + "\"");
+        assertThat(registered.body())
+                .contains("\"username\":\"" + username + "\"")
+                .contains("\"email\":\"" + email.toUpperCase() + "\"");
 
         HttpResponse<String> duplicate = post("/api/auth/register", """
-                {"username":"%s","password":"Another!Pass2026","passwordConfirmation":"Another!Pass2026"}
+                {"username":"%s","email":"different@example.com","password":"Another!Pass2026","passwordConfirmation":"Another!Pass2026"}
                 """.formatted(username.toUpperCase()), null);
         assertThat(duplicate.statusCode()).isEqualTo(409);
         assertThat(duplicate.body()).contains("\"code\":\"USERNAME_TAKEN\"");
         assertThat(duplicate.body()).contains("That username is already taken");
+
+        HttpResponse<String> duplicateEmail = post("/api/auth/register", """
+                {"username":"DifferentPlayer","email":"%s","password":"Another!Pass2026","passwordConfirmation":"Another!Pass2026"}
+                """.formatted(email), null);
+        assertThat(duplicateEmail.statusCode()).isEqualTo(409);
+        assertThat(duplicateEmail.body()).contains("\"code\":\"EMAIL_TAKEN\"");
     }
 
     @Test
@@ -373,19 +394,21 @@ class ApiIntegrationTest {
                 {"username":"admin","password":"admin"}
                 """, null);
         assertThat(adminLogin.statusCode()).isEqualTo(200);
-        assertThat(adminLogin.body()).contains("\"admin\":true");
+        assertThat(adminLogin.body()).contains("\"admin\":true", "\"email\":\"admin@admin.com\"");
         String adminToken = extractToken(adminLogin.body());
 
         String managedUsername = "Managed_" + UUID.randomUUID().toString().substring(0, 8);
+        String managedEmail = managedUsername.toLowerCase() + "@example.com";
         HttpResponse<String> registration = post("/api/auth/register", """
-                {"username":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
-                """.formatted(managedUsername), null);
+                {"username":"%s","email":"%s","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(managedUsername, managedEmail), null);
         String managedToken = extractToken(registration.body());
         String managedUserId = extractJsonString(registration.body(), "id");
 
         assertThat(get("/api/admin/users", managedToken).statusCode()).isEqualTo(403);
         assertThat(get("/api/admin/users", adminToken).body())
                 .contains("\"username\":\"" + managedUsername + "\"")
+                .contains("\"email\":\"" + managedEmail + "\"")
                 .doesNotContain("Sir Rolls-a-Lot");
 
         HttpResponse<String> playerScore = post("/api/scores", """
@@ -410,6 +433,11 @@ class ApiIntegrationTest {
         assertThat(put("/api/admin/users/" + managedUserId + "/password", """
                 {"password":"ManagedPassword!2026","passwordConfirmation":"ManagedPassword!2026"}
                 """, adminToken).statusCode()).isEqualTo(204);
+        assertThat(put("/api/admin/users/" + managedUserId + "/email", """
+                {"email":"managed.updated@example.com"}
+                """, adminToken).statusCode()).isEqualTo(204);
+        assertThat(get("/api/admin/users", adminToken).body())
+                .contains("\"email\":\"managed.updated@example.com\"");
         assertThat(post("/api/auth/login", """
                 {"username":"%s","password":"ManagedPassword!2026"}
                 """.formatted(managedUsername), null).statusCode()).isEqualTo(200);
@@ -421,6 +449,7 @@ class ApiIntegrationTest {
         HttpResponse<String> testLogin = post("/api/auth/login", """
                 {"username":"test","password":"test"}
                 """, null);
+        assertThat(testLogin.body()).contains("\"email\":\"test@test.com\"");
         String testToken = extractToken(testLogin.body());
         assertThat(put("/api/game-session/theme", """
                 {"theme":"rainbow"}

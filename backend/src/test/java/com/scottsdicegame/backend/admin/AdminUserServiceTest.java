@@ -1,6 +1,7 @@
 package com.scottsdicegame.backend.admin;
 
 import com.scottsdicegame.backend.admin.dto.AdminPasswordChangeRequest;
+import com.scottsdicegame.backend.admin.dto.AdminEmailChangeRequest;
 import com.scottsdicegame.backend.api.ApiException;
 import com.scottsdicegame.backend.auth.AuthenticationService;
 import com.scottsdicegame.backend.auth.PasswordPolicy;
@@ -10,6 +11,7 @@ import com.scottsdicegame.backend.user.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -53,14 +55,16 @@ class AdminUserServiceTest {
 
         assertThat(users).hasSize(2);
         assertThat(users.get(0).canChangePassword()).isTrue();
+        assertThat(users.get(0).canChangeEmail()).isTrue();
         assertThat(users.get(1).canChangePassword()).isFalse();
+        assertThat(users.get(1).canChangeEmail()).isFalse();
         verify(authenticationService).requireAdmin(adminId);
     }
 
     @Test
     void changesAManualPasswordAfterValidation() {
         UUID userId = UUID.randomUUID();
-        UserAccount manual = UserAccount.manual("player", "player", "old-hash");
+        UserAccount manual = UserAccount.manual("player", "player", "player@example.com", "old-hash");
         when(userRepository.findById(userId)).thenReturn(Optional.of(manual));
         when(passwordEncoder.encode("BetterPassword!2026")).thenReturn("new-hash");
 
@@ -77,12 +81,20 @@ class AdminUserServiceTest {
     @Test
     void rejectsSocialPasswordsMismatchesAndSelfDeletion() {
         UUID socialId = UUID.randomUUID();
-        UserAccount social = UserAccount.social(AuthProvider.FACEBOOK, "subject", "Social", null, null);
+        UserAccount social = UserAccount.social(
+                AuthProvider.FACEBOOK,
+                "subject",
+                "Social",
+                "social@example.com",
+                null
+        );
         when(userRepository.findById(socialId)).thenReturn(Optional.of(social));
         assertCode(() -> service.changePassword(adminId, socialId, new AdminPasswordChangeRequest("Password!2026", "Password!2026")), "PASSWORD_NOT_MANAGED");
 
         UUID manualId = UUID.randomUUID();
-        when(userRepository.findById(manualId)).thenReturn(Optional.of(UserAccount.manual("player", "player", "hash")));
+        when(userRepository.findById(manualId)).thenReturn(Optional.of(
+                UserAccount.manual("player", "player", "player@example.com", "hash")
+        ));
         assertCode(() -> service.changePassword(adminId, manualId, new AdminPasswordChangeRequest("Password!2026", "Different!2026")), "PASSWORDS_DO_NOT_MATCH");
         assertCode(() -> service.deleteUser(adminId, adminId), "ADMIN_SELF_DELETE");
         verify(userRepository, never()).delete(social);
@@ -91,7 +103,7 @@ class AdminUserServiceTest {
     @Test
     void deletesAnotherUserAndHidesSystemAccounts() {
         UUID userId = UUID.randomUUID();
-        UserAccount user = UserAccount.manual("player", "player", "hash");
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "hash");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         service.deleteUser(adminId, userId);
         verify(userRepository).delete(user);
@@ -101,12 +113,59 @@ class AdminUserServiceTest {
         assertCode(() -> service.deleteUser(adminId, systemId), "USER_NOT_FOUND");
     }
 
+    @Test
+    void changesAManualEmailAndEnforcesCaseInsensitiveUniqueness() {
+        UUID userId = UUID.randomUUID();
+        UserAccount manual = UserAccount.manual("player", "player", "old@example.com", "hash");
+        ReflectionTestUtils.setField(manual, "id", userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(manual));
+
+        service.changeEmail(adminId, userId, new AdminEmailChangeRequest(" Player@Example.COM "));
+
+        assertThat(manual.getEmail()).isEqualTo("Player@Example.COM");
+        assertThat(manual.getNormalizedEmail()).isEqualTo("player@example.com");
+        verify(userRepository).saveAndFlush(manual);
+
+        UserAccount other = UserAccount.manual("other", "other", "taken@example.com", "hash");
+        ReflectionTestUtils.setField(other, "id", UUID.randomUUID());
+        when(userRepository.findByNormalizedEmail("taken@example.com")).thenReturn(Optional.of(other));
+        assertCode(
+                () -> service.changeEmail(adminId, userId, new AdminEmailChangeRequest("TAKEN@example.com")),
+                "EMAIL_TAKEN"
+        );
+    }
+
+    @Test
+    void rejectsInvalidAndProviderManagedEmailChanges() {
+        UUID manualId = UUID.randomUUID();
+        UserAccount manual = UserAccount.manual("player", "player", "player@example.com", "hash");
+        when(userRepository.findById(manualId)).thenReturn(Optional.of(manual));
+        assertCode(
+                () -> service.changeEmail(adminId, manualId, new AdminEmailChangeRequest("invalid")),
+                "INVALID_EMAIL"
+        );
+
+        UUID socialId = UUID.randomUUID();
+        UserAccount social = UserAccount.social(
+                AuthProvider.GOOGLE,
+                "subject",
+                "Social",
+                "social@example.com",
+                null
+        );
+        when(userRepository.findById(socialId)).thenReturn(Optional.of(social));
+        assertCode(
+                () -> service.changeEmail(adminId, socialId, new AdminEmailChangeRequest("new@example.com")),
+                "EMAIL_NOT_MANAGED"
+        );
+    }
+
     private static UserAccount user(UUID id, String name, AuthProvider provider, boolean admin) {
         UserAccount user = mock(UserAccount.class);
         when(user.getId()).thenReturn(id);
         when(user.getDisplayName()).thenReturn(name);
         when(user.getUsername()).thenReturn(provider == AuthProvider.MANUAL ? name.toLowerCase() : null);
-        when(user.getEmail()).thenReturn(provider.isSocial() ? name.toLowerCase() + "@example.com" : null);
+        when(user.getEmail()).thenReturn(name.toLowerCase() + "@example.com");
         when(user.getAuthProvider()).thenReturn(provider);
         when(user.isAdmin()).thenReturn(admin);
         when(user.getCreatedAt()).thenReturn(Instant.parse("2026-08-03T12:00:00Z"));

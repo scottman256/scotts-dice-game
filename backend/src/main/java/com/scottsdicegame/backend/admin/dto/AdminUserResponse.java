@@ -15,6 +15,7 @@ public record AdminUserResponse(
         String providerLabel,
         boolean admin,
         boolean canChangePassword,
+        boolean canChangeEmail,
         boolean canDelete,
         Instant createdAt
 ) {
@@ -27,6 +28,7 @@ public record AdminUserResponse(
                 user.getAuthProvider().name().toLowerCase(),
                 providerLabel(user.getAuthProvider()),
                 user.isAdmin(),
+                user.getAuthProvider() == AuthProvider.MANUAL,
                 user.getAuthProvider() == AuthProvider.MANUAL,
                 !user.getId().equals(requestingAdminId),
                 user.getCreatedAt()

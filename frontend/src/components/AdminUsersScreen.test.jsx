@@ -6,18 +6,18 @@ import AdminUsersScreen from './AdminUsersScreen'
 
 const users = [
   {
-    id: 'admin-1', name: 'admin', username: 'admin', email: '', providerId: 'manual',
-    providerLabel: 'Username', admin: true, canChangePassword: true, canDelete: false,
+    id: 'admin-1', name: 'admin', username: 'admin', email: 'admin@admin.com', providerId: 'manual',
+    providerLabel: 'Username', admin: true, canChangePassword: true, canChangeEmail: true, canDelete: false,
     createdAt: '2026-08-03T12:00:00Z',
   },
   {
-    id: 'manual-1', name: 'Dice Player', username: 'dice-player', email: '', providerId: 'manual',
-    providerLabel: 'Username', admin: false, canChangePassword: true, canDelete: true,
+    id: 'manual-1', name: 'Dice Player', username: 'dice-player', email: 'dice@example.com', providerId: 'manual',
+    providerLabel: 'Username', admin: false, canChangePassword: true, canChangeEmail: true, canDelete: true,
     createdAt: '2026-08-02T12:00:00Z',
   },
   {
     id: 'google-1', name: 'Social Player', username: null, email: 'social@example.com', providerId: 'google',
-    providerLabel: 'Google', admin: false, canChangePassword: false, canDelete: true,
+    providerLabel: 'Google', admin: false, canChangePassword: false, canChangeEmail: false, canDelete: true,
     createdAt: 'not-a-date',
   },
 ]
@@ -26,7 +26,9 @@ function renderScreen(overrides = {}) {
   const props = {
     loadUsers: jest.fn(() => Promise.resolve(users)),
     deleteUser: jest.fn(() => Promise.resolve()),
+    changeEmail: jest.fn(() => Promise.resolve()),
     changePassword: jest.fn(() => Promise.resolve()),
+    onEmailChanged: jest.fn(),
     onBack: jest.fn(),
     ...overrides,
   }
@@ -39,8 +41,12 @@ describe('AdminUsersScreen', () => {
 
     expect(await screen.findByText('Dice Player')).toBeVisible()
     expect(screen.getByText('Social Player')).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'E-mail address' })).toBeVisible()
+    expect(screen.getByText('admin@admin.com')).toBeVisible()
+    expect(screen.getByText('dice@example.com')).toBeVisible()
     expect(screen.getByText('Current account')).toBeVisible()
     expect(screen.getAllByRole('button', { name: 'Change password' })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'Change email' })).toHaveLength(2)
     expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(2)
     expect(screen.getByText('—')).toBeVisible()
   })
@@ -65,6 +71,27 @@ describe('AdminUsersScreen', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete user' }))
     expect(props.deleteUser).toHaveBeenCalledWith('google-1')
     expect(screen.queryByText('Social Player')).not.toBeInTheDocument()
+  })
+
+  it('validates and changes a manual account email address', async () => {
+    const { props, user } = renderScreen()
+    await screen.findByText('Dice Player')
+    const playerRow = screen.getByText('Dice Player').closest('tr')
+    await user.click(within(playerRow).getByRole('button', { name: 'Change email' }))
+
+    const emailInput = screen.getByLabelText('Email address')
+    await user.clear(emailInput)
+    await user.type(emailInput, 'invalid')
+    await user.click(screen.getByRole('button', { name: 'Update email' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid email address')
+    expect(props.changeEmail).not.toHaveBeenCalled()
+
+    await user.clear(emailInput)
+    await user.type(emailInput, 'updated@example.com')
+    await user.click(screen.getByRole('button', { name: 'Update email' }))
+    expect(props.changeEmail).toHaveBeenCalledWith('manual-1', { email: 'updated@example.com' })
+    expect(props.onEmailChanged).toHaveBeenCalledWith('manual-1', 'updated@example.com')
+    expect(await screen.findByText('updated@example.com')).toBeVisible()
   })
 
   it('keeps the password dialog open when the backend rejects a change', async () => {
@@ -101,13 +128,13 @@ describe('AdminUsersScreen', () => {
   it('supports canceling account actions and displays users without an identifier', async () => {
     const anonymousProviderUser = {
       id: 'facebook-1', name: 'Mystery Roller', username: null, email: '', providerId: 'facebook',
-      providerLabel: 'Facebook', admin: false, canChangePassword: false, canDelete: true,
+      providerLabel: 'Facebook', admin: false, canChangePassword: false, canChangeEmail: false, canDelete: true,
       createdAt: '2026-08-01T12:00:00Z',
     }
     const { user } = renderScreen({
       loadUsers: jest.fn(() => Promise.resolve([...users, anonymousProviderUser])),
     })
-    expect(await screen.findByText('No public identifier')).toBeVisible()
+    expect(await screen.findByText('Not available')).toBeVisible()
 
     const manualRow = screen.getByText('Dice Player').closest('tr')
     await user.click(within(manualRow).getByRole('button', { name: 'Change password' }))

@@ -1,13 +1,16 @@
 package com.scottsdicegame.backend.admin;
 
+import com.scottsdicegame.backend.admin.dto.AdminEmailChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminPasswordChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminUserResponse;
 import com.scottsdicegame.backend.api.ApiException;
 import com.scottsdicegame.backend.auth.AuthenticationService;
 import com.scottsdicegame.backend.auth.PasswordPolicy;
 import com.scottsdicegame.backend.user.AuthProvider;
+import com.scottsdicegame.backend.user.EmailAddress;
 import com.scottsdicegame.backend.user.UserAccount;
 import com.scottsdicegame.backend.user.UserAccountRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -77,6 +80,35 @@ public class AdminUserService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void changeEmail(UUID adminId, UUID userId, AdminEmailChangeRequest request) {
+        authenticationService.requireAdmin(adminId);
+        UserAccount user = findManagedUser(userId);
+        if (user.getAuthProvider() != AuthProvider.MANUAL) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "EMAIL_NOT_MANAGED",
+                    "Google and Facebook email addresses are managed by their identity provider."
+            );
+        }
+        if (!EmailAddress.isValid(request.email())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_EMAIL", "Enter a valid email address.");
+        }
+        String normalizedEmail = EmailAddress.normalize(request.email());
+        userRepository.findByNormalizedEmail(normalizedEmail)
+                .filter(existing -> !existing.getId().equals(user.getId()))
+                .ifPresent(existing -> {
+                    throw emailTaken();
+                });
+
+        user.changeEmail(request.email());
+        try {
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException exception) {
+            throw emailTaken();
+        }
+    }
+
     private UserAccount findManagedUser(UUID userId) {
         UserAccount user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "That user account does not exist."));
@@ -84,5 +116,13 @@ public class AdminUserService {
             throw new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "That user account does not exist.");
         }
         return user;
+    }
+
+    private static ApiException emailTaken() {
+        return new ApiException(
+                HttpStatus.CONFLICT,
+                "EMAIL_TAKEN",
+                "An account already exists for that email address."
+        );
     }
 }

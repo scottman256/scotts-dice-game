@@ -9,7 +9,9 @@ cd backend
 .\gradlew.bat bootRun
 ```
 
-The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The local seed accounts are `test` / `test` and administrator `admin` / `admin`.
+The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The local seed accounts are `test` / `test` with `test@test.com` and administrator `admin` / `admin` with `admin@admin.com`.
+
+New username accounts require a valid email address. Email uniqueness is case-insensitive across username, Google, and Facebook accounts. Firebase email claims are validated and refreshed from the identity provider at sign-in; an administrator can update username-account emails, while provider-managed addresses remain read-only.
 
 For the complete Docker deployment, use the root [`compose.yaml`](../compose.yaml) as documented in the [project README](../README.md). It builds this service as a non-root Java 17 container, connects it to the private H2 TCP service, and waits for database health before Spring Boot starts. The backend image is intentionally orchestrated through Compose rather than run alone because its Docker database hostname is provided there.
 
@@ -49,7 +51,7 @@ Bearer-token endpoints:
 Administrator-role endpoints:
 
 - `GET /api/admin/themes` and `PUT /api/admin/themes/{themeId}`
-- `GET /api/admin/users`, `PUT /api/admin/users/{userId}/password`, and `DELETE /api/admin/users/{userId}`
+- `GET /api/admin/users`, `PUT /api/admin/users/{userId}/password`, `PUT /api/admin/users/{userId}/email`, and `DELETE /api/admin/users/{userId}`
 - `POST /api/admin/scores`, `DELETE /api/admin/scores/{scoreId}`, and `POST /api/admin/game-data/reset`
 
 Each user can have one resumable game. Dice and in-progress category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted. New score submissions preserve their completed scorecard and completion theme. Stats exclude older score-only games, while the achievement engine replays all available history and can retroactively award milestones supported by the stored facts. Earned achievement keys and their qualifying games are persisted; definitions remain in a versionable catalog so future achievements can evaluate old data without one-off database backfills.

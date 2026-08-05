@@ -95,6 +95,29 @@ class FirebaseIdentityVerifierTest {
         assertInvalidToken(() -> verifier.verify("malformed-token"));
     }
 
+    @Test
+    void rejectsSocialTokensWithoutAValidEmailAddress() {
+        NimbusJwtDecoder decoder = mock(NimbusJwtDecoder.class);
+        FirebaseIdentityVerifier verifier = verifierUsing(decoder);
+        when(decoder.decode("missing-email")).thenReturn(jwt(
+                "google.com",
+                "google-subject",
+                "Player",
+                null,
+                null
+        ));
+        when(decoder.decode("invalid-email")).thenReturn(jwt(
+                "facebook.com",
+                "facebook-subject",
+                "Player",
+                "not-an-email",
+                null
+        ));
+
+        assertInvalidToken(() -> verifier.verify("missing-email"));
+        assertInvalidToken(() -> verifier.verify("invalid-email"));
+    }
+
     private static FirebaseIdentityVerifier verifierUsing(NimbusJwtDecoder decoder) {
         FirebaseIdentityVerifier verifier = new FirebaseIdentityVerifier("dice-game");
         ReflectionTestUtils.setField(verifier, "decoder", decoder);
