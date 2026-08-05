@@ -43,7 +43,8 @@ class AchievementEvaluatorTest {
                 "baseball-game",
                 "triple-crown",
                 "world-traveler-game",
-                "holiday-wonder"
+                "holiday-wonder",
+                "deep-sea-game"
         );
     }
 
@@ -53,17 +54,18 @@ class AchievementEvaluatorTest {
         history.add(game(99, detailedScores(), "golden"));
         history.add(game(1_000, detailedScores(), "baseball"));
         history.add(game(1_000, detailedScores(), "world-traveler"));
+        history.add(game(1_000, detailedScores(), "deep-sea"));
         history.add(game(1_000, detailedScores(), "halloween"));
         history.add(game(1_000, detailedScores(), "christmas"));
-        for (int index = 0; index < 996; index++) {
+        for (int index = 0; index < 995; index++) {
             history.add(game(1_000, detailedScores(), "classic"));
         }
 
         Set<String> keys = keys(AchievementEvaluator.evaluate(history, Set.of("first-game")));
 
-        assertThat(AchievementCatalog.DEFINITIONS).hasSize(27);
+        assertThat(AchievementCatalog.DEFINITIONS).hasSize(28);
         assertThat(AchievementCatalog.DISPLAY_CAPACITY).isEqualTo(36);
-        assertThat(keys).hasSize(26).doesNotContain("first-game");
+        assertThat(keys).hasSize(27).doesNotContain("first-game");
         assertThat(keys).containsAll(AchievementCatalog.DEFINITIONS.stream()
                 .map(AchievementDefinition::key)
                 .filter(key -> !key.equals("first-game"))
@@ -138,6 +140,17 @@ class AchievementEvaluatorTest {
                 .findFirst()
                 .orElseThrow()
                 .qualifyingGame()).isSameAs(christmas);
+    }
+
+    @Test
+    void rollBeneathTheSurfaceUnlocksOnlyAfterADeepSeaGame() {
+        GameScore jungle = game(275, Map.of(), "jungle-adventure");
+        GameScore deepSea = game(275, Map.of(), "deep-sea");
+
+        assertThat(keys(AchievementEvaluator.evaluate(List.of(jungle), Set.of())))
+                .doesNotContain("deep-sea-game");
+        assertThat(keys(AchievementEvaluator.evaluate(List.of(jungle, deepSea), Set.of())))
+                .contains("deep-sea-game");
     }
 
     private GameScore game(int score, Map<String, Integer> categoryScores, String theme) {

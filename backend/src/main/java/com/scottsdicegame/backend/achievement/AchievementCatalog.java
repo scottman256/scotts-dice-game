@@ -53,7 +53,10 @@ final class AchievementCatalog {
                     (progress, game) -> "world-traveler".equals(game.getTheme())),
             cumulative(27, "holiday-wonder", "Holiday Wonder",
                     "Completed games with both the Halloween and Christmas dice.",
-                    progress -> progress.completedEveryTheme("halloween", "christmas"))
+                    progress -> progress.completedEveryTheme("halloween", "christmas")),
+            definition(28, "deep-sea-game", "Roll Beneath the Surface",
+                    "Completed a game with the Deep Sea dice.",
+                    (progress, game) -> "deep-sea".equals(game.getTheme()))
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();

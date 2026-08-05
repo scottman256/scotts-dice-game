@@ -8,7 +8,7 @@ import {
 } from './gameThemes'
 
 describe('game theme settings', () => {
-  it('defines the eighteen requested themes in display order', () => {
+  it('defines the twenty requested themes in display order', () => {
     expect(GAME_THEMES.map(({ id, label }) => ({ id, label }))).toEqual([
       { id: 'classic', label: 'Classic' },
       { id: 'rainbow', label: 'Rainbow' },
@@ -28,8 +28,10 @@ describe('game theme settings', () => {
       { id: 'baseball', label: 'Baseball' },
       { id: 'candy-kingdom', label: 'Candy Kingdom' },
       { id: 'frozen-crystal', label: 'Frozen Crystal' },
+      { id: 'deep-sea', label: 'Deep Sea' },
+      { id: 'jungle-adventure', label: 'Jungle Adventure' },
     ])
-    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 18)
+    expect(new Set(GAME_THEMES.map(({ id }) => id))).toHaveProperty('size', 20)
     GAME_THEMES.forEach((theme) => expect(theme.description).not.toHaveLength(0))
   })
 
@@ -48,7 +50,7 @@ describe('game theme settings', () => {
     'retro-arcade', 'vegas',
     'american', 'cosmic-galaxy',
     'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
-    'candy-kingdom', 'frozen-crystal',
+    'candy-kingdom', 'frozen-crystal', 'deep-sea', 'jungle-adventure',
   ])(
     'recognizes %s as a supported theme',
     (themeId) => expect(isGameTheme(themeId)).toBe(true),

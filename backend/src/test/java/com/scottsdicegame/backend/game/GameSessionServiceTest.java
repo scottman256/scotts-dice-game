@@ -90,7 +90,7 @@ class GameSessionServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"candy-kingdom", "frozen-crystal"})
+    @ValueSource(strings = {"candy-kingdom", "frozen-crystal", "deep-sea", "jungle-adventure"})
     void savesEachNewThemeAsAUserPreference(String theme) {
         when(authenticationService.requireUser(userId)).thenReturn(user);
         when(preferencesRepository.findById(userId)).thenReturn(Optional.empty());

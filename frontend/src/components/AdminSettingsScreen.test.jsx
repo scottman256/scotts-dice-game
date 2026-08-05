@@ -27,10 +27,12 @@ describe('AdminSettingsScreen', () => {
     const { container, props, user } = renderScreen()
 
     expect(await screen.findByRole('heading', { name: 'Theme availability' })).toBeVisible()
-    expect(screen.getAllByRole('switch')).toHaveLength(18)
+    expect(screen.getAllByRole('switch')).toHaveLength(20)
     expect(screen.getByRole('switch', { name: 'Classic theme' })).toBeChecked()
     expect(screen.getByRole('switch', { name: 'Classic theme' })).toBeDisabled()
     expect(container.querySelector('.theme-preview')).not.toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Deep Sea theme' })).toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Jungle Adventure theme' })).toBeChecked()
 
     await user.click(screen.getByRole('switch', { name: 'Candy Kingdom theme' }))
     expect(props.updateTheme).toHaveBeenCalledWith('candy-kingdom', false)

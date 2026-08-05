@@ -587,6 +587,8 @@ describe('App authentication shell', () => {
     ['Baseball', 'baseball'],
     ['Candy Kingdom', 'candy-kingdom'],
     ['Frozen Crystal', 'frozen-crystal'],
+    ['Deep Sea', 'deep-sea'],
+    ['Jungle Adventure', 'jungle-adventure'],
   ])('applies the %s style after it is saved', async (themeLabel, themeId) => {
     const user = userEvent.setup()
     const { container } = render(<App />)

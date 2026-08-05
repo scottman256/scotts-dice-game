@@ -8,7 +8,7 @@ const THEME_IDS = [
   'retro-arcade', 'vegas',
   'american', 'cosmic-galaxy',
   'sixties-tie-dye', 'world-traveler', 'clockwork', 'baseball',
-  'candy-kingdom', 'frozen-crystal',
+  'candy-kingdom', 'frozen-crystal', 'deep-sea', 'jungle-adventure',
 ]
 const THEME_SIGNATURES = Object.freeze({
   rainbow: ['id="body"', 'id="pip"'],
@@ -28,6 +28,8 @@ const THEME_SIGNATURES = Object.freeze({
   baseball: ['id="leather-shell"', 'id="baseball-pip"'],
   'candy-kingdom': ['id="candy-shell"', 'id="peppermint-pip"'],
   'frozen-crystal': ['id="ice-crystal"', 'id="snow-crystal-pip"'],
+  'deep-sea': ['id="abyss-shell"', 'id="bioluminescent-pip"'],
+  'jungle-adventure': ['id="stone-shell"', 'id="vine-pip"'],
 })
 
 function assetPath(themeId, face) {
@@ -73,6 +75,20 @@ describe('themed dice assets', () => {
         expect(svg).toContain(`data-face="${face}"`)
         signatures.forEach((signature) => expect(svg).toContain(signature))
       }
+    })
+  })
+
+  it('provides full-scene vector backgrounds for the immersive new themes', () => {
+    const backgrounds = {
+      'deep-sea': ['id="deep-sea-scene"', 'id="jelly-glow"'],
+      'jungle-adventure': ['id="jungle-scene"', 'id="canopy-light"'],
+    }
+
+    Object.entries(backgrounds).forEach(([themeId, signatures]) => {
+      const path = join(process.cwd(), 'src', 'assets', themeId, 'background.svg')
+      expect(existsSync(path)).toBe(true)
+      const svg = readFileSync(path, 'utf8')
+      signatures.forEach((signature) => expect(svg).toContain(signature))
     })
   })
 

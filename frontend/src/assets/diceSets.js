@@ -106,6 +106,18 @@ import frozenCrystal3 from './frozen-crystal/dice-3.svg'
 import frozenCrystal4 from './frozen-crystal/dice-4.svg'
 import frozenCrystal5 from './frozen-crystal/dice-5.svg'
 import frozenCrystal6 from './frozen-crystal/dice-6.svg'
+import deepSea1 from './deep-sea/dice-1.svg'
+import deepSea2 from './deep-sea/dice-2.svg'
+import deepSea3 from './deep-sea/dice-3.svg'
+import deepSea4 from './deep-sea/dice-4.svg'
+import deepSea5 from './deep-sea/dice-5.svg'
+import deepSea6 from './deep-sea/dice-6.svg'
+import jungleAdventure1 from './jungle-adventure/dice-1.svg'
+import jungleAdventure2 from './jungle-adventure/dice-2.svg'
+import jungleAdventure3 from './jungle-adventure/dice-3.svg'
+import jungleAdventure4 from './jungle-adventure/dice-4.svg'
+import jungleAdventure5 from './jungle-adventure/dice-5.svg'
+import jungleAdventure6 from './jungle-adventure/dice-6.svg'
 
 function createDiceSet(id, faces) {
   return Object.freeze({ id, faces: Object.freeze(faces) })
@@ -156,6 +168,13 @@ export const DICE_SETS = Object.freeze({
   'frozen-crystal': createDiceSet('frozen-crystal', [
     frozenCrystal1, frozenCrystal2, frozenCrystal3,
     frozenCrystal4, frozenCrystal5, frozenCrystal6,
+  ]),
+  'deep-sea': createDiceSet('deep-sea', [
+    deepSea1, deepSea2, deepSea3, deepSea4, deepSea5, deepSea6,
+  ]),
+  'jungle-adventure': createDiceSet('jungle-adventure', [
+    jungleAdventure1, jungleAdventure2, jungleAdventure3,
+    jungleAdventure4, jungleAdventure5, jungleAdventure6,
   ]),
 })
 

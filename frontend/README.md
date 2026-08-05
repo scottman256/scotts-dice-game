@@ -1,6 +1,6 @@
 # Scott's Dice Game frontend
 
-React + Vite dice game with held dice, category scoring, bonus rolls, eighteen visual themes, guest play, username accounts, optional Google/Facebook authentication, resumable games, saved high scores, personal/global leaderboards, completed-game player stats, and an illustrated achievement collection.
+React + Vite dice game with held dice, category scoring, bonus rolls, twenty visual themes, guest play, username accounts, optional Google/Facebook authentication, resumable games, saved high scores, personal/global leaderboards, completed-game player stats, and an illustrated achievement collection.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ Open the Vite URL, normally `http://localhost:5173`. Run the Spring Boot service
 
 For Docker, use the root [`compose.yaml`](../compose.yaml) and the concise instructions in the [project README](../README.md). The frontend Dockerfile creates a static production build and serves it from non-root Nginx on container port 8080. Nginx also proxies `/backend` to Spring Boot, so browsers use one origin and never need to resolve Docker service names. Firebase `VITE_*` values are build-time settings, so rebuild the frontend image after changing them.
 
-Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in. Signed-in players can open the Player Hub for their personal top ten, the overall top ten, completed-game stats, and achievements. Achievement evaluation replays available score history so compatible milestones can be awarded retroactively; older games cannot prove category- or theme-specific accomplishments when that detail was not recorded.
+Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, Deep Sea, Jungle Adventure, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in. Signed-in players can open the Player Hub for their personal top ten, the overall top ten, completed-game stats, and achievements. Achievement evaluation replays available score history so compatible milestones can be awarded retroactively; older games cannot prove category- or theme-specific accomplishments when that detail was not recorded.
 
 The local `admin` / `admin` account (`admin@admin.com`) has a separate Admin menu for enabling themes, resetting game data, and managing user accounts. New username accounts require a valid email address. The user-management table displays every account email and lets administrators update username-account addresses and passwords; Google and Facebook addresses remain managed by Firebase. Its global leaderboard view can add fictional system scores or remove individual entries. Classic cannot be disabled.
 

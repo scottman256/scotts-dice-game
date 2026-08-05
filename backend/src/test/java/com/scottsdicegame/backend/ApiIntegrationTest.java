@@ -320,7 +320,7 @@ class ApiIntegrationTest {
     }
 
     @Test
-    void newThemesPassApiValidationAndDatabaseConstraints() throws Exception {
+    void newestThemesPassApiValidationAndDeepSeaAwardsItsAchievement() throws Exception {
         String username = "ThemePlayer_" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> registration = post("/api/auth/register", """
                 {"username":"%s","email":"%s@example.com","password":"CandyIce!2026","passwordConfirmation":"CandyIce!2026"}
@@ -329,18 +329,22 @@ class ApiIntegrationTest {
         String token = extractToken(registration.body());
 
         HttpResponse<String> preference = put("/api/game-session/theme", """
-                {"theme":"frozen-crystal"}
+                {"theme":"jungle-adventure"}
                 """, token);
         assertThat(preference.statusCode()).isEqualTo(200);
-        assertThat(preference.body()).contains("\"theme\":\"frozen-crystal\"");
+        assertThat(preference.body()).contains("\"theme\":\"jungle-adventure\"");
 
         HttpResponse<String> score = post("/api/scores", """
-                {"gameId":"%s","score":275,"theme":"candy-kingdom","categoryScores":%s}
+                {"gameId":"%s","score":275,"theme":"deep-sea","categoryScores":%s}
                 """.formatted(UUID.randomUUID(), SCORECARD_275), token);
         assertThat(score.statusCode()).isEqualTo(201);
 
         assertThat(get("/api/game-session", token).body())
-                .contains("\"theme\":\"frozen-crystal\"");
+                .contains("\"theme\":\"jungle-adventure\"");
+        assertThat(get("/api/achievements/me", token).body()).contains(
+                "\"key\":\"deep-sea-game\"",
+                "\"title\":\"Roll Beneath the Surface\""
+        );
     }
 
     @Test
@@ -451,6 +455,10 @@ class ApiIntegrationTest {
                 """, null);
         assertThat(testLogin.body()).contains("\"email\":\"test@test.com\"");
         String testToken = extractToken(testLogin.body());
+        assertThat(get("/api/admin/themes", adminToken).body()).contains(
+                "\"id\":\"deep-sea\"",
+                "\"id\":\"jungle-adventure\""
+        );
         assertThat(put("/api/game-session/theme", """
                 {"theme":"rainbow"}
                 """, testToken).statusCode()).isEqualTo(200);

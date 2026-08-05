@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" aria-hidden="true">
+  <defs>
+    <linearGradient id="jungle-scene" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#315b36"/>
+      <stop offset=".46" stop-color="#193d25"/>
+      <stop offset="1" stop-color="#0a1710"/>
+    </linearGradient>
+    <radialGradient id="canopy-light" cx="50%" cy="0" r="70%">
+      <stop stop-color="#e6db8e" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#b8d071" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="jungle-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#jungle-scene)"/>
+  <ellipse cx="800" cy="0" rx="600" ry="760" fill="url(#canopy-light)"/>
+  <path d="M590 940V610h72V498h75V363h126v135h77v112h74v330Z" fill="#111d16" opacity=".8"/>
+  <path d="M688 940V656h73V542h77v114h74v284M731 514l68-89 70 89" fill="none" stroke="#83906a" stroke-width="17" opacity=".28"/>
+  <path d="M764 940V730c0-55 70-55 70 0v210" fill="#08110c" opacity=".86"/>
+  <g fill="#244b29" opacity=".94">
+    <ellipse cx="85" cy="96" rx="170" ry="65" transform="rotate(-23 85 96)"/>
+    <ellipse cx="178" cy="208" rx="150" ry="58" transform="rotate(31 178 208)"/>
+    <ellipse cx="1515" cy="104" rx="175" ry="68" transform="rotate(24 1515 104)"/>
+    <ellipse cx="1432" cy="220" rx="156" ry="60" transform="rotate(-32 1432 220)"/>
+    <ellipse cx="74" cy="716" rx="190" ry="72" transform="rotate(-39 74 716)"/>
+    <ellipse cx="1514" cy="706" rx="195" ry="74" transform="rotate(38 1514 706)"/>
+  </g>
+  <g fill="#6f9447" opacity=".48">
+    <path d="M0 355c179-90 223-220 320-355h-64C155 118 104 191 0 232Z"/>
+    <path d="M1600 356c-179-91-223-220-320-356h64c101 118 152 191 256 232Z"/>
+    <path d="M0 770c139-39 223-2 316 133-150-54-214-35-316 13Z"/>
+    <path d="M1600 770c-139-39-223-2-316 133 150-54 214-35 316 13Z"/>
+  </g>
+  <g fill="none" stroke="#76a653" stroke-width="14" stroke-linecap="round" opacity=".56">
+    <path d="M52 0c61 181-9 282 94 409 63 77 35 170-47 231"/>
+    <path d="M1548 0c-61 181 9 282-94 409-63 77-35 170 47 231"/>
+  </g>
+  <g fill="#d8cb75" filter="url(#jungle-soft)" opacity=".42">
+    <circle cx="410" cy="250" r="5"/><circle cx="1160" cy="184" r="4"/><circle cx="1040" cy="412" r="5"/><circle cx="520" cy="520" r="4"/>
+  </g>
+  <path d="M0 906c170-76 340 37 505 20 188-19 362-52 581 3 177 44 327-68 514-25v96H0Z" fill="#07110b" opacity=".83"/>
+</svg>

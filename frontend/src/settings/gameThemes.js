@@ -93,6 +93,16 @@ export const GAME_THEMES = Object.freeze([
     label: 'Frozen Crystal',
     description: 'Faceted translucent ice dice with frosted edges and snow-crystal pips.',
   }),
+  Object.freeze({
+    id: 'deep-sea',
+    label: 'Deep Sea',
+    description: 'Bioluminescent ocean dice among glowing coral, bubbles, and drifting jellyfish.',
+  }),
+  Object.freeze({
+    id: 'jungle-adventure',
+    label: 'Jungle Adventure',
+    description: 'Mossy carved-stone dice surrounded by rainforest vines and ancient ruins.',
+  }),
 ])
 
 export const GAME_SETTING_DEFINITIONS = Object.freeze([

@@ -36,7 +36,7 @@ class ThemeAvailabilityServiceTest {
         assertThat(service.enabledThemeIds())
                 .startsWith("classic", "rainbow")
                 .doesNotContain("fire")
-                .contains("frozen-crystal");
+                .contains("frozen-crystal", "deep-sea", "jungle-adventure");
         assertThat(service.getSettings().themes()).hasSize(GameCatalog.THEME_IDS.size());
     }
 
