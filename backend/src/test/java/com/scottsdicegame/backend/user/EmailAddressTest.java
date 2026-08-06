@@ -25,6 +25,8 @@ class EmailAddressTest {
         assertThat(EmailAddress.isValid(".player@example.com")).isFalse();
         assertThat(EmailAddress.isValid("player..name@example.com")).isFalse();
         assertThat(EmailAddress.isValid("x".repeat(65) + "@example.com")).isFalse();
+        assertThatThrownBy(() -> EmailAddress.clean("not-an-email"))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> EmailAddress.normalize("not-an-email"))
                 .isInstanceOf(IllegalArgumentException.class);
     }

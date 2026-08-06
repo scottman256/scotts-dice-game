@@ -176,6 +176,27 @@ class AuthenticationServiceTest {
     }
 
     @Test
+    void convertsAConcurrentFirebaseAccountConflictIntoThePublicApiError() {
+        FirebaseIdentity identity = new FirebaseIdentity(
+                AuthProvider.GOOGLE,
+                "firebase-subject",
+                "Ada Player",
+                "ada@example.com",
+                null
+        );
+        when(firebaseVerifier.verify("firebase-token")).thenReturn(identity);
+        when(userRepository.findByAuthProviderAndExternalSubject(AuthProvider.GOOGLE, "firebase-subject"))
+                .thenReturn(Optional.empty());
+        when(userRepository.saveAndFlush(any(UserAccount.class)))
+                .thenThrow(new DataIntegrityViolationException("unique constraint"));
+
+        assertApiError(
+                () -> authenticationService.loginWithFirebase("firebase-token"),
+                "ACCOUNT_ALREADY_EXISTS"
+        );
+    }
+
+    @Test
     void returnsTheCurrentUserAndRejectsAMissingAccount() {
         UUID existingId = UUID.randomUUID();
         UserAccount existing = UserAccount.manual(
@@ -193,6 +214,20 @@ class AuthenticationServiceTest {
         UUID missingId = UUID.randomUUID();
         when(userRepository.findById(missingId)).thenReturn(Optional.empty());
         assertApiError(() -> authenticationService.requireUser(missingId), "ACCOUNT_NOT_FOUND");
+    }
+
+    @Test
+    void requiresAnAdministratorForAdministrativeOperations() {
+        UUID userId = UUID.randomUUID();
+        UserAccount user = UserAccount.manual(
+                "player",
+                "player",
+                "player@example.com",
+                "encoded-password"
+        );
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertApiError(() -> authenticationService.requireAdmin(userId), "ADMIN_REQUIRED");
     }
 
     @Test
