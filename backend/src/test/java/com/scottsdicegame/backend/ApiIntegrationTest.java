@@ -128,7 +128,7 @@ class ApiIntegrationTest {
     @Test
     void seededTestAccountCanLoginAndUseProtectedScoreEndpoints() throws Exception {
         HttpResponse<String> login = post("/api/auth/login", """
-                {"username":"test","password":"test"}
+                {"identifier":"  TEST@TEST.COM  ","password":"test"}
                 """, null);
         assertThat(login.statusCode()).isEqualTo(200);
         String token = extractToken(login.body());

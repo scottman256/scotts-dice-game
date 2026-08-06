@@ -3146,6 +3146,11 @@ td small {
   font-weight: 800;
 }
 
+.manual-auth-field {
+  display: grid;
+  gap: 6px;
+}
+
 .manual-auth-form input {
   width: 100%;
   min-height: 46px;
@@ -3163,11 +3168,13 @@ td small {
   box-shadow: 0 0 0 3px rgba(93, 224, 195, 0.12);
 }
 
-.password-guidance {
+.password-guidance,
+.auth-field-hint {
   margin: -3px 0 0;
   color: #8ea5ad;
   font-size: 0.68rem;
   line-height: 1.45;
+  font-weight: 500;
 }
 
 .manual-auth-form .auth-message {

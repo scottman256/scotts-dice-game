@@ -25,7 +25,7 @@ Stop any locally running frontend or backend first so the default host ports `51
 docker compose up --build
 ```
 
-Compose builds and starts the H2 database, waits for it to become healthy, starts the backend and runs its Flyway migrations, then starts the frontend. Open `http://localhost:5173` and sign in with `test` / `test`, use the local administrator `admin` / `admin`, create an account, or play as a guest. The seeded accounts use `test@test.com` and `admin@admin.com`; new username accounts require a valid, unique email address. The backend and H2 console are available at `http://localhost:8080` and `http://localhost:8080/h2-console`; for the Docker H2 console use JDBC URL `jdbc:h2:tcp://database:9092/dicegame`, user `sa`, and a blank password.
+Compose builds and starts the H2 database, waits for it to become healthy, starts the backend and runs its Flyway migrations, then starts the frontend. Open `http://localhost:5173` and sign in with either the username `test` or email `test@test.com` plus password `test`; the administrator likewise accepts `admin` or `admin@admin.com` with password `admin`. You can also create an account or play as a guest. New username accounts require a valid, unique email address. The backend and H2 console are available at `http://localhost:8080` and `http://localhost:8080/h2-console`; for the Docker H2 console use JDBC URL `jdbc:h2:tcp://database:9092/dicegame`, user `sa`, and a blank password.
 
 Database files survive container restarts in the `h2-data` named volume. Stop the stack with `docker compose down`. Use `docker compose down -v` only when you intentionally want to delete that volume and start with a fresh database.
 

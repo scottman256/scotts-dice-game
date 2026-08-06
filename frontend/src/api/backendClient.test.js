@@ -68,12 +68,19 @@ describe('backend client', () => {
     const client = createBackendClient({ fetchImpl, storage })
     const categoryScores = { fiveKind: 75 }
 
-    await expect(client.login({ username: 'test', password: 'test' }))
+    await expect(client.login({ identifier: 'test@test.com', password: 'test' }))
       .resolves.toMatchObject({ name: 'Scott' })
     await expect(client.saveScore('game-1', 500, categoryScores, 'golden'))
       .resolves.toMatchObject({ newHighScore: true })
     await expect(client.getGameStats()).resolves.toMatchObject({ gamesPlayed: 1 })
     await expect(client.getAchievements()).resolves.toMatchObject({ capacity: 36 })
+    expect(fetchImpl.mock.calls[0]).toEqual([
+      'http://localhost:8080/api/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ identifier: 'test@test.com', password: 'test' }),
+      }),
+    ])
     expect(fetchImpl.mock.calls[1][1].headers.Authorization).toBe('Bearer backend-token')
     expect(fetchImpl.mock.calls[1][1].body).toBe(JSON.stringify({
       gameId: 'game-1',
@@ -107,7 +114,7 @@ describe('backend client', () => {
       statusTone: 'normal',
     }
 
-    await client.login({ username: 'test', password: 'test' })
+    await client.login({ identifier: 'test', password: 'test' })
     await expect(client.getGameSession()).resolves.toMatchObject({ theme: 'classic' })
     await expect(client.saveTheme('vegas')).resolves.toEqual({ theme: 'vegas' })
     await expect(client.saveGame('game-1', state)).resolves.toEqual({ gameId: 'game-1' })

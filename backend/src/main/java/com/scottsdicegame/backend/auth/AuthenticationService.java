@@ -5,6 +5,7 @@ import com.scottsdicegame.backend.auth.dto.AuthResponse;
 import com.scottsdicegame.backend.auth.dto.LoginRequest;
 import com.scottsdicegame.backend.auth.dto.RegisterRequest;
 import com.scottsdicegame.backend.auth.dto.UserResponse;
+import com.scottsdicegame.backend.user.AuthProvider;
 import com.scottsdicegame.backend.user.EmailAddress;
 import com.scottsdicegame.backend.user.UserAccount;
 import com.scottsdicegame.backend.user.UserAccountRepository;
@@ -76,7 +77,12 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        UserAccount user = userRepository.findByNormalizedUsername(normalizeUsername(request.username()))
+        String normalizedIdentifier = normalizeUsername(request.identifier());
+        UserAccount user = userRepository.findByNormalizedUsernameOrNormalizedEmail(
+                        normalizedIdentifier,
+                        normalizedIdentifier
+                )
+                .filter(candidate -> candidate.getAuthProvider() == AuthProvider.MANUAL)
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
                 .orElseThrow(AuthenticationService::invalidCredentials);
         return tokenService.issue(user);
@@ -185,7 +191,7 @@ public class AuthenticationService {
         return new ApiException(
                 HttpStatus.UNAUTHORIZED,
                 "INVALID_CREDENTIALS",
-                "The username or password is incorrect."
+                "The username, email address, or password is incorrect."
         );
     }
 }

@@ -69,8 +69,8 @@ export default function AuthLanding({
           <>
             <div className="auth-card-heading">
               <p className="eyebrow">Player account</p>
-              <h2 id="sign-in-title">Use your username</h2>
-              <p>Sign in to an existing account or create a new one.</p>
+              <h2 id="sign-in-title">Use your account</h2>
+              <p>Sign in with your username or email address, or create a new account.</p>
             </div>
             <ManualAuthForm
               busyAction={busyProvider}
@@ -115,7 +115,7 @@ export default function AuthLanding({
                     disabled={!manualAuthEnabled || isBusy}
                   >
                     <UsernameMark />
-                    <span>Continue with Username</span>
+                    <span>Continue with username or email</span>
                   </button>
                 </>
               )}
@@ -140,7 +140,7 @@ export default function AuthLanding({
             )}
             {backendAvailable && !socialAvailable && (
               <p className="auth-message auth-setup-note">
-                Social sign-in needs matching Firebase setup. Username and guest play are ready.
+                Social sign-in needs matching Firebase setup. Username, email, and guest play are ready.
               </p>
             )}
             <p className="auth-privacy-note">

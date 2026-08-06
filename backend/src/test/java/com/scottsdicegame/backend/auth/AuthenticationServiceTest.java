@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -195,10 +196,65 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void rejectsInvalidTokenSubjectsAndNullLoginUsernames() {
+    void logsInWithEitherANormalizedUsernameOrEmailAddress() {
+        UserAccount manual = UserAccount.manual(
+                "DicePlayer",
+                "diceplayer",
+                "DicePlayer@Example.com",
+                "encoded-password"
+        );
+        when(userRepository.findByNormalizedUsernameOrNormalizedEmail("diceplayer", "diceplayer"))
+                .thenReturn(Optional.of(manual));
+        when(userRepository.findByNormalizedUsernameOrNormalizedEmail(
+                "diceplayer@example.com",
+                "diceplayer@example.com"
+        )).thenReturn(Optional.of(manual));
+        when(passwordEncoder.matches("correct-password", "encoded-password")).thenReturn(true);
+
+        authenticationService.login(new LoginRequest("  DicePlayer  ", "correct-password"));
+        authenticationService.login(new LoginRequest("  DICEPLAYER@EXAMPLE.COM  ", "correct-password"));
+
+        verify(tokenService, times(2)).issue(manual);
+    }
+
+    @Test
+    void rejectsSocialAccountsAndBadPasswordsWithTheSameGenericLoginError() {
+        UserAccount social = UserAccount.social(
+                AuthProvider.GOOGLE,
+                "google-subject",
+                "Social Player",
+                "social@example.com",
+                null
+        );
+        UserAccount manual = UserAccount.manual(
+                "player",
+                "player",
+                "player@example.com",
+                "encoded-password"
+        );
+        when(userRepository.findByNormalizedUsernameOrNormalizedEmail(
+                "social@example.com",
+                "social@example.com"
+        )).thenReturn(Optional.of(social));
+        when(userRepository.findByNormalizedUsernameOrNormalizedEmail("player", "player"))
+                .thenReturn(Optional.of(manual));
+
+        assertApiError(
+                () -> authenticationService.login(new LoginRequest("social@example.com", "password")),
+                "INVALID_CREDENTIALS"
+        );
+        assertApiError(
+                () -> authenticationService.login(new LoginRequest("player", "wrong-password")),
+                "INVALID_CREDENTIALS"
+        );
+    }
+
+    @Test
+    void rejectsInvalidTokenSubjectsAndNullLoginIdentifiers() {
         assertApiError(() -> AuthenticationService.parseUserId("not-a-uuid"), "INVALID_TOKEN");
 
-        when(userRepository.findByNormalizedUsername("")).thenReturn(Optional.empty());
+        when(userRepository.findByNormalizedUsernameOrNormalizedEmail("", ""))
+                .thenReturn(Optional.empty());
         assertApiError(
                 () -> authenticationService.login(new LoginRequest(null, "password")),
                 "INVALID_CREDENTIALS"

@@ -125,7 +125,7 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Ready to roll?' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Continue with Facebook' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Continue with Username' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with username or email' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continue as Guest' })).toBeEnabled()
     expect(screen.getByText('The game service is offline. Guest play still works normally.')).toBeVisible()
     expect(screen.queryByRole('heading', { name: 'Your Roll' })).not.toBeInTheDocument()
@@ -180,7 +180,7 @@ describe('App authentication shell', () => {
     expect(await screen.findByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Continue with Facebook' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Continue with Username' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continue with username or email' })).toBeEnabled()
   })
 
   it('restores a persisted backend account into the game navbar', async () => {
@@ -308,7 +308,10 @@ describe('App authentication shell', () => {
     expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
   })
 
-  it('signs in with the seeded username account', async () => {
+  it.each([
+    ['username', 'test'],
+    ['email address', 'test@test.com'],
+  ])('signs in with the seeded account using its %s', async (_kind, identifier) => {
     const manualUser = authenticatedUser({
       id: 'manual-user',
       name: 'test',
@@ -324,12 +327,12 @@ describe('App authentication shell', () => {
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
 
-    await user.click(await screen.findByRole('button', { name: 'Continue with Username' }))
-    await user.type(screen.getByLabelText('Username'), 'test')
+    await user.click(await screen.findByRole('button', { name: 'Continue with username or email' }))
+    await user.type(screen.getByLabelText('Username or email address'), identifier)
     await user.type(screen.getByLabelText('Password'), 'test')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(login).toHaveBeenCalledWith({ username: 'test', password: 'test' })
+    expect(login).toHaveBeenCalledWith({ identifier, password: 'test' })
     expect(await screen.findByText('test')).toBeVisible()
     expect(screen.getByText('test@test.com')).toBeVisible()
   })
@@ -352,7 +355,7 @@ describe('App authentication shell', () => {
 
   it('displays backend login errors without leaving the landing page', async () => {
     const login = jest.fn(() => Promise.reject(new BackendApiError(
-      'Invalid username or password.',
+      'The username, email address, or password is incorrect.',
       { code: 'INVALID_CREDENTIALS', status: 401 },
     )))
     const backendClient = createMockBackendClient({
@@ -362,12 +365,14 @@ describe('App authentication shell', () => {
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
 
-    await user.click(await screen.findByRole('button', { name: 'Continue with Username' }))
-    await user.type(screen.getByLabelText('Username'), 'nobody')
+    await user.click(await screen.findByRole('button', { name: 'Continue with username or email' }))
+    await user.type(screen.getByLabelText('Username or email address'), 'nobody@example.com')
     await user.type(screen.getByLabelText('Password'), 'wrong')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password.')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The username, email address, or password is incorrect.',
+    )
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled()
   })
 

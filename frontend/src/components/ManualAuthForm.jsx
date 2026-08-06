@@ -20,7 +20,7 @@ export function isStrongPassword(password) {
 
 export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSubmit }) {
   const [mode, setMode] = useState('login')
-  const [username, setUsername] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
@@ -54,7 +54,9 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
     }
 
     await onSubmit(mode, {
-      username: username.trim(),
+      ...(isRegistering
+        ? { username: identifier.trim() }
+        : { identifier: identifier.trim() }),
       ...(isRegistering ? { email: email.trim() } : {}),
       password,
       ...(isRegistering ? { passwordConfirmation } : {}),
@@ -67,7 +69,7 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
         <span aria-hidden="true">←</span> All sign-in options
       </button>
 
-      <div className="manual-auth-tabs" role="tablist" aria-label="Username account action">
+      <div className="manual-auth-tabs" role="tablist" aria-label="Account action">
         <button
           type="button"
           role="tab"
@@ -89,21 +91,32 @@ export default function ManualAuthForm({ busyAction, errorMessage, onBack, onSub
       </div>
 
       <form className="manual-auth-form" onSubmit={handleSubmit}>
-        <label>
-          Username
+        <div className="manual-auth-field">
+          <label htmlFor="manual-account-identifier">
+            {isRegistering ? 'Username' : 'Username or email address'}
+          </label>
           <input
-            name="username"
+            id="manual-account-identifier"
+            name={isRegistering ? 'username' : 'identifier'}
             type="text"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            value={identifier}
+            onChange={(event) => setIdentifier(event.target.value)}
             autoComplete="username"
-            minLength={3}
-            maxLength={32}
-            pattern="[A-Za-z0-9][A-Za-z0-9._-]*"
+            autoCapitalize="none"
+            spellCheck={false}
+            minLength={isRegistering ? 3 : undefined}
+            maxLength={isRegistering ? 32 : EMAIL_MAX_LENGTH}
+            pattern={isRegistering ? '[A-Za-z0-9][A-Za-z0-9._-]*' : undefined}
+            aria-describedby={isRegistering ? undefined : 'login-identifier-hint'}
             required
             disabled={isBusy}
           />
-        </label>
+          {!isRegistering && (
+            <span className="auth-field-hint" id="login-identifier-hint">
+              Use the username or email address associated with your account.
+            </span>
+          )}
+        </div>
         {isRegistering && (
           <label>
             Email address

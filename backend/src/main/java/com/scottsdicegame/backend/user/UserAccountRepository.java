@@ -15,6 +15,11 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
 
     Optional<UserAccount> findByNormalizedUsername(String normalizedUsername);
 
+    Optional<UserAccount> findByNormalizedUsernameOrNormalizedEmail(
+            String normalizedUsername,
+            String normalizedEmail
+    );
+
     boolean existsByNormalizedUsername(String normalizedUsername);
 
     Optional<UserAccount> findByNormalizedEmail(String normalizedEmail);

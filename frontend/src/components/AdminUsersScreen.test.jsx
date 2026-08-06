@@ -119,6 +119,35 @@ describe('AdminUsersScreen', () => {
     expect(screen.getByRole('dialog')).toBeVisible()
   })
 
+  it('keeps an empty-email dialog open with a safe fallback when an email change fails', async () => {
+    const accountWithoutEmail = {
+      ...users[1],
+      id: 'manual-without-email',
+      name: 'No Email Player',
+      email: '',
+    }
+    const { props, user } = renderScreen({
+      loadUsers: jest.fn(() => Promise.resolve([...users, accountWithoutEmail])),
+      changeEmail: jest.fn(() => Promise.reject({})),
+    })
+    await screen.findByText('No Email Player')
+
+    const playerRow = screen.getByText('No Email Player').closest('tr')
+    await user.click(within(playerRow).getByRole('button', { name: 'Change email' }))
+    const emailInput = screen.getByLabelText('Email address')
+    expect(emailInput).toHaveValue('')
+    await user.type(emailInput, 'player@example.com')
+    await user.click(screen.getByRole('button', { name: 'Update email' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The email address could not be changed.',
+    )
+    expect(screen.getByRole('dialog')).toBeVisible()
+    expect(props.changeEmail).toHaveBeenCalledWith('manual-without-email', {
+      email: 'player@example.com',
+    })
+  })
+
   it('shows fallback errors when loading or deleting users fails', async () => {
     const firstRender = renderScreen({ loadUsers: jest.fn(() => Promise.reject({})) })
     expect(await screen.findByRole('alert')).toHaveTextContent('User accounts could not be loaded.')

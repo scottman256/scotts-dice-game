@@ -17,7 +17,7 @@ For Docker, use the root [`compose.yaml`](../compose.yaml) and the concise instr
 
 Use the gear button during a game to switch among themes such as Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, Deep Sea, Jungle Adventure, and World Traveler. The active game stays mounted while settings is open, and appearance returns to Classic when the session returns to sign-in. Signed-in players can open the Player Hub for their personal top ten, the overall top ten, completed-game stats, and achievements. Achievement evaluation replays available score history so compatible milestones can be awarded retroactively; older games cannot prove category- or theme-specific accomplishments when that detail was not recorded.
 
-The local `admin` / `admin` account (`admin@admin.com`) has a separate Admin menu for enabling themes, resetting game data, and managing user accounts. New username accounts require a valid email address. The user-management table displays every account email and lets administrators update username-account addresses and passwords; Google and Facebook addresses remain managed by Firebase. Its global leaderboard view can add fictional system scores or remove individual entries. Classic cannot be disabled.
+The local administrator can sign in with `admin` or `admin@admin.com` and password `admin`, then use a separate Admin menu for enabling themes, resetting game data, and managing user accounts. New username accounts require a valid email address, and either identifier can be used on later sign-ins. The user-management table displays every account email and lets administrators update username-account addresses and passwords; Google and Facebook addresses remain managed by Firebase. Its global leaderboard view can add fictional system scores or remove individual entries. Classic cannot be disabled.
 
 ## Google and Facebook sign-in
 
@@ -40,4 +40,4 @@ npm run test:coverage
 npm run build
 ```
 
-`npm run test:ci` runs the complete test suite once and requires at least 90% global statement, branch, function, and line coverage. The HTML coverage report is written to `frontend/coverage/`.
+`npm run test:ci` runs the complete test suite once and keeps the enforcement threshold at 90% global statement, branch, function, and line coverage. The maintained suite targets more than 95% in every global metric. The HTML coverage report is written to `frontend/coverage/`.
