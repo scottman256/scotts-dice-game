@@ -131,6 +131,22 @@ describe('App authentication shell', () => {
     expect(screen.queryByRole('heading', { name: 'Your Roll' })).not.toBeInTheDocument()
   })
 
+  it('opens the complete game guide from the login page and returns to sign-in', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+
+    await user.click(screen.getByRole('link', { name: /Learn how to play and score/ }))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'How to Play' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Know what every roll is worth' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Your game is ready when you return' }))
+      .not.toBeInTheDocument()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+
+    await user.click(screen.getByRole('button', { name: 'Back to sign in' }))
+    expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
+  })
+
   it('starts a normal guest game, shows the return link, and resets the game after returning', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -143,6 +159,12 @@ describe('App authentication shell', () => {
     expect(screen.getByText('Guest Player')).toBeVisible()
     expect(screen.getByText('Local guest session')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'How to Play' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'How to Play' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Your game is ready when you return' }))
+      .not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to game' }))
 
     await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
     expect(screen.getByLabelText('Roll 1')).toBeVisible()
@@ -192,6 +214,14 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('button', { name: /Player Hub/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled()
     expect(screen.queryByRole('link', { name: /Return to sign in/ })).not.toBeInTheDocument()
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('link', { name: 'How to Play' }))
+    expect(screen.getByRole('heading', { name: 'Your game is ready when you return' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Shape the whole game room' }))
+      .not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to game' }))
+    expect(screen.getByRole('heading', { name: 'Your Roll' })).toBeVisible()
   })
 
   it('offers to resume and restores the saved theme, dice, holds, and scorecard', async () => {
@@ -294,14 +324,17 @@ describe('App authentication shell', () => {
   it('never calls game persistence APIs during guest play', async () => {
     const backendClient = createMockBackendClient()
     const user = userEvent.setup()
-    render(<App backendClient={backendClient} />)
+    const { container } = render(<App backendClient={backendClient} />)
 
     await user.click(await screen.findByRole('button', { name: 'Continue as Guest' }))
     await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
     await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('link', { name: 'How to Play' }))
 
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
+    expect(screen.getByRole('heading', { level: 1, name: 'How to Play' })).toBeVisible()
     expect(backendClient.getGameSession).not.toHaveBeenCalled()
     expect(backendClient.saveGame).not.toHaveBeenCalled()
     expect(backendClient.saveTheme).not.toHaveBeenCalled()
@@ -502,6 +535,11 @@ describe('App authentication shell', () => {
     })
     const user = userEvent.setup()
     render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('link', { name: 'How to Play' }))
+    expect(screen.getByRole('heading', { name: 'Your game is ready when you return' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Shape the whole game room' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Back to game' }))
 
     await user.click(await screen.findByRole('button', { name: /^Admin/ }))
     await user.click(screen.getByRole('menuitem', { name: 'Admin Settings' }))

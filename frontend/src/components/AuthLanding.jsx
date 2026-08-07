@@ -39,6 +39,7 @@ export default function AuthLanding({
   busyProvider,
   errorMessage,
   onGuest,
+  onHowToPlay,
   onManualAuth,
   onProviderSignIn,
 }) {
@@ -62,6 +63,11 @@ export default function AuthLanding({
           <li>Three fourth-roll chances</li>
           <li>Big-roll celebrations</li>
         </ul>
+        <a className="auth-guide-link" href="/how-to-play" onClick={onHowToPlay}>
+          <span aria-hidden="true">?</span>
+          Learn how to play and score
+          <span aria-hidden="true">→</span>
+        </a>
       </section>
 
       <section className="auth-card" aria-labelledby="sign-in-title">

@@ -9,6 +9,7 @@ describe('AppNavbar', () => {
   it('shows a guest identity and a real link back to sign-in', async () => {
     const onReturnHome = jest.fn((event) => event.preventDefault())
     const onOpenSettings = jest.fn()
+    const onOpenHowToPlay = jest.fn((event) => event.preventDefault())
     const user = userEvent.setup()
     render(
       <AppNavbar
@@ -17,6 +18,7 @@ describe('AppNavbar', () => {
         isSigningOut={false}
         isSettingsOpen={false}
         onReturnHome={onReturnHome}
+        onOpenHowToPlay={onOpenHowToPlay}
         onOpenSettings={onOpenSettings}
         onSignOut={jest.fn()}
       />,
@@ -27,6 +29,10 @@ describe('AppNavbar', () => {
     expect(screen.getByText('Local guest session')).toBeVisible()
     expect(screen.getByText('GP')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument()
+    const guideLink = screen.getByRole('link', { name: 'How to Play' })
+    expect(guideLink).toHaveAttribute('href', '/how-to-play')
+    await user.click(guideLink)
+    expect(onOpenHowToPlay).toHaveBeenCalledTimes(1)
     const settingsButton = screen.getByRole('button', { name: 'Game settings' })
     expect(settingsButton).toHaveAttribute('aria-pressed', 'false')
     await user.click(settingsButton)
@@ -57,7 +63,9 @@ describe('AppNavbar', () => {
         isPlayerSectionOpen={false}
         activePlayerView={null}
         isSettingsOpen={false}
+        isHowToPlayOpen
         onOpenPlayerView={onOpenPlayerView}
+        onOpenHowToPlay={jest.fn((event) => event.preventDefault())}
         onReturnHome={jest.fn()}
         onOpenSettings={jest.fn()}
         onSignOut={onSignOut}
@@ -67,6 +75,7 @@ describe('AppNavbar', () => {
     expect(screen.getByText("Scott's Dice Game")).toBeVisible()
     expect(screen.getByText('Ada Lovelace')).toBeVisible()
     expect(screen.getByText('ada@example.com')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'How to Play' })).toHaveAttribute('aria-current', 'page')
     expect(container.querySelector('.user-avatar img')).toHaveAttribute(
       'src',
       'https://example.com/ada.jpg',
@@ -112,6 +121,7 @@ describe('AppNavbar', () => {
           activePlayerView="personal"
           isSettingsOpen={false}
           onOpenPlayerView={jest.fn()}
+          onOpenHowToPlay={jest.fn((event) => event.preventDefault())}
           onReturnHome={jest.fn()}
           onOpenSettings={jest.fn()}
           onSignOut={jest.fn()}
@@ -153,6 +163,7 @@ describe('AppNavbar', () => {
         isSigningOut
         isSettingsOpen
         onReturnHome={jest.fn()}
+        onOpenHowToPlay={jest.fn((event) => event.preventDefault())}
         onOpenSettings={jest.fn()}
         onSignOut={jest.fn()}
       />,
@@ -187,6 +198,7 @@ describe('AppNavbar', () => {
         isSettingsOpen={false}
         onOpenPlayerView={jest.fn()}
         onOpenAdminView={onOpenAdminView}
+        onOpenHowToPlay={jest.fn((event) => event.preventDefault())}
         onReturnHome={jest.fn()}
         onOpenSettings={jest.fn()}
         onSignOut={jest.fn()}

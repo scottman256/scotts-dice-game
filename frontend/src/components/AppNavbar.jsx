@@ -10,9 +10,11 @@ export default function AppNavbar({
   isAdminSectionOpen,
   activeAdminView,
   isSettingsOpen,
+  isHowToPlayOpen,
   onOpenPlayerView,
   onOpenAdminView,
   onReturnHome,
+  onOpenHowToPlay,
   onOpenSettings,
   onSignOut,
   settingsButtonRef,
@@ -63,6 +65,11 @@ export default function AppNavbar({
   function openSettings() {
     setOpenMenu(null)
     onOpenSettings()
+  }
+
+  function openHowToPlay(event) {
+    setOpenMenu(null)
+    onOpenHowToPlay(event)
   }
 
   return (
@@ -182,6 +189,14 @@ export default function AppNavbar({
           )}
           </div>
         )}
+        <a
+          className="nav-guide-link"
+          href="/how-to-play"
+          onClick={openHowToPlay}
+          aria-current={isHowToPlayOpen ? 'page' : undefined}
+        >
+          How to Play
+        </a>
         <button
           type="button"
           className="settings-icon-button"

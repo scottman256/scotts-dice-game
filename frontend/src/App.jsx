@@ -15,6 +15,7 @@ import AchievementsScreen from './components/AchievementsScreen'
 import AuthLanding from './components/AuthLanding'
 import DiceRoller from './components/DiceRoller'
 import GameStatsScreen from './components/GameStatsScreen'
+import HowToPlayScreen from './components/HowToPlayScreen'
 import ResumeGameModal from './components/ResumeGameModal'
 import ScoreboardScreen from './components/ScoreboardScreen'
 import SettingsScreen from './components/SettingsScreen'
@@ -301,6 +302,12 @@ export default function App({
     setActiveScreen('admin')
   }
 
+  function handleOpenHowToPlay(event) {
+    event.preventDefault()
+    setAuthError('')
+    setActiveScreen('howToPlay')
+  }
+
   function handleThemeAvailabilityChange(themes) {
     const enabled = themes.filter((theme) => theme.enabled).map((theme) => theme.id)
     setEnabledThemeIds(enabled)
@@ -417,6 +424,13 @@ export default function App({
   }
 
   if (session.kind === 'signedOut') {
+    if (activeScreen === 'howToPlay') {
+      return (
+        <div className="how-to-play-standalone game-session" data-game-theme={gameSettings.theme}>
+          <HowToPlayScreen sessionKind={session.kind} user={session.user} onBack={returnToGame} />
+        </div>
+      )
+    }
     return (
       <AuthLanding
         authConfigured={authService.isConfigured}
@@ -426,6 +440,7 @@ export default function App({
         busyProvider={busyAction}
         errorMessage={authError}
         onGuest={handleGuest}
+        onHowToPlay={handleOpenHowToPlay}
         onManualAuth={handleManualAuth}
         onProviderSignIn={handleProviderSignIn}
       />
@@ -445,7 +460,9 @@ export default function App({
         isAdminSectionOpen={activeScreen === 'admin'}
         activeAdminView={activeScreen === 'admin' ? adminView : null}
         isSettingsOpen={activeScreen === 'settings'}
+        isHowToPlayOpen={activeScreen === 'howToPlay'}
         onReturnHome={handleReturnHome}
+        onOpenHowToPlay={handleOpenHowToPlay}
         onOpenPlayerView={handleOpenPlayerView}
         onOpenAdminView={handleOpenAdminView}
         onOpenSettings={handleOpenSettings}
@@ -453,19 +470,25 @@ export default function App({
         settingsButtonRef={settingsButtonRef}
       />
       {authError && <p className="session-error" role="alert">{authError}</p>}
-      {session.kind === 'authenticated' && gamePersistenceStatus === 'loading' && (
+      {session.kind === 'authenticated' && gamePersistenceStatus === 'loading' && activeScreen !== 'howToPlay' && (
         <main className="game-persistence-loading" aria-label="Loading saved game">
           <span className="loading-die" aria-hidden="true">⚄</span>
           <p role="status">Checking for saved game progress…</p>
         </main>
       )}
-      {session.kind === 'authenticated' && gamePersistenceStatus === 'prompting' && savedGameToResume && (
+      {session.kind === 'authenticated'
+        && gamePersistenceStatus === 'prompting'
+        && savedGameToResume
+        && activeScreen !== 'howToPlay' && (
         <ResumeGameModal
           savedGame={savedGameToResume}
           isStartingNew={resumeDecisionBusy}
           onContinue={handleContinueSavedGame}
           onStartNew={handleStartNewSavedGame}
         />
+      )}
+      {activeScreen === 'howToPlay' && (
+        <HowToPlayScreen sessionKind={session.kind} user={session.user} onBack={returnToGame} />
       )}
       {gameReady && (
         <>

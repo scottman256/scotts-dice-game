@@ -14,6 +14,7 @@ function defaultProps(overrides = {}) {
     busyProvider: null,
     errorMessage: '',
     onGuest: jest.fn(),
+    onHowToPlay: jest.fn((event) => event.preventDefault()),
     onManualAuth: jest.fn(),
     onProviderSignIn: jest.fn(),
     ...overrides,
@@ -48,6 +49,18 @@ describe('AuthLanding', () => {
     expect(props.onProviderSignIn).toHaveBeenNthCalledWith(1, AUTH_PROVIDERS.google)
     expect(props.onProviderSignIn).toHaveBeenNthCalledWith(2, AUTH_PROVIDERS.facebook)
     expect(props.onGuest).toHaveBeenCalledTimes(1)
+  })
+
+  it('provides a real link to the game guide', async () => {
+    const props = defaultProps()
+    const user = userEvent.setup()
+    render(<AuthLanding {...props} />)
+
+    const guideLink = screen.getByRole('link', { name: /Learn how to play and score/ })
+    expect(guideLink).toHaveAttribute('href', '/how-to-play')
+    await user.click(guideLink)
+
+    expect(props.onHowToPlay).toHaveBeenCalledTimes(1)
   })
 
   it('keeps guest mode available while explaining missing provider configuration', () => {
