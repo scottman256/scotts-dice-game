@@ -11,8 +11,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      frontend: ${{ steps.paths.outputs.frontend }}
+      backend: ${{ steps.paths.outputs.backend }}
+
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect frontend and backend changes
+        id: paths
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          changed() {
+            local result
+            set +e
+            git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- "$@"
+            result=$?
+            set -e
+
+            case "$result" in
+              0) echo false ;;
+              1) echo true ;;
+              *) return "$result" ;;
+            esac
+          }
+
+          frontend_changed="$(changed frontend/ .github/workflows/ci.yml)"
+          backend_changed="$(changed backend/ .github/workflows/ci.yml)"
+
+          echo "frontend=$frontend_changed" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend_changed" >> "$GITHUB_OUTPUT"
+          echo "Frontend changed: $frontend_changed"
+          echo "Backend changed: $backend_changed"
+
   frontend:
     name: Frontend tests and coverage
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.frontend == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -50,6 +97,8 @@ jobs:
 
   backend:
     name: Backend tests and coverage
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.backend == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:

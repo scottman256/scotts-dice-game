@@ -87,7 +87,23 @@ npm run build
 
 ## Continuous integration
 
-The [pull-request workflow](.github/workflows/ci.yml) runs independent frontend and backend jobs on every pull request. It installs dependencies from the committed lockfiles, runs all unit and integration tests, enforces the configured 90% coverage gates, verifies the frontend production build, and retains the generated test and coverage reports as workflow artifacts for seven days.
+The [pull-request workflow](.github/workflows/ci.yml) always starts so required checks are reported, then detects which application areas changed. The frontend test, coverage, and build job runs for changes under `frontend/`; the backend test and coverage job runs for changes under `backend/`. Changes to the CI workflow run both jobs. Skipped jobs report success under GitHub's job-condition behavior, so the existing frontend and backend required-check configuration can remain unchanged.
+
+When an application area changes, CI installs its dependencies from the committed lockfile, runs all unit and integration tests, enforces the configured 90% coverage gate, and retains generated test and coverage reports as workflow artifacts for seven days. Frontend changes also trigger a production build.
+
+## Local commit-message hook
+
+This repository includes a tracked `commit-msg` hook. Enable it once in each local clone:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+The first line of every local commit message must use `DICE-N: description`, where `N` contains one to five digits and therefore ranges from 0 to 99999. For example:
+
+```text
+DICE-10: Add a new feature
+```
 
 
 See [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md) for configuration and API details.
