@@ -2,6 +2,10 @@ package com.scottsdicegame.backend.achievement;
 
 import com.scottsdicegame.backend.score.GameScore;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +66,10 @@ final class AchievementCatalog {
             completionDays(31, "days-50", "Dice Regular", 50),
             completionDays(32, "days-100", "Hundred-Day Hero", 100),
             completionDays(33, "days-250", "Table Devotee", 250),
-            completionDays(34, "days-365", "Year-Round Roller", 365)
+            completionDays(34, "days-365", "Year-Round Roller", 365),
+            definition(35, "new-years-day", "New Year, New Roll",
+                    "Completed a game on New Year's Day.",
+                    (progress, game) -> completedOn(game, Month.JANUARY, 1))
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();
@@ -148,6 +155,14 @@ final class AchievementCatalog {
 
     private static boolean scored(GameScore game, String category) {
         return game.getCategoryScores().getOrDefault(category, 0) > 0;
+    }
+
+    private static boolean completedOn(GameScore game, Month month, int dayOfMonth) {
+        Instant completedAt = game.getCompletedAt();
+        if (completedAt == null) return false;
+
+        LocalDate completedDate = LocalDate.ofInstant(completedAt, ZoneOffset.UTC);
+        return completedDate.getMonth() == month && completedDate.getDayOfMonth() == dayOfMonth;
     }
 
     private static Map<String, AchievementDefinition> indexDefinitions() {
