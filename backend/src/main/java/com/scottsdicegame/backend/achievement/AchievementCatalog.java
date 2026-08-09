@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 final class AchievementCatalog {
 
@@ -42,25 +43,25 @@ final class AchievementCatalog {
             cumulative(21, "large-straights-1000", "Straight Thousand", "Scored 1,000 large straights.",
                     progress -> progress.largeStraights() >= 1_000),
             definition(22, "score-under-100", "Boo!", "Finished a game with fewer than 100 points.",
-                    (progress, game) -> game.getScore() < 100),
+                    (progress, game, unlocked) -> game.getScore() < 100),
             definition(23, "golden-game", "Golden", "Completed a game with the Golden dice.",
-                    (progress, game) -> "golden".equals(game.getTheme())),
+                    (progress, game, unlocked) -> "golden".equals(game.getTheme())),
             definition(24, "baseball-game", "Sporty", "Completed a game with the Baseball dice.",
-                    (progress, game) -> "baseball".equals(game.getTheme())),
+                    (progress, game, unlocked) -> "baseball".equals(game.getTheme())),
             definition(25, "triple-crown", "Triple Crown",
                     "Scored a 5 of a kind, its bonus, and a first-roll 5 of a kind in one game.",
-                    (progress, game) -> scored(game, "fiveKind")
+                    (progress, game, unlocked) -> scored(game, "fiveKind")
                             && scored(game, "fiveKindBonus")
                             && scored(game, "firstRollFiveKind")),
             definition(26, "world-traveler-game", "World Traveler",
                     "Completed a game with the World Traveler dice.",
-                    (progress, game) -> "world-traveler".equals(game.getTheme())),
+                    (progress, game, unlocked) -> "world-traveler".equals(game.getTheme())),
             cumulative(27, "holiday-wonder", "Holiday Wonder",
                     "Completed games with both the Halloween and Christmas dice.",
                     progress -> progress.completedEveryTheme("halloween", "christmas")),
             definition(28, "deep-sea-game", "Roll Beneath the Surface",
                     "Completed a game with the Deep Sea dice.",
-                    (progress, game) -> "deep-sea".equals(game.getTheme())),
+                    (progress, game, unlocked) -> "deep-sea".equals(game.getTheme())),
             completionDays(29, "roll-call", "Roll Call", 10),
             completionDays(30, "days-25", "Repeat Roller", 25),
             completionDays(31, "days-50", "Dice Regular", 50),
@@ -69,7 +70,10 @@ final class AchievementCatalog {
             completionDays(34, "days-365", "Year-Round Roller", 365),
             definition(35, "new-years-day", "New Year, New Roll",
                     "Completed a game on New Year's Day.",
-                    (progress, game) -> completedOn(game, Month.JANUARY, 1))
+                    (progress, game, unlocked) -> completedOn(game, Month.JANUARY, 1)),
+            definition(36, "grand-master", "Grand Master",
+                    "Unlocked all 35 other achievements.",
+                    (progress, game, unlocked) -> unlockedEveryOtherAchievement(unlocked))
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();
@@ -95,7 +99,13 @@ final class AchievementCatalog {
             String description,
             int threshold
     ) {
-        return definition(order, key, title, description, (progress, game) -> game.getScore() > threshold);
+        return definition(
+                order,
+                key,
+                title,
+                description,
+                (progress, game, unlocked) -> game.getScore() > threshold
+        );
     }
 
     private static AchievementDefinition points(
@@ -140,7 +150,8 @@ final class AchievementCatalog {
             String description,
             ProgressRule rule
     ) {
-        return definition(order, key, title, description, (progress, game) -> rule.isEarned(progress));
+        return definition(order, key, title, description,
+                (progress, game, unlocked) -> rule.isEarned(progress));
     }
 
     private static AchievementDefinition definition(
@@ -163,6 +174,12 @@ final class AchievementCatalog {
 
         LocalDate completedDate = LocalDate.ofInstant(completedAt, ZoneOffset.UTC);
         return completedDate.getMonth() == month && completedDate.getDayOfMonth() == dayOfMonth;
+    }
+
+    private static boolean unlockedEveryOtherAchievement(Set<String> unlockedAchievementKeys) {
+        return DEFINITIONS.stream()
+                .filter(definition -> !definition.key().equals("grand-master"))
+                .allMatch(definition -> unlockedAchievementKeys.contains(definition.key()));
     }
 
     private static Map<String, AchievementDefinition> indexDefinitions() {

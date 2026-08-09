@@ -7,7 +7,7 @@ describe('achievement badge assets', () => {
   it('provides one optimized image for every achievement', () => {
     const keys = Object.keys(ACHIEVEMENT_BADGES)
 
-    expect(keys).toHaveLength(35)
+    expect(keys).toHaveLength(36)
     for (const key of keys) {
       expect(existsSync(join(process.cwd(), 'src', 'assets', 'achievements', `${key}.jpg`))).toBe(true)
     }
