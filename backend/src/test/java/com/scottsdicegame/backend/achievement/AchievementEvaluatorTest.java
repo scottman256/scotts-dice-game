@@ -54,7 +54,8 @@ class AchievementEvaluatorTest {
                 "days-100",
                 "days-250",
                 "days-365",
-                "new-years-day"
+                "new-years-day",
+                "grand-master"
         );
     }
 
@@ -77,15 +78,17 @@ class AchievementEvaluatorTest {
             ));
         }
 
-        Set<String> keys = keys(AchievementEvaluator.evaluate(history, Set.of("first-game")));
+        List<AchievementUnlock> unlocks = AchievementEvaluator.evaluate(history, Set.of("first-game"));
+        Set<String> keys = keys(unlocks);
 
-        assertThat(AchievementCatalog.DEFINITIONS).hasSize(35);
+        assertThat(AchievementCatalog.DEFINITIONS).hasSize(36);
         assertThat(AchievementCatalog.DISPLAY_CAPACITY).isEqualTo(36);
-        assertThat(keys).hasSize(34).doesNotContain("first-game");
+        assertThat(keys).hasSize(35).doesNotContain("first-game");
         assertThat(keys).containsAll(AchievementCatalog.DEFINITIONS.stream()
                 .map(AchievementDefinition::key)
                 .filter(key -> !key.equals("first-game"))
                 .toList());
+        assertQualifyingGame(unlocks, "grand-master", history.get(1000));
     }
 
     @Test
@@ -195,6 +198,20 @@ class AchievementEvaluatorTest {
         assertQualifyingGame(unlocks, "days-100", history.get(99));
         assertQualifyingGame(unlocks, "days-250", history.get(249));
         assertQualifyingGame(unlocks, "days-365", history.get(364));
+        assertThat(keys(unlocks)).doesNotContain("grand-master");
+    }
+
+    @Test
+    void grandMasterRequiresEveryPrerequisiteInReplayedGameHistory() {
+        Set<String> persistedKeys = AchievementCatalog.DEFINITIONS.stream()
+                .map(AchievementDefinition::key)
+                .filter(key -> !key.equals("grand-master"))
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertThat(keys(AchievementEvaluator.evaluate(
+                List.of(game(275, Map.of(), "classic")),
+                persistedKeys
+        ))).doesNotContain("grand-master");
     }
 
     @Test
