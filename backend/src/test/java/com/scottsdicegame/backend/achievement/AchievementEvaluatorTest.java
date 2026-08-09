@@ -3,7 +3,10 @@ package com.scottsdicegame.backend.achievement;
 import com.scottsdicegame.backend.score.GameScore;
 import com.scottsdicegame.backend.user.UserAccount;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,28 +47,35 @@ class AchievementEvaluatorTest {
                 "triple-crown",
                 "world-traveler-game",
                 "holiday-wonder",
-                "deep-sea-game"
+                "deep-sea-game",
+                "roll-call"
         );
     }
 
     @Test
     void evaluatesEveryCatalogAchievementAndNeverAwardsAnExistingKeyTwice() {
         List<GameScore> history = new ArrayList<>();
-        history.add(game(99, detailedScores(), "golden"));
-        history.add(game(1_000, detailedScores(), "baseball"));
-        history.add(game(1_000, detailedScores(), "world-traveler"));
-        history.add(game(1_000, detailedScores(), "deep-sea"));
-        history.add(game(1_000, detailedScores(), "halloween"));
-        history.add(game(1_000, detailedScores(), "christmas"));
+        Instant firstDay = Instant.parse("2026-01-01T12:00:00Z");
+        history.add(game(99, detailedScores(), "golden", firstDay));
+        history.add(game(1_000, detailedScores(), "baseball", firstDay.plus(1, ChronoUnit.DAYS)));
+        history.add(game(1_000, detailedScores(), "world-traveler", firstDay.plus(2, ChronoUnit.DAYS)));
+        history.add(game(1_000, detailedScores(), "deep-sea", firstDay.plus(3, ChronoUnit.DAYS)));
+        history.add(game(1_000, detailedScores(), "halloween", firstDay.plus(4, ChronoUnit.DAYS)));
+        history.add(game(1_000, detailedScores(), "christmas", firstDay.plus(5, ChronoUnit.DAYS)));
         for (int index = 0; index < 995; index++) {
-            history.add(game(1_000, detailedScores(), "classic"));
+            history.add(game(
+                    1_000,
+                    detailedScores(),
+                    "classic",
+                    firstDay.plus(index + 6L, ChronoUnit.DAYS)
+            ));
         }
 
         Set<String> keys = keys(AchievementEvaluator.evaluate(history, Set.of("first-game")));
 
-        assertThat(AchievementCatalog.DEFINITIONS).hasSize(28);
+        assertThat(AchievementCatalog.DEFINITIONS).hasSize(29);
         assertThat(AchievementCatalog.DISPLAY_CAPACITY).isEqualTo(36);
-        assertThat(keys).hasSize(27).doesNotContain("first-game");
+        assertThat(keys).hasSize(28).doesNotContain("first-game");
         assertThat(keys).containsAll(AchievementCatalog.DEFINITIONS.stream()
                 .map(AchievementDefinition::key)
                 .filter(key -> !key.equals("first-game"))
@@ -153,8 +163,47 @@ class AchievementEvaluatorTest {
                 .contains("deep-sea-game");
     }
 
+    @Test
+    void rollCallRequiresCompletionsOnTenDistinctUtcDays() {
+        Instant firstDay = Instant.parse("2026-02-01T12:00:00Z");
+        List<GameScore> nineDistinctDays = new ArrayList<>();
+        for (int index = 0; index < 9; index++) {
+            nineDistinctDays.add(game(
+                    275,
+                    Map.of(),
+                    "classic",
+                    firstDay.plus(index, ChronoUnit.DAYS)
+            ));
+        }
+        nineDistinctDays.add(game(275, Map.of(), "classic", firstDay.plus(2, ChronoUnit.HOURS)));
+
+        assertThat(keys(AchievementEvaluator.evaluate(nineDistinctDays, Set.of())))
+                .doesNotContain("roll-call");
+
+        GameScore tenthDay = game(275, Map.of(), "classic", firstDay.plus(9, ChronoUnit.DAYS));
+        List<GameScore> tenDistinctDays = new ArrayList<>(nineDistinctDays);
+        tenDistinctDays.add(tenthDay);
+
+        assertThat(AchievementEvaluator.evaluate(tenDistinctDays, Set.of()))
+                .filteredOn(unlock -> unlock.definition().key().equals("roll-call"))
+                .singleElement()
+                .extracting(AchievementUnlock::qualifyingGame)
+                .isSameAs(tenthDay);
+    }
+
     private GameScore game(int score, Map<String, Integer> categoryScores, String theme) {
         return new GameScore(UUID.randomUUID(), user, score, false, categoryScores, theme);
+    }
+
+    private GameScore game(
+            int score,
+            Map<String, Integer> categoryScores,
+            String theme,
+            Instant completedAt
+    ) {
+        GameScore game = game(score, categoryScores, theme);
+        ReflectionTestUtils.setField(game, "completedAt", completedAt);
+        return game;
     }
 
     private static Map<String, Integer> detailedScores() {
