@@ -32,6 +32,7 @@ import days50 from './achievements/days-50.jpg'
 import days100 from './achievements/days-100.jpg'
 import days250 from './achievements/days-250.jpg'
 import days365 from './achievements/days-365.jpg'
+import newYearsDay from './achievements/new-years-day.jpg'
 
 export const ACHIEVEMENT_BADGES = Object.freeze({
   'first-game': firstGame,
@@ -68,6 +69,7 @@ export const ACHIEVEMENT_BADGES = Object.freeze({
   'days-100': days100,
   'days-250': days250,
   'days-365': days365,
+  'new-years-day': newYearsDay,
 })
 
 export function getAchievementBadge(key) {

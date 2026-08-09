@@ -53,7 +53,8 @@ class AchievementEvaluatorTest {
                 "days-50",
                 "days-100",
                 "days-250",
-                "days-365"
+                "days-365",
+                "new-years-day"
         );
     }
 
@@ -78,9 +79,9 @@ class AchievementEvaluatorTest {
 
         Set<String> keys = keys(AchievementEvaluator.evaluate(history, Set.of("first-game")));
 
-        assertThat(AchievementCatalog.DEFINITIONS).hasSize(34);
+        assertThat(AchievementCatalog.DEFINITIONS).hasSize(35);
         assertThat(AchievementCatalog.DISPLAY_CAPACITY).isEqualTo(36);
-        assertThat(keys).hasSize(33).doesNotContain("first-game");
+        assertThat(keys).hasSize(34).doesNotContain("first-game");
         assertThat(keys).containsAll(AchievementCatalog.DEFINITIONS.stream()
                 .map(AchievementDefinition::key)
                 .filter(key -> !key.equals("first-game"))
@@ -194,6 +195,37 @@ class AchievementEvaluatorTest {
         assertQualifyingGame(unlocks, "days-100", history.get(99));
         assertQualifyingGame(unlocks, "days-250", history.get(249));
         assertQualifyingGame(unlocks, "days-365", history.get(364));
+    }
+
+    @Test
+    void newYearNewRollUnlocksOnlyOnJanuaryFirstInUtc() {
+        GameScore beforeNewYear = game(
+                275,
+                Map.of(),
+                "classic",
+                Instant.parse("2025-12-31T23:59:59Z")
+        );
+        GameScore newYearsDay = game(
+                275,
+                Map.of(),
+                "classic",
+                Instant.parse("2026-01-01T00:00:00Z")
+        );
+        GameScore afterNewYear = game(
+                275,
+                Map.of(),
+                "classic",
+                Instant.parse("2026-01-02T00:00:00Z")
+        );
+
+        assertThat(keys(AchievementEvaluator.evaluate(List.of(beforeNewYear, afterNewYear), Set.of())))
+                .doesNotContain("new-years-day");
+
+        List<AchievementUnlock> unlocks = AchievementEvaluator.evaluate(
+                List.of(beforeNewYear, newYearsDay, afterNewYear),
+                Set.of()
+        );
+        assertQualifyingGame(unlocks, "new-years-day", newYearsDay);
     }
 
     private GameScore game(int score, Map<String, Integer> categoryScores, String theme) {
