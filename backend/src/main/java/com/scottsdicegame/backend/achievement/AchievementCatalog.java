@@ -57,8 +57,12 @@ final class AchievementCatalog {
             definition(28, "deep-sea-game", "Roll Beneath the Surface",
                     "Completed a game with the Deep Sea dice.",
                     (progress, game) -> "deep-sea".equals(game.getTheme())),
-            cumulative(29, "roll-call", "Roll Call", "Completed a game on 10 different days.",
-                    progress -> progress.distinctCompletionDays() >= 10)
+            completionDays(29, "roll-call", "Roll Call", 10),
+            completionDays(30, "days-25", "Repeat Roller", 25),
+            completionDays(31, "days-50", "Dice Regular", 50),
+            completionDays(32, "days-100", "Hundred-Day Hero", 100),
+            completionDays(33, "days-250", "Table Devotee", 250),
+            completionDays(34, "days-365", "Year-Round Roller", 365)
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();
@@ -105,6 +109,21 @@ final class AchievementCatalog {
             long threshold
     ) {
         return cumulative(order, key, title, description, progress -> progress.fiveOfAKinds() >= threshold);
+    }
+
+    private static AchievementDefinition completionDays(
+            int order,
+            String key,
+            String title,
+            int threshold
+    ) {
+        return cumulative(
+                order,
+                key,
+                title,
+                "Completed a game on " + threshold + " different days.",
+                progress -> progress.distinctCompletionDays() >= threshold
+        );
     }
 
     private static AchievementDefinition cumulative(

@@ -27,6 +27,11 @@ import worldTravelerGame from './achievements/world-traveler-game.jpg'
 import holidayWonder from './achievements/holiday-wonder.jpg'
 import deepSeaGame from './achievements/deep-sea-game.jpg'
 import rollCall from './achievements/roll-call.jpg'
+import days25 from './achievements/days-25.jpg'
+import days50 from './achievements/days-50.jpg'
+import days100 from './achievements/days-100.jpg'
+import days250 from './achievements/days-250.jpg'
+import days365 from './achievements/days-365.jpg'
 
 export const ACHIEVEMENT_BADGES = Object.freeze({
   'first-game': firstGame,
@@ -58,6 +63,11 @@ export const ACHIEVEMENT_BADGES = Object.freeze({
   'holiday-wonder': holidayWonder,
   'deep-sea-game': deepSeaGame,
   'roll-call': rollCall,
+  'days-25': days25,
+  'days-50': days50,
+  'days-100': days100,
+  'days-250': days250,
+  'days-365': days365,
 })
 
 export function getAchievementBadge(key) {

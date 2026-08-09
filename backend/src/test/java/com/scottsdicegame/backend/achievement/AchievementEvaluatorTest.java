@@ -48,7 +48,12 @@ class AchievementEvaluatorTest {
                 "world-traveler-game",
                 "holiday-wonder",
                 "deep-sea-game",
-                "roll-call"
+                "roll-call",
+                "days-25",
+                "days-50",
+                "days-100",
+                "days-250",
+                "days-365"
         );
     }
 
@@ -73,9 +78,9 @@ class AchievementEvaluatorTest {
 
         Set<String> keys = keys(AchievementEvaluator.evaluate(history, Set.of("first-game")));
 
-        assertThat(AchievementCatalog.DEFINITIONS).hasSize(29);
+        assertThat(AchievementCatalog.DEFINITIONS).hasSize(34);
         assertThat(AchievementCatalog.DISPLAY_CAPACITY).isEqualTo(36);
-        assertThat(keys).hasSize(28).doesNotContain("first-game");
+        assertThat(keys).hasSize(33).doesNotContain("first-game");
         assertThat(keys).containsAll(AchievementCatalog.DEFINITIONS.stream()
                 .map(AchievementDefinition::key)
                 .filter(key -> !key.equals("first-game"))
@@ -164,31 +169,31 @@ class AchievementEvaluatorTest {
     }
 
     @Test
-    void rollCallRequiresCompletionsOnTenDistinctUtcDays() {
+    void completionDayMilestonesUnlockOnTheirDistinctUtcDayThresholds() {
         Instant firstDay = Instant.parse("2026-02-01T12:00:00Z");
-        List<GameScore> nineDistinctDays = new ArrayList<>();
-        for (int index = 0; index < 9; index++) {
-            nineDistinctDays.add(game(
+        List<GameScore> history = new ArrayList<>();
+        for (int index = 0; index < 365; index++) {
+            history.add(game(
                     275,
                     Map.of(),
                     "classic",
                     firstDay.plus(index, ChronoUnit.DAYS)
             ));
         }
+
+        List<GameScore> nineDistinctDays = new ArrayList<>(history.subList(0, 9));
         nineDistinctDays.add(game(275, Map.of(), "classic", firstDay.plus(2, ChronoUnit.HOURS)));
 
         assertThat(keys(AchievementEvaluator.evaluate(nineDistinctDays, Set.of())))
-                .doesNotContain("roll-call");
+                .doesNotContain("roll-call", "days-25", "days-50", "days-100", "days-250", "days-365");
 
-        GameScore tenthDay = game(275, Map.of(), "classic", firstDay.plus(9, ChronoUnit.DAYS));
-        List<GameScore> tenDistinctDays = new ArrayList<>(nineDistinctDays);
-        tenDistinctDays.add(tenthDay);
-
-        assertThat(AchievementEvaluator.evaluate(tenDistinctDays, Set.of()))
-                .filteredOn(unlock -> unlock.definition().key().equals("roll-call"))
-                .singleElement()
-                .extracting(AchievementUnlock::qualifyingGame)
-                .isSameAs(tenthDay);
+        List<AchievementUnlock> unlocks = AchievementEvaluator.evaluate(history, Set.of());
+        assertQualifyingGame(unlocks, "roll-call", history.get(9));
+        assertQualifyingGame(unlocks, "days-25", history.get(24));
+        assertQualifyingGame(unlocks, "days-50", history.get(49));
+        assertQualifyingGame(unlocks, "days-100", history.get(99));
+        assertQualifyingGame(unlocks, "days-250", history.get(249));
+        assertQualifyingGame(unlocks, "days-365", history.get(364));
     }
 
     private GameScore game(int score, Map<String, Integer> categoryScores, String theme) {
@@ -217,5 +222,17 @@ class AchievementEvaluatorTest {
 
     private static Set<String> keys(List<AchievementUnlock> unlocks) {
         return unlocks.stream().map(unlock -> unlock.definition().key()).collect(java.util.stream.Collectors.toSet());
+    }
+
+    private static void assertQualifyingGame(
+            List<AchievementUnlock> unlocks,
+            String achievementKey,
+            GameScore expectedGame
+    ) {
+        assertThat(unlocks)
+                .filteredOn(unlock -> unlock.definition().key().equals(achievementKey))
+                .singleElement()
+                .extracting(AchievementUnlock::qualifyingGame)
+                .isSameAs(expectedGame);
     }
 }
