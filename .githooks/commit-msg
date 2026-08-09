@@ -1,0 +1,13 @@
+#!/bin/sh
+
+message_file=$1
+first_line=$(sed -n '1p' "$message_file")
+
+if printf '%s\n' "$first_line" | grep -Eq '^DICE-[0-9]{1,5}: .+'; then
+  exit 0
+fi
+
+printf '%s\n' \
+  'Commit message must start with "DICE-N: ", where N is a number from 0 to 99999.' \
+  'Example: DICE-10: Add a new feature.' >&2
+exit 1
