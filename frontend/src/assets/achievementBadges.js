@@ -26,6 +26,7 @@ import tripleCrown from './achievements/triple-crown.jpg'
 import worldTravelerGame from './achievements/world-traveler-game.jpg'
 import holidayWonder from './achievements/holiday-wonder.jpg'
 import deepSeaGame from './achievements/deep-sea-game.jpg'
+import rollCall from './achievements/roll-call.jpg'
 
 export const ACHIEVEMENT_BADGES = Object.freeze({
   'first-game': firstGame,
@@ -56,6 +57,7 @@ export const ACHIEVEMENT_BADGES = Object.freeze({
   'world-traveler-game': worldTravelerGame,
   'holiday-wonder': holidayWonder,
   'deep-sea-game': deepSeaGame,
+  'roll-call': rollCall,
 })
 
 export function getAchievementBadge(key) {

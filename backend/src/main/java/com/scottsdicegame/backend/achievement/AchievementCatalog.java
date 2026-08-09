@@ -56,7 +56,9 @@ final class AchievementCatalog {
                     progress -> progress.completedEveryTheme("halloween", "christmas")),
             definition(28, "deep-sea-game", "Roll Beneath the Surface",
                     "Completed a game with the Deep Sea dice.",
-                    (progress, game) -> "deep-sea".equals(game.getTheme()))
+                    (progress, game) -> "deep-sea".equals(game.getTheme())),
+            cumulative(29, "roll-call", "Roll Call", "Completed a game on 10 different days.",
+                    progress -> progress.distinctCompletionDays() >= 10)
     );
 
     private static final Map<String, AchievementDefinition> BY_KEY = indexDefinitions();
