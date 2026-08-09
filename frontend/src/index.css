@@ -3612,12 +3612,13 @@ td small {
   position: absolute;
   width: 15px;
   height: 14px;
-  top: -13px;
-  left: 5px;
+  bottom: 100%;
+  left: 50%;
   border: 2px solid color-mix(in srgb, var(--muted) 38%, transparent);
   border-bottom: 0;
   border-radius: 9px 9px 0 0;
   content: "";
+  transform: translateX(-50%);
 }
 
 .new-high-score-message {
