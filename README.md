@@ -99,7 +99,7 @@ This repository includes a tracked `commit-msg` hook. Enable it once in each loc
 git config core.hooksPath .githooks
 ```
 
-The first line of every local commit message must use `DICE-N: description`, where `N` contains one to five digits and therefore ranges from 0 to 99999. For example:
+The first line of every local commit message must use `DICE-N: description`, where `N` contains one to five digits (mapping to a user story) and therefore ranges from 0 to 99999. For example:
 
 ```text
 DICE-10: Add a new feature
