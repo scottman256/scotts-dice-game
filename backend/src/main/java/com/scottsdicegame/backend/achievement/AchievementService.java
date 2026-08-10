@@ -2,6 +2,7 @@ package com.scottsdicegame.backend.achievement;
 
 import com.scottsdicegame.backend.api.ApiException;
 import com.scottsdicegame.backend.achievement.dto.AchievementCollectionResponse;
+import com.scottsdicegame.backend.achievement.dto.AchievementHintResponse;
 import com.scottsdicegame.backend.achievement.dto.AchievementResponse;
 import com.scottsdicegame.backend.score.GameScore;
 import com.scottsdicegame.backend.score.GameScoreRepository;
@@ -21,6 +22,10 @@ import java.util.UUID;
 
 @Service
 public class AchievementService {
+
+    private static final String GRAND_MASTER_KEY = "grand-master";
+    private static final int GRAND_MASTER_HINT_REVEAL_COUNT = 25;
+    private static final String HIDDEN_ACHIEVEMENT_HINT = "?????";
 
     private final UserAchievementRepository achievementRepository;
     private final GameScoreRepository scoreRepository;
@@ -63,7 +68,11 @@ public class AchievementService {
                         .thenComparingInt(AchievementService::catalogOrder))
                 .map(AchievementService::toResponse)
                 .toList();
-        return new AchievementCollectionResponse(AchievementCatalog.DISPLAY_CAPACITY, responses);
+        return new AchievementCollectionResponse(
+                AchievementCatalog.DISPLAY_CAPACITY,
+                responses,
+                lockedAchievementHints(responses)
+        );
     }
 
     @Transactional
@@ -101,5 +110,29 @@ public class AchievementService {
                 definition.description(),
                 achievement.getAchievedAt()
         );
+    }
+
+    private static List<AchievementHintResponse> lockedAchievementHints(
+            List<AchievementResponse> earnedAchievements
+    ) {
+        Set<String> earnedKeys = earnedAchievements.stream()
+                .map(AchievementResponse::key)
+                .collect(java.util.stream.Collectors.toSet());
+        int earnedCount = earnedKeys.size();
+
+        return AchievementCatalog.DEFINITIONS.stream()
+                .filter(definition -> !earnedKeys.contains(definition.key()))
+                .map(definition -> new AchievementHintResponse(
+                        unlockDescription(definition, earnedCount)
+                ))
+                .toList();
+    }
+
+    private static String unlockDescription(AchievementDefinition definition, int earnedCount) {
+        if (definition.key().equals(GRAND_MASTER_KEY)
+                && earnedCount < GRAND_MASTER_HINT_REVEAL_COUNT) {
+            return HIDDEN_ACHIEVEMENT_HINT;
+        }
+        return definition.unlockDescription();
     }
 }

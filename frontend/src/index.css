@@ -3590,12 +3590,28 @@ td small {
 
 .achievement-slot-locked {
   position: relative;
+  z-index: 0;
   display: grid;
+  overflow: visible;
   place-items: center;
   border: 1px dashed color-mix(in srgb, var(--line-strong) 48%, transparent);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.018), transparent),
     repeating-linear-gradient(135deg, transparent 0 13px, rgba(255, 255, 255, 0.012) 13px 14px);
+  cursor: help;
+}
+
+.achievement-slot-locked:is(:hover, :focus-visible) {
+  z-index: 5;
+  border-color: color-mix(in srgb, var(--teal) 34%, var(--line-strong));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--teal) 5%, transparent), transparent),
+    repeating-linear-gradient(135deg, transparent 0 13px, rgba(255, 255, 255, 0.018) 13px 14px);
+}
+
+.achievement-slot-locked:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--teal) 72%, transparent);
+  outline-offset: -2px;
 }
 
 .achievement-lock {
@@ -3606,6 +3622,7 @@ td small {
   border: 1px solid color-mix(in srgb, var(--muted) 38%, transparent);
   border-radius: 6px;
   opacity: 0.42;
+  transition: opacity 160ms ease, transform 180ms ease;
 }
 
 .achievement-lock::before {
@@ -3619,6 +3636,82 @@ td small {
   border-radius: 9px 9px 0 0;
   content: "";
   transform: translateX(-50%);
+}
+
+.achievement-help-tip {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  left: 50%;
+  width: min(220px, calc(100vw - 48px));
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+  border-radius: 11px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--teal) 8%, transparent), transparent 60%),
+    color-mix(in srgb, var(--panel-strong) 96%, black);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 20px color-mix(in srgb, var(--teal) 8%, transparent);
+  color: color-mix(in srgb, var(--theme-page-copy) 90%, white);
+  font-size: clamp(0.61rem, 1vw, 0.69rem);
+  font-weight: 720;
+  line-height: 1.4;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+  transition: opacity 150ms ease, transform 180ms ease;
+}
+
+.achievement-help-tip::after {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+  background: color-mix(in srgb, var(--panel-strong) 96%, black);
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.achievement-help-tip[data-secret="true"] {
+  color: var(--accent-light);
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+}
+
+.achievement-slot-locked[data-column="0"] .achievement-help-tip,
+.achievement-slot-locked[data-column="1"] .achievement-help-tip {
+  left: 8px;
+  transform: translateY(6px);
+}
+
+.achievement-slot-locked[data-column="4"] .achievement-help-tip,
+.achievement-slot-locked[data-column="5"] .achievement-help-tip {
+  right: 8px;
+  left: auto;
+  transform: translateY(6px);
+}
+
+.achievement-slot-locked:is(:hover, :focus-visible) .achievement-lock {
+  opacity: 0.62;
+  transform: translateY(34px);
+}
+
+.achievement-slot-locked:is(:hover, :focus-visible) .achievement-help-tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.achievement-slot-locked:is(:hover, :focus-visible)[data-column="0"] .achievement-help-tip,
+.achievement-slot-locked:is(:hover, :focus-visible)[data-column="1"] .achievement-help-tip,
+.achievement-slot-locked:is(:hover, :focus-visible)[data-column="4"] .achievement-help-tip,
+.achievement-slot-locked:is(:hover, :focus-visible)[data-column="5"] .achievement-help-tip {
+  transform: translateY(0);
 }
 
 .new-high-score-message {

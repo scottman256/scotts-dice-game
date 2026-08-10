@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, expect, it, jest } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AchievementsScreen from './AchievementsScreen'
 
@@ -20,6 +20,10 @@ const COLLECTION = {
       achievedAt: '2026-07-29T12:00:00Z',
     },
   ],
+  lockedAchievements: [
+    { unlockDescription: 'Complete 10 games.' },
+    { unlockDescription: 'Complete 100 games.' },
+  ],
 }
 
 describe('AchievementsScreen', () => {
@@ -38,13 +42,69 @@ describe('AchievementsScreen', () => {
     expect(screen.getByText('2 / 36')).toBeVisible()
     expect(screen.getAllByRole('row')).toHaveLength(6)
     expect(screen.getAllByRole('cell')).toHaveLength(36)
-    expect(screen.getAllByLabelText(/Locked achievement slot/)).toHaveLength(34)
+    const lockedCells = screen.getAllByLabelText(/Locked achievement slot/)
+    expect(lockedCells).toHaveLength(34)
     expect(container.querySelectorAll('.achievement-slot-earned img')).toHaveLength(2)
     expect(container.querySelectorAll('.achievement-slot-earned')[0]).toHaveTextContent('First Finish')
     expect(container.querySelectorAll('.achievement-slot-earned')[1]).toHaveTextContent('Golden')
+    const firstHint = within(lockedCells[0]).getByRole('tooltip')
+    expect(firstHint).toHaveTextContent('Complete 10 games.')
+    expect(lockedCells[0]).toHaveAttribute('aria-describedby', firstHint.id)
+    expect(lockedCells[0]).toHaveAttribute('tabindex', '0')
+    expect(screen.queryByText('Double Digits')).not.toBeInTheDocument()
+
+    await user.hover(lockedCells[0])
+    expect(firstHint).toBeVisible()
 
     await user.click(screen.getByRole('button', { name: 'Back to game' }))
     expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders the server-controlled Grand Master hint without its title or artwork', async () => {
+    const earnedAchievements = Array.from({ length: 24 }, (_, index) => ({
+      key: `earned-${index}`,
+      title: `Earned ${index}`,
+      description: `Earned achievement ${index}.`,
+      achievedAt: `2026-07-${String(index + 1).padStart(2, '0')}T12:00:00Z`,
+    }))
+    const { unmount } = render(
+      <AchievementsScreen
+        loadAchievements={() => Promise.resolve({
+          capacity: 36,
+          achievements: earnedAchievements,
+          lockedAchievements: [{ unlockDescription: '?????' }],
+        })}
+        onBack={jest.fn()}
+      />,
+    )
+
+    expect(await screen.findByText('24 / 36')).toBeVisible()
+    let firstLockedCell = screen.getAllByLabelText(/Locked achievement slot/)[0]
+    expect(within(firstLockedCell).getByRole('tooltip')).toHaveTextContent('?????')
+    expect(screen.queryByText('Grand Master')).not.toBeInTheDocument()
+    unmount()
+
+    render(
+      <AchievementsScreen
+        loadAchievements={() => Promise.resolve({
+          capacity: 36,
+          achievements: [...earnedAchievements, {
+            key: 'earned-24',
+            title: 'Earned 24',
+            description: 'Earned achievement 24.',
+            achievedAt: '2026-07-25T12:00:00Z',
+          }],
+          lockedAchievements: [{ unlockDescription: 'Unlocked all 35 other achievements.' }],
+        })}
+        onBack={jest.fn()}
+      />,
+    )
+
+    expect(await screen.findByText('25 / 36')).toBeVisible()
+    firstLockedCell = screen.getAllByLabelText(/Locked achievement slot/)[0]
+    expect(within(firstLockedCell).getByRole('tooltip'))
+      .toHaveTextContent('Unlocked all 35 other achievements.')
+    expect(screen.queryByText('Grand Master')).not.toBeInTheDocument()
   })
 
   it('keeps unearned details hidden and reports loading failures', async () => {

@@ -5,6 +5,7 @@ record AchievementDefinition(
         String key,
         String title,
         String description,
+        String unlockDescription,
         AchievementRule rule
 ) {
 }
