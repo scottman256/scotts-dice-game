@@ -17,50 +17,78 @@ final class AchievementCatalog {
     static final int DISPLAY_CAPACITY = 36;
 
     static final List<AchievementDefinition> DEFINITIONS = List.of(
-            games(1, "first-game", "First Finish", "Completed your first game.", 1),
-            games(2, "games-10", "Double Digits", "Completed 10 games.", 10),
-            games(3, "games-100", "Century Roller", "Completed 100 games.", 100),
-            games(4, "games-500", "Endurance Legend", "Completed 500 games.", 500),
-            cumulative(5, "first-five-kind", "Five of a Kind", "Scored your first 5 of a kind.",
+            games(1, "first-game", "First Finish",
+                    "Completed your first game.", "Complete your first game.", 1),
+            games(2, "games-10", "Double Digits",
+                    "Completed 10 games.", "Complete 10 games.", 10),
+            games(3, "games-100", "Century Roller",
+                    "Completed 100 games.", "Complete 100 games.", 100),
+            games(4, "games-500", "Endurance Legend",
+                    "Completed 500 games.", "Complete 500 games.", 500),
+            cumulative(5, "first-five-kind", "Five of a Kind",
+                    "Scored your first 5 of a kind.", "Score your first 5 of a kind.",
                     progress -> progress.fiveOfAKinds() >= 1),
-            cumulative(6, "first-roll-five-kind", "Natural Five", "Scored a 5 of a kind on the first roll.",
+            cumulative(6, "first-roll-five-kind", "Natural Five",
+                    "Scored a 5 of a kind on the first roll.", "Score a 5 of a kind on the first roll.",
                     progress -> progress.firstRollFiveOfAKinds() >= 1),
-            scoreOver(7, "score-500", "500 Club", "Finished a game with more than 500 points.", 500),
-            scoreOver(8, "score-600", "600 Club", "Finished a game with more than 600 points.", 600),
-            scoreOver(9, "score-700", "700 Club", "Finished a game with more than 700 points.", 700),
-            cumulative(10, "ten-scores-500", "High-Roller Ten", "Scored 500 or more in 10 games.",
+            scoreOver(7, "score-500", "500 Club",
+                    "Finished a game with more than 500 points.", "Finish a game with more than 500 points.", 500),
+            scoreOver(8, "score-600", "600 Club",
+                    "Finished a game with more than 600 points.", "Finish a game with more than 600 points.", 600),
+            scoreOver(9, "score-700", "700 Club",
+                    "Finished a game with more than 700 points.", "Finish a game with more than 700 points.", 700),
+            cumulative(10, "ten-scores-500", "High-Roller Ten",
+                    "Scored 500 or more in 10 games.", "Score 500 or more in 10 games.",
                     progress -> progress.scoresAtLeast500() >= 10),
-            points(11, "points-5000", "5K Point Stash", "Scored 5,000 total points.", 5_000),
-            points(12, "points-10000", "10K Point Cache", "Scored 10,000 total points.", 10_000),
-            points(13, "points-25000", "25K Point Treasury", "Scored 25,000 total points.", 25_000),
-            points(14, "points-50000", "50K Point Pile", "Scored 50,000 total points.", 50_000),
-            points(15, "points-100000", "100K Point Vault", "Scored 100,000 total points.", 100_000),
-            points(16, "points-500000", "Half-Million Hero", "Scored 500,000 total points.", 500_000),
-            points(17, "points-1000000", "Million-Point Legend", "Scored 1,000,000 total points.", 1_000_000),
-            fiveKinds(18, "five-kinds-50", "Fifty Fives", "Scored 50 total 5 of a kinds.", 50),
-            fiveKinds(19, "five-kinds-100", "Century of Fives", "Scored 100 total 5 of a kinds.", 100),
-            fiveKinds(20, "five-kinds-500", "Five-Kind Master", "Scored 500 total 5 of a kinds.", 500),
-            cumulative(21, "large-straights-1000", "Straight Thousand", "Scored 1,000 large straights.",
+            points(11, "points-5000", "5K Point Stash",
+                    "Scored 5,000 total points.", "Score 5,000 total points.", 5_000),
+            points(12, "points-10000", "10K Point Cache",
+                    "Scored 10,000 total points.", "Score 10,000 total points.", 10_000),
+            points(13, "points-25000", "25K Point Treasury",
+                    "Scored 25,000 total points.", "Score 25,000 total points.", 25_000),
+            points(14, "points-50000", "50K Point Pile",
+                    "Scored 50,000 total points.", "Score 50,000 total points.", 50_000),
+            points(15, "points-100000", "100K Point Vault",
+                    "Scored 100,000 total points.", "Score 100,000 total points.", 100_000),
+            points(16, "points-500000", "Half-Million Hero",
+                    "Scored 500,000 total points.", "Score 500,000 total points.", 500_000),
+            points(17, "points-1000000", "Million-Point Legend",
+                    "Scored 1,000,000 total points.", "Score 1,000,000 total points.", 1_000_000),
+            fiveKinds(18, "five-kinds-50", "Fifty Fives",
+                    "Scored 50 total 5 of a kinds.", "Score 50 total 5 of a kinds.", 50),
+            fiveKinds(19, "five-kinds-100", "Century of Fives",
+                    "Scored 100 total 5 of a kinds.", "Score 100 total 5 of a kinds.", 100),
+            fiveKinds(20, "five-kinds-500", "Five-Kind Master",
+                    "Scored 500 total 5 of a kinds.", "Score 500 total 5 of a kinds.", 500),
+            cumulative(21, "large-straights-1000", "Straight Thousand",
+                    "Scored 1,000 large straights.", "Score 1,000 large straights.",
                     progress -> progress.largeStraights() >= 1_000),
-            definition(22, "score-under-100", "Boo!", "Finished a game with fewer than 100 points.",
+            definition(22, "score-under-100", "Boo!",
+                    "Finished a game with fewer than 100 points.", "Finish a game with fewer than 100 points.",
                     (progress, game, unlocked) -> game.getScore() < 100),
-            definition(23, "golden-game", "Golden", "Completed a game with the Golden dice.",
+            definition(23, "golden-game", "Golden",
+                    "Completed a game with the Golden dice.", "Complete a game with the Golden dice.",
                     (progress, game, unlocked) -> "golden".equals(game.getTheme())),
-            definition(24, "baseball-game", "Sporty", "Completed a game with the Baseball dice.",
+            definition(24, "baseball-game", "Sporty",
+                    "Completed a game with the Baseball dice.", "Complete a game with the Baseball dice.",
                     (progress, game, unlocked) -> "baseball".equals(game.getTheme())),
             definition(25, "triple-crown", "Triple Crown",
                     "Scored a 5 of a kind, its bonus, and a first-roll 5 of a kind in one game.",
+                    "Score a 5 of a kind, its bonus, and a first-roll 5 of a kind in one game.",
                     (progress, game, unlocked) -> scored(game, "fiveKind")
                             && scored(game, "fiveKindBonus")
                             && scored(game, "firstRollFiveKind")),
             definition(26, "world-traveler-game", "World Traveler",
                     "Completed a game with the World Traveler dice.",
+                    "Complete a game with the World Traveler dice.",
                     (progress, game, unlocked) -> "world-traveler".equals(game.getTheme())),
             cumulative(27, "holiday-wonder", "Holiday Wonder",
                     "Completed games with both the Halloween and Christmas dice.",
+                    "Complete games with both the Halloween and Christmas dice.",
                     progress -> progress.completedEveryTheme("halloween", "christmas")),
             definition(28, "deep-sea-game", "Roll Beneath the Surface",
                     "Completed a game with the Deep Sea dice.",
+                    "Complete a game with the Deep Sea dice.",
                     (progress, game, unlocked) -> "deep-sea".equals(game.getTheme())),
             completionDays(29, "roll-call", "Roll Call", 10),
             completionDays(30, "days-25", "Repeat Roller", 25),
@@ -70,8 +98,10 @@ final class AchievementCatalog {
             completionDays(34, "days-365", "Year-Round Roller", 365),
             definition(35, "new-years-day", "New Year, New Roll",
                     "Completed a game on New Year's Day.",
+                    "Complete a game on New Year's Day.",
                     (progress, game, unlocked) -> completedOn(game, Month.JANUARY, 1)),
             definition(36, "grand-master", "Grand Master",
+                    "Unlocked all 35 other achievements.",
                     "Unlocked all 35 other achievements.",
                     (progress, game, unlocked) -> unlockedEveryOtherAchievement(unlocked))
     );
@@ -87,9 +117,11 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             long threshold
     ) {
-        return cumulative(order, key, title, description, progress -> progress.gamesPlayed() >= threshold);
+        return cumulative(order, key, title, description, unlockDescription,
+                progress -> progress.gamesPlayed() >= threshold);
     }
 
     private static AchievementDefinition scoreOver(
@@ -97,6 +129,7 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             int threshold
     ) {
         return definition(
@@ -104,6 +137,7 @@ final class AchievementCatalog {
                 key,
                 title,
                 description,
+                unlockDescription,
                 (progress, game, unlocked) -> game.getScore() > threshold
         );
     }
@@ -113,9 +147,11 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             long threshold
     ) {
-        return cumulative(order, key, title, description, progress -> progress.totalPoints() >= threshold);
+        return cumulative(order, key, title, description, unlockDescription,
+                progress -> progress.totalPoints() >= threshold);
     }
 
     private static AchievementDefinition fiveKinds(
@@ -123,9 +159,11 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             long threshold
     ) {
-        return cumulative(order, key, title, description, progress -> progress.fiveOfAKinds() >= threshold);
+        return cumulative(order, key, title, description, unlockDescription,
+                progress -> progress.fiveOfAKinds() >= threshold);
     }
 
     private static AchievementDefinition completionDays(
@@ -139,6 +177,7 @@ final class AchievementCatalog {
                 key,
                 title,
                 "Completed a game on " + threshold + " different days.",
+                "Complete a game on " + threshold + " different days.",
                 progress -> progress.distinctCompletionDays() >= threshold
         );
     }
@@ -148,9 +187,10 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             ProgressRule rule
     ) {
-        return definition(order, key, title, description,
+        return definition(order, key, title, description, unlockDescription,
                 (progress, game, unlocked) -> rule.isEarned(progress));
     }
 
@@ -159,9 +199,10 @@ final class AchievementCatalog {
             String key,
             String title,
             String description,
+            String unlockDescription,
             AchievementRule rule
     ) {
-        return new AchievementDefinition(order, key, title, description, rule);
+        return new AchievementDefinition(order, key, title, description, unlockDescription, rule);
     }
 
     private static boolean scored(GameScore game, String category) {

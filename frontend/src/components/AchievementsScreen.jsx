@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { getAchievementBadge } from '../assets/achievementBadges'
 
 const DEFAULT_CAPACITY = 36
+const DEFAULT_UNLOCK_HINT = 'Keep playing to discover this achievement.'
 
 export default function AchievementsScreen({ loadAchievements, onBack }) {
   const [collection, setCollection] = useState(null)
@@ -27,10 +28,16 @@ export default function AchievementsScreen({ loadAchievements, onBack }) {
   }, [loadAchievements])
 
   const achievements = collection?.achievements || []
+  const lockedAchievements = collection?.lockedAchievements || []
   const capacity = Math.max(collection?.capacity || DEFAULT_CAPACITY, achievements.length)
   const slots = useMemo(
-    () => Array.from({ length: capacity }, (_, index) => achievements[index] || null),
-    [achievements, capacity],
+    () => Array.from({ length: capacity }, (_, index) => ({
+      achievement: achievements[index] || null,
+      lockedAchievement: index < achievements.length
+        ? null
+        : lockedAchievements[index - achievements.length] || null,
+    })),
+    [achievements, capacity, lockedAchievements],
   )
   const rows = useMemo(
     () => Array.from({ length: Math.ceil(capacity / 6) }, (_, rowIndex) => (
@@ -73,18 +80,31 @@ export default function AchievementsScreen({ loadAchievements, onBack }) {
               >
                 {rows.map((row, rowIndex) => (
                   <div className="achievement-row" role="row" key={`row-${rowIndex}`}>
-                    {row.map((achievement, columnIndex) => {
+                    {row.map(({ achievement, lockedAchievement }, columnIndex) => {
                       const slotIndex = rowIndex * 6 + columnIndex
                       const badge = achievement ? getAchievementBadge(achievement.key) : null
                       if (!achievement) {
+                        const unlockDescription = lockedAchievement?.unlockDescription || DEFAULT_UNLOCK_HINT
+                        const tooltipId = `achievement-hint-${slotIndex}`
                         return (
                           <div
                             className="achievement-slot achievement-slot-locked"
                             role="cell"
                             aria-label={`Locked achievement slot ${slotIndex + 1}`}
+                            aria-describedby={tooltipId}
+                            data-column={columnIndex}
                             key={`locked-${slotIndex}`}
+                            tabIndex={0}
                           >
                             <span className="achievement-lock" aria-hidden="true" />
+                            <span
+                              className="achievement-help-tip"
+                              data-secret={unlockDescription === '?????' ? 'true' : undefined}
+                              id={tooltipId}
+                              role="tooltip"
+                            >
+                              {unlockDescription}
+                            </span>
                           </div>
                         )
                       }
