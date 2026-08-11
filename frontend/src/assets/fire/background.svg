@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" aria-hidden="true">
+  <defs>
+    <linearGradient id="fire-scene" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#120506"/>
+      <stop offset=".5" stop-color="#2a0907"/>
+      <stop offset="1" stop-color="#090202"/>
+    </linearGradient>
+    <radialGradient id="furnace-glow" cx="50%" cy="100%" r="68%">
+      <stop stop-color="#ff9f25" stop-opacity=".82"/>
+      <stop offset=".34" stop-color="#f53c16" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#7a0905" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame-outer" x1="0" y1="1" x2=".45" y2="0">
+      <stop stop-color="#8f0b06"/>
+      <stop offset=".38" stop-color="#f43b12"/>
+      <stop offset=".72" stop-color="#ff9d24"/>
+      <stop offset="1" stop-color="#ffe88a"/>
+    </linearGradient>
+    <linearGradient id="flame-core" x1="0" y1="1" x2=".5" y2="0">
+      <stop stop-color="#ff4a13"/>
+      <stop offset=".58" stop-color="#ffbd35"/>
+      <stop offset="1" stop-color="#fff5b0"/>
+    </linearGradient>
+    <filter id="fire-glow" x="-30%" y="-40%" width="160%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="smoke-soft" x="-20%" y="-30%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <rect id="fire-scene" width="1600" height="1000" fill="url(#fire-scene)"/>
+  <ellipse cx="800" cy="1040" rx="790" ry="650" fill="url(#furnace-glow)"/>
+  <g fill="none" stroke="#80615a" stroke-linecap="round" filter="url(#smoke-soft)" opacity=".18">
+    <path d="M190 660c-95-190 132-202 20-430C151 109 285 56 255-42" stroke-width="76"/>
+    <path d="M1375 686c104-213-121-222-1-440 71-129-61-190-12-296" stroke-width="84"/>
+    <path d="M720 555c-82-137 95-176 9-306-52-78 32-153 7-232" stroke-width="58" opacity=".45"/>
+  </g>
+  <g id="flame-field" filter="url(#fire-glow)">
+    <path d="M0 1000V734c76 63 73-74 151-205-4 148 75 159 48 303 79-88 111-200 86-321 153 167 86 311 180 489Z" fill="url(#flame-outer)" opacity=".92"/>
+    <path d="M91 1000c-14-109 52-123 31-241 81 76 39 140 92 241Zm201 0c-16-93 50-125 18-229 91 104 33 157 96 229Z" fill="url(#flame-core)" opacity=".9"/>
+    <path d="M1600 1000V720c-71 57-71-69-141-188 0 136-71 149-45 279-73-78-106-179-84-294-145 157-78 296-174 483Z" fill="url(#flame-outer)" opacity=".92"/>
+    <path d="M1511 1000c14-105-49-119-29-230-78 72-39 134-88 230Zm-194 0c15-92-49-122-18-222-87 98-31 151-91 222Z" fill="url(#flame-core)" opacity=".9"/>
+    <path d="M535 1000c-30-119 78-175 36-324 100 87 92 167 76 244 58-56 78-126 58-203 112 111 72 206 122 283Z" fill="url(#flame-outer)" opacity=".62"/>
+    <path d="M994 1000c30-116-77-170-35-314-98 84-90 162-74 237-57-55-77-123-57-198-110 108-70 201-120 275Z" fill="url(#flame-outer)" opacity=".58"/>
+  </g>
+  <g fill="#ffd35b" filter="url(#fire-glow)">
+    <circle cx="118" cy="430" r="6"/><circle cx="236" cy="335" r="4"/><circle cx="388" cy="565" r="7"/>
+    <circle cx="532" cy="390" r="4"/><circle cx="675" cy="520" r="6"/><circle cx="811" cy="315" r="5"/>
+    <circle cx="954" cy="482" r="4"/><circle cx="1098" cy="355" r="7"/><circle cx="1255" cy="535" r="5"/>
+    <circle cx="1418" cy="378" r="6"/><circle cx="1505" cy="580" r="4"/>
+  </g>
+  <path d="M0 942c163-58 324 23 487 2 210-27 362-42 575 3 172 36 341-55 538-9v62H0Z" fill="#120302" opacity=".68"/>
+</svg>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="vegas-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#080319"/>
+      <stop offset=".5" stop-color="#21072f"/>
+      <stop offset="1" stop-color="#4a123b"/>
+    </linearGradient>
+    <radialGradient id="strip-glow" cx="50%" cy="100%" r="72%">
+      <stop offset="0" stop-color="#ff3fb8" stop-opacity=".55"/>
+      <stop offset=".42" stop-color="#7036c5" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#080319" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hotel-gold" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#311538"/>
+      <stop offset=".22" stop-color="#a86b39"/>
+      <stop offset=".5" stop-color="#f2c978"/>
+      <stop offset=".78" stop-color="#804632"/>
+      <stop offset="1" stop-color="#1d102a"/>
+    </linearGradient>
+    <linearGradient id="hotel-glass" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#10324c"/>
+      <stop offset=".5" stop-color="#3c1f63"/>
+      <stop offset="1" stop-color="#10142d"/>
+    </linearGradient>
+    <linearGradient id="boulevard" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#181025"/>
+      <stop offset="1" stop-color="#05040c"/>
+    </linearGradient>
+    <filter id="vegas-soft-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <pattern id="window-grid" width="28" height="23" patternUnits="userSpaceOnUse">
+      <rect x="5" y="6" width="10" height="4" rx="1" fill="#ffd878" opacity=".7"/>
+      <rect x="19" y="6" width="5" height="4" rx="1" fill="#51eff8" opacity=".45"/>
+    </pattern>
+  </defs>
+  <g id="vegas-scene">
+    <rect width="1600" height="1000" fill="url(#vegas-sky)"/>
+    <rect width="1600" height="1000" fill="url(#strip-glow)"/>
+    <g fill="#fff4c5" opacity=".75">
+      <circle cx="132" cy="112" r="2"/><circle cx="245" cy="71" r="1.5"/><circle cx="386" cy="148" r="2"/>
+      <circle cx="563" cy="89" r="1.5"/><circle cx="742" cy="136" r="2"/><circle cx="918" cy="76" r="1.5"/>
+      <circle cx="1088" cy="151" r="2"/><circle cx="1276" cy="83" r="1.5"/><circle cx="1460" cy="132" r="2"/>
+    </g>
+    <g opacity=".17" filter="url(#vegas-soft-glow)" fill="none" stroke-linecap="round">
+      <path d="M230 0 650 720" stroke="#ff48c5" stroke-width="28"/>
+      <path d="M1370 0 930 720" stroke="#4cefff" stroke-width="24"/>
+      <path d="M780 0 820 680" stroke="#ffe373" stroke-width="18"/>
+    </g>
+    <path d="M0 477 125 408 248 438 371 369 520 428 652 354 795 414 942 347 1095 415 1240 350 1390 422 1600 349V660H0Z" fill="#100b20" opacity=".82"/>
+    <g id="premium-resorts">
+      <path d="M35 626V308q0-28 28-28h303q28 0 28 28v318Z" fill="#1c1029" stroke="#ffcc72" stroke-width="5"/>
+      <path d="M72 626V334h85v292m38 0V304h95v322m38 0V360h39v266" fill="url(#hotel-gold)" opacity=".78"/>
+      <path d="M65 328h308M65 368h308" stroke="#ffdf91" stroke-width="4" opacity=".74"/>
+      <path d="M80 392h276v218H80Z" fill="url(#window-grid)" opacity=".78"/>
+      <path d="M1206 638V270h298v368Z" fill="url(#hotel-glass)" stroke="#50e6f0" stroke-width="5"/>
+      <path d="M1240 618V310h80v308m35 0V286h95v332m22 0V345h32v273" fill="url(#window-grid)" opacity=".72"/>
+      <path d="M1210 322q145-72 290 0" fill="none" stroke="#ff52b8" stroke-width="8"/>
+      <path d="M1220 356q135-58 270 0" fill="none" stroke="#ffd866" stroke-width="3" opacity=".8"/>
+      <g fill="#191129" stroke-width="3">
+        <path d="M444 638V445h70V638Z" stroke="#fa52b7"/><path d="M525 638V393h90V638Z" stroke="#4ceaf5"/>
+        <path d="M625 638V468h63V638Z" stroke="#fbd36d"/><path d="M913 638V420h74V638Z" stroke="#ff50b6"/>
+        <path d="M999 638V365h92V638Z" stroke="#53e7f1"/><path d="M1102 638V454h67V638Z" stroke="#ffd66d"/>
+      </g>
+      <g fill="url(#window-grid)" opacity=".58">
+        <path d="M449 455h60v177h-60Z"/><path d="M530 403h80v229h-80Z"/><path d="M630 478h53v154h-53Z"/>
+        <path d="M918 430h64v202h-64Z"/><path d="M1004 375h82v257h-82Z"/><path d="M1107 464h57v168h-57Z"/>
+      </g>
+    </g>
+    <g id="strip-palms" fill="#090712" stroke="#f1b95b" stroke-width="4">
+      <path d="M138 716q7-74 0-147M113 578q25-31 28 5m-2-8q32-19 39 8m-42-1q-21-31-43-7"/>
+      <path d="M1467 715q-8-84 0-161M1437 566q27-30 31 6m-3-7q32-17 39 10m-40-2q-23-31-47-7"/>
+    </g>
+    <path d="M0 645H1600V1000H0Z" fill="url(#boulevard)"/>
+    <path d="M682 644 498 1000H1102L918 644Z" fill="#0a0911"/>
+    <path d="M776 662 740 1000M824 662l36 338" stroke="#f9d45e" stroke-width="5" opacity=".75"/>
+    <g id="strip-fountains" fill="none" stroke-linecap="round">
+      <ellipse cx="800" cy="735" rx="350" ry="62" fill="#10192d" stroke="#51eaf4" stroke-width="5" opacity=".9"/>
+      <path d="M495 732q55-184 110 0m20 0q58-248 116 0m18 0q41-296 82 0m18 0q58-248 116 0m20 0q55-184 110 0" stroke="#9ff9ff" stroke-width="8" opacity=".86"/>
+      <path d="M520 744q280 65 560 0" stroke="#ff56bd" stroke-width="5" opacity=".7"/>
+      <path d="M610 762q190 48 380 0" stroke="#ffd96d" stroke-width="4" opacity=".68"/>
+    </g>
+    <g fill="none" stroke-linecap="round" filter="url(#vegas-soft-glow)" opacity=".55">
+      <path d="M90 851q275-78 535 10" stroke="#ff3cb2" stroke-width="13"/>
+      <path d="M1510 890q-270-92-520-16" stroke="#4aeaf5" stroke-width="12"/>
+      <path d="M500 945q285-47 570 0" stroke="#ffd45f" stroke-width="9"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="ballpark-sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#031419"/><stop offset=".58" stop-color="#0a3940"/><stop offset="1" stop-color="#0d573e"/></linearGradient>
+    <radialGradient id="stadium-haze" cx="50%" cy="70%" r="65%"><stop stop-color="#dff5d0" stop-opacity=".18"/><stop offset="1" stop-color="#0a2e2a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="field-grass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1c8550"/><stop offset="1" stop-color="#07543b"/></linearGradient>
+    <filter id="stadium-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <pattern id="crowd" width="24" height="18" patternUnits="userSpaceOnUse"><circle cx="5" cy="6" r="2" fill="#f2d68e"/><circle cx="15" cy="11" r="2" fill="#d84849"/><circle cx="22" cy="4" r="1.6" fill="#95d6c1"/></pattern>
+  </defs>
+  <g id="baseball-scene">
+    <rect width="1600" height="1000" fill="url(#ballpark-sky)"/>
+    <rect width="1600" height="1000" fill="url(#stadium-haze)"/>
+    <g fill="#e9f7de" opacity=".48"><circle cx="165" cy="92" r="2"/><circle cx="382" cy="145" r="1.5"/><circle cx="712" cy="76" r="2"/><circle cx="1040" cy="128" r="1.5"/><circle cx="1374" cy="83" r="2"/></g>
+    <g id="ballpark-lights">
+      <g transform="translate(70 120)"><path d="M34 550 72 90" stroke="#23463f" stroke-width="14"/><rect width="180" height="96" rx="10" fill="#122e2c" stroke="#d8ecd7" stroke-width="5"/><g fill="#fff6cd"><circle cx="28" cy="28" r="12"/><circle cx="68" cy="28" r="12"/><circle cx="108" cy="28" r="12"/><circle cx="148" cy="28" r="12"/><circle cx="28" cy="68" r="12"/><circle cx="68" cy="68" r="12"/><circle cx="108" cy="68" r="12"/><circle cx="148" cy="68" r="12"/></g></g>
+      <g transform="translate(1350 120)"><path d="M110 550 72 90" stroke="#23463f" stroke-width="14"/><rect width="180" height="96" rx="10" fill="#122e2c" stroke="#d8ecd7" stroke-width="5"/><g fill="#fff6cd"><circle cx="28" cy="28" r="12"/><circle cx="68" cy="28" r="12"/><circle cx="108" cy="28" r="12"/><circle cx="148" cy="28" r="12"/><circle cx="28" cy="68" r="12"/><circle cx="68" cy="68" r="12"/><circle cx="108" cy="68" r="12"/><circle cx="148" cy="68" r="12"/></g></g>
+      <ellipse cx="190" cy="190" rx="220" ry="130" fill="#fff8d5" opacity=".08" filter="url(#stadium-glow)"/>
+      <ellipse cx="1410" cy="190" rx="220" ry="130" fill="#fff8d5" opacity=".08" filter="url(#stadium-glow)"/>
+    </g>
+    <path d="M0 477Q800 250 1600 477V732H0Z" fill="#0c2d31" stroke="#e2d3a5" stroke-width="6"/>
+    <path d="M0 510Q800 290 1600 510V675Q800 470 0 675Z" fill="url(#crowd)" opacity=".82"/>
+    <path d="M0 650Q800 445 1600 650V1000H0Z" fill="url(#field-grass)"/>
+    <path d="M0 701Q800 500 1600 701" fill="none" stroke="#e5d4a1" stroke-width="11" opacity=".8"/>
+    <g id="baseball-diamond">
+      <path d="M800 607 1210 1000H390Z" fill="#14875a"/>
+      <path d="M800 651 1120 960 800 993 480 960Z" fill="#b58b55" opacity=".9"/>
+      <path d="m800 693 236 228-236 25-236-25Z" fill="#238e5d"/>
+      <g fill="#f6eed3" stroke="#9c7548" stroke-width="5"><path d="m800 680 24 22-24 22-24-22Z"/><path d="m1019 890 24 22-24 22-24-22Z"/><path d="m581 890 24 22-24 22-24-22Z"/><path d="m800 937 34 30-34 24-34-24Z"/></g>
+      <circle cx="800" cy="822" r="38" fill="#b88c55"/><rect x="772" y="812" width="56" height="15" rx="7" fill="#f0e5c6"/>
+      <path d="M800 696 800 970M800 696 560 918M800 696l240 222" stroke="#f1e7c9" stroke-width="5" opacity=".75"/>
+    </g>
+    <g fill="#0d2d2a" stroke="#d8b763" stroke-width="5"><path d="M254 500V282h286v218Z"/><path d="M1060 500V318h278v182Z"/></g>
+    <g fill="#f2d27e" opacity=".8"><rect x="288" y="322" width="54" height="12"/><rect x="360" y="322" width="54" height="12"/><rect x="432" y="322" width="54" height="12"/><circle cx="1110" cy="368" r="15"/><circle cx="1160" cy="368" r="15"/><circle cx="1210" cy="368" r="15"/><circle cx="1260" cy="368" r="15"/></g>
+    <path d="M86 650V280M1514 650V280" stroke="#c84a49" stroke-width="10"/><path d="M78 280h32M1490 280h32" stroke="#fff0ca" stroke-width="9"/>
+  </g>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="traveler-paper" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0c383d"/><stop offset=".5" stop-color="#1c625f"/><stop offset="1" stop-color="#0a3036"/></linearGradient>
+    <radialGradient id="map-wash" cx="50%" cy="42%" r="68%"><stop stop-color="#e7c985" stop-opacity=".24"/><stop offset="1" stop-color="#0b3136" stop-opacity="0"/></radialGradient>
+    <linearGradient id="horizon-warm" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#dfb46d" stop-opacity=".5"/><stop offset="1" stop-color="#9d5942" stop-opacity=".1"/></linearGradient>
+    <pattern id="map-grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="#e7d19d" stroke-width="2" opacity=".12"/></pattern>
+  </defs>
+  <g id="traveler-scene">
+    <rect width="1600" height="1000" fill="url(#traveler-paper)"/>
+    <rect width="1600" height="1000" fill="url(#map-wash)"/>
+    <rect width="1600" height="1000" fill="url(#map-grid)"/>
+    <circle cx="800" cy="420" r="335" fill="#174f53" stroke="#dfc07c" stroke-width="8" opacity=".9"/>
+    <g id="world-map">
+      <g fill="none" stroke="#dfc780" stroke-width="3" opacity=".38"><ellipse cx="800" cy="420" rx="335" ry="110"/><ellipse cx="800" cy="420" rx="335" ry="230"/><ellipse cx="800" cy="420" rx="118" ry="335"/><ellipse cx="800" cy="420" rx="234" ry="335"/><path d="M465 420h670"/></g>
+      <g fill="#d3ad69" opacity=".58">
+        <path d="M542 276 606 227l112 21 42 42-31 43-68 18-25 68-61-20-18-67-43-22Z"/>
+        <path d="M681 458 736 475l30 56-21 79-55 102-36-43 14-83-32-69Z"/>
+        <path d="M826 244 915 225l101 38 68 11 17 48-72 24-32 58-88-8-40 48-58-27 25-65-41-41Z"/>
+        <path d="M850 452 934 442l54 45-14 105-58 99-52-55 10-85-44-53Z"/>
+        <path d="M1020 625 1080 606l42 31-24 49-65 4Z"/>
+      </g>
+    </g>
+    <g id="flight-route" fill="none" stroke-linecap="round">
+      <path d="M140 274Q650 42 1138 220T1512 380" stroke="#f1d18a" stroke-width="5" stroke-dasharray="18 20" opacity=".8"/>
+      <path d="m1122 204 64 20-56 39 15-30Z" fill="#f8e0a7" stroke="#8e5b3b" stroke-width="3"/>
+      <circle cx="144" cy="274" r="12" fill="#dc7259" stroke="#f6d896" stroke-width="4"/><circle cx="1510" cy="380" r="12" fill="#dc7259" stroke="#f6d896" stroke-width="4"/>
+    </g>
+    <path d="M0 705q180-75 366-9t361-2q183-75 361 2t512-2v306H0Z" fill="url(#horizon-warm)"/>
+    <g fill="#f2d594"><circle cx="214" cy="170" r="3"/><circle cx="391" cy="105" r="2"/><circle cx="1252" cy="109" r="3"/><circle cx="1430" cy="232" r="2"/></g>
+  </g>
+</svg>

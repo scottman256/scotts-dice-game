@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="rainbow-sky" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#221341"/><stop offset=".48" stop-color="#234e85"/><stop offset="1" stop-color="#163c67"/>
+    </linearGradient>
+    <linearGradient id="rainbow-haze" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffb8dc" stop-opacity=".2"/><stop offset="1" stop-color="#6cebd2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="cloud-light" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fff9fb" stop-opacity=".9"/><stop offset="1" stop-color="#b8c8ef" stop-opacity=".52"/>
+    </linearGradient>
+    <filter id="rainbow-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
+  </defs>
+  <g id="rainbow-scene">
+    <rect width="1600" height="1000" fill="url(#rainbow-sky)"/>
+    <ellipse cx="1230" cy="145" rx="320" ry="245" fill="#ff9ccc" opacity=".13" filter="url(#rainbow-glow)"/>
+    <rect width="1600" height="740" fill="url(#rainbow-haze)"/>
+    <g fill="#fff7d1" opacity=".72">
+      <circle cx="147" cy="118" r="2"/><circle cx="290" cy="78" r="1.5"/><circle cx="448" cy="151" r="2"/>
+      <circle cx="1094" cy="82" r="2"/><circle cx="1371" cy="172" r="1.5"/><circle cx="1502" cy="91" r="2"/>
+    </g>
+    <g id="six-color-rainbow" fill="none" stroke-linecap="round" stroke-width="38" opacity=".92">
+      <path data-rainbow-band="red" d="M40 820A760 760 0 0 1 1560 820" stroke="#e51b2a"/>
+      <path data-rainbow-band="orange" d="M78 820A722 722 0 0 1 1522 820" stroke="#ff7d27"/>
+      <path data-rainbow-band="yellow" d="M116 820A684 684 0 0 1 1484 820" stroke="#ffdc3c"/>
+      <path data-rainbow-band="green" d="M154 820A646 646 0 0 1 1446 820" stroke="#35b957"/>
+      <path data-rainbow-band="blue" d="M192 820A608 608 0 0 1 1408 820" stroke="#188ecb"/>
+      <path data-rainbow-band="violet" d="M230 820A570 570 0 0 1 1370 820" stroke="#7555a5"/>
+    </g>
+    <path d="M0 770q220-105 426 0t403 9q218-116 409-2t362-15v238H0Z" fill="#172844" opacity=".68"/>
+    <path d="M0 842q213-90 420 0t420 0q220-95 418 0t342-5v163H0Z" fill="#182c39" opacity=".82"/>
+    <g id="prism-clouds" fill="url(#cloud-light)">
+      <path d="M-40 720q12-96 112-96 44-91 140-41 72-38 124 27 103-4 108 110Z"/>
+      <path d="M1180 748q13-101 105-92 46-103 146-43 71-31 120 35 78 0 91 100Z"/>
+      <path d="M510 918q18-96 108-83 46-95 137-37 60-36 112 26 96-7 111 94Z" opacity=".7"/>
+    </g>
+    <g fill="#ffeaa1" opacity=".7">
+      <circle cx="220" cy="892" r="4"/><circle cx="356" cy="831" r="3"/><circle cx="1225" cy="858" r="4"/><circle cx="1394" cy="804" r="3"/>
+    </g>
+  </g>
+</svg>

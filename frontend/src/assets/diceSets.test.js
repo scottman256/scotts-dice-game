@@ -78,18 +78,43 @@ describe('themed dice assets', () => {
     })
   })
 
-  it('provides full-scene vector backgrounds for the immersive new themes', () => {
+  it('provides and wires full-scene vector backgrounds for every immersive theme', () => {
     const backgrounds = {
+      rainbow: ['id="rainbow-scene"', 'id="six-color-rainbow"', 'id="prism-clouds"'],
+      fire: ['id="fire-scene"', 'id="flame-field"'],
+      beach: ['id="beach-scene"', 'id="sun-haze"'],
+      sky: ['id="sky-scene"', 'id="sun-rays"', 'id="cloud-sea"'],
+      christmas: ['id="christmas-scene"', 'id="festive-lights"'],
+      halloween: ['id="halloween-scene"', 'id="bat-swarm"', 'id="eerie-moon"'],
+      golden: ['id="golden-scene"', 'id="art-deco-fan"', 'id="golden-columns"'],
+      'retro-arcade': ['id="arcade-scene"', 'id="neon-grid"', 'id="arcade-cabinets"'],
+      vegas: ['id="vegas-scene"', 'id="premium-resorts"', 'id="strip-fountains"'],
+      american: ['id="american-scene"', 'id="freedom-fireworks"'],
+      'cosmic-galaxy': ['id="cosmic-scene"', 'id="nebula-cloud"', 'id="ringed-planet"', 'id="red-giant"', 'id="accurate-comet"'],
+      'world-traveler': ['id="traveler-scene"', 'id="world-map"', 'id="flight-route"'],
+      baseball: ['id="baseball-scene"', 'id="ballpark-lights"', 'id="baseball-diamond"'],
+      'candy-kingdom': ['id="candy-scene"', 'id="candy-pieces"'],
+      'frozen-crystal': ['id="frozen-scene"', 'id="aurora-sky"', 'id="crystal-cavern"'],
       'deep-sea': ['id="deep-sea-scene"', 'id="jelly-glow"'],
       'jungle-adventure': ['id="jungle-scene"', 'id="canopy-light"'],
     }
+    const stylesheet = readFileSync(join(process.cwd(), 'src', 'index.css'), 'utf8')
 
     Object.entries(backgrounds).forEach(([themeId, signatures]) => {
       const path = join(process.cwd(), 'src', 'assets', themeId, 'background.svg')
       expect(existsSync(path)).toBe(true)
       const svg = readFileSync(path, 'utf8')
       signatures.forEach((signature) => expect(svg).toContain(signature))
+      expect(stylesheet).toContain(`url("./assets/${themeId}/background.svg")`)
     })
+
+    const rainbowSvg = readFileSync(join(process.cwd(), 'src', 'assets', 'rainbow', 'background.svg'), 'utf8')
+    expect([...rainbowSvg.matchAll(/data-rainbow-band="([^"]+)"/g)].map((match) => match[1])).toEqual([
+      'red', 'orange', 'yellow', 'green', 'blue', 'violet',
+    ])
+
+    const travelerSvg = readFileSync(join(process.cwd(), 'src', 'assets', 'world-traveler', 'background.svg'), 'utf8')
+    expect(travelerSvg).not.toContain('id="landmark-silhouettes"')
   })
 
   it('does not leave the legacy dice files loose in the assets root', () => {

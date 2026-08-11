@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" aria-hidden="true">
+  <defs>
+    <linearGradient id="halloween-scene" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#21102f"/>
+      <stop offset=".54" stop-color="#130b23"/>
+      <stop offset="1" stop-color="#07070e"/>
+    </linearGradient>
+    <radialGradient id="moon-light">
+      <stop stop-color="#fff3c1"/>
+      <stop offset=".62" stop-color="#e6c97d"/>
+      <stop offset="1" stop-color="#b88a45"/>
+    </radialGradient>
+    <radialGradient id="moon-aura">
+      <stop stop-color="#ffe8a0" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#d38cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="grave-fog" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b58acb" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#51315e" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="moon-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect id="halloween-scene" width="1600" height="1000" fill="url(#halloween-scene)"/>
+  <g id="eerie-moon">
+    <circle cx="1230" cy="190" r="245" fill="url(#moon-aura)" filter="url(#moon-glow)"/>
+    <circle cx="1230" cy="190" r="132" fill="url(#moon-light)" opacity=".9"/>
+    <g fill="#8c713f" opacity=".18">
+      <ellipse cx="1184" cy="146" rx="29" ry="18"/><ellipse cx="1277" cy="228" rx="38" ry="23"/>
+      <circle cx="1280" cy="128" r="16"/><circle cx="1170" cy="236" r="20"/>
+    </g>
+  </g>
+  <g fill="#0a0710" opacity=".95">
+    <path d="M0 855V312c74 99 98 176 91 275 58-71 108-92 167-112-52 69-81 130-94 219 66-53 124-60 184-53-75 44-124 103-157 214Z"/>
+    <path d="M1600 855V340c-75 94-103 168-101 264-55-65-104-88-164-108 51 67 77 126 88 210-64-49-119-56-178-49 72 42 118 98 151 198Z"/>
+  </g>
+  <g id="bat-swarm" fill="#090610">
+    <path d="M1010 140c34-32 72-25 96 5 24-30 62-37 96-5-18 1-32 11-43 28-22-14-37-15-53 5-16-20-31-19-53-5-11-17-25-27-43-28Z"/>
+    <path d="M890 260c23-22 49-17 66 4 16-21 43-26 66-4-13 1-23 8-30 20-16-10-26-11-36 3-11-14-21-13-37-3-7-12-17-19-29-20Z"/>
+    <path d="M1360 345c27-25 57-20 76 5 19-25 49-30 76-5-14 1-26 9-34 23-18-12-30-13-42 3-12-16-24-15-42-3-8-14-19-22-34-23Z"/>
+    <path d="M660 150c19-18 40-14 54 3 13-17 35-21 54-3-10 1-18 7-24 16-13-8-21-8-30 3-8-11-17-11-30-3-6-9-14-15-24-16Z" opacity=".75"/>
+    <path d="M420 330c22-20 46-16 61 4 15-20 39-24 61-4-12 1-21 7-28 18-14-9-23-10-33 2-9-12-19-11-33-2-7-11-16-17-28-18Z" opacity=".7"/>
+  </g>
+  <g fill="#0b0910" opacity=".92">
+    <path d="M560 850V615h55v-70h68v70h56v235Z"/><path d="m600 548 47-83 48 83Z"/>
+    <rect x="620" y="665" width="28" height="55" fill="#ff9a32" opacity=".42"/>
+    <rect x="678" y="650" width="25" height="48" fill="#ff9a32" opacity=".36"/>
+  </g>
+  <path d="M0 775c205-53 355 38 545 14 203-26 365-39 575 4 176 36 311-48 480-18v225H0Z" fill="#09080d"/>
+  <g fill="#1d1723" stroke="#6c526e" stroke-width="5" opacity=".9">
+    <path d="M260 845v-118c0-54 94-54 94 0v118Z"/><path d="M430 880V746c0-47 83-47 83 0v134Z"/>
+    <path d="M1110 865V742c0-52 90-52 90 0v123Z"/><path d="M1320 850V706c0-45 82-45 82 0v144Z"/>
+  </g>
+  <path d="M0 730c214-62 387 5 578-18 225-27 409 2 612-19 162-17 281 26 410 7v190c-194 33-337-31-511 1-229 41-420-18-619 7-172 21-309-20-470 8Z" fill="url(#grave-fog)" opacity=".7"/>
+</svg>
