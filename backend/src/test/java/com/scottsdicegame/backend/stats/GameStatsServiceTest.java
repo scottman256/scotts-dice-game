@@ -1,5 +1,6 @@
 package com.scottsdicegame.backend.stats;
 
+import com.scottsdicegame.backend.achievement.UserAchievementRepository;
 import com.scottsdicegame.backend.auth.AuthenticationService;
 import com.scottsdicegame.backend.score.GameScore;
 import com.scottsdicegame.backend.score.GameScoreRepository;
@@ -8,7 +9,9 @@ import com.scottsdicegame.backend.stats.dto.GameStatsResponse;
 import com.scottsdicegame.backend.user.UserAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,7 @@ class GameStatsServiceTest {
 
     private GameScoreRepository scoreRepository;
     private AuthenticationService authenticationService;
+    private UserAchievementRepository achievementRepository;
     private GameStatsService gameStatsService;
     private UUID userId;
 
@@ -30,7 +34,12 @@ class GameStatsServiceTest {
     void setUp() {
         scoreRepository = mock(GameScoreRepository.class);
         authenticationService = mock(AuthenticationService.class);
-        gameStatsService = new GameStatsService(scoreRepository, authenticationService);
+        achievementRepository = mock(UserAchievementRepository.class);
+        gameStatsService = new GameStatsService(
+                scoreRepository,
+                authenticationService,
+                achievementRepository
+        );
         userId = UUID.randomUUID();
     }
 
@@ -89,6 +98,51 @@ class GameStatsServiceTest {
         assertThat(response.secondTopBonuses()).isEqualTo(1);
         assertThat(response.fiveOfAKindBonuses()).isEqualTo(1);
         assertThat(response.totalPoints()).isEqualTo(935);
+    }
+
+    @Test
+    void calculatesActivityFavoriteThemeScratchesMilestonesAndAchievementCount() {
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
+        Map<String, Integer> scores = scorecard(Map.of("ones", 5));
+        when(achievementRepository.countByUserId(userId)).thenReturn(7L);
+        when(scoreRepository.findStatTrackedByUserId(userId)).thenReturn(List.of(
+                game(user, 499, scores, "classic", "2026-08-01T12:00:00Z"),
+                game(user, 500, scores, "golden", "2026-08-02T12:00:00Z"),
+                game(user, 600, scores, "classic", "2026-08-02T18:00:00Z"),
+                game(user, 601, scores, "golden", "2026-08-04T12:00:00Z")
+        ));
+
+        GameStatsResponse response = gameStatsService.getForUser(userId);
+
+        assertThat(response.activeDays()).isEqualTo(3);
+        assertThat(response.longestPlayStreak()).isEqualTo(2);
+        assertThat(response.favoriteTheme()).isEqualTo("golden");
+        assertThat(response.averageScratchesPerGame()).isEqualTo(18.0);
+        assertThat(response.achievementsUnlocked()).isEqualTo(7);
+        assertThat(response.gamesAtLeast500()).isEqualTo(3);
+        assertThat(response.gamesAtLeast600()).isEqualTo(2);
+    }
+
+    @Test
+    void keepsUnlockedAchievementCountWhenThereAreNoTrackedGames() {
+        when(achievementRepository.countByUserId(userId)).thenReturn(3L);
+        when(scoreRepository.findStatTrackedByUserId(userId)).thenReturn(List.of());
+
+        GameStatsResponse response = gameStatsService.getForUser(userId);
+
+        assertThat(response).isEqualTo(GameStatsResponse.empty(3));
+    }
+
+    private static GameScore game(
+            UserAccount user,
+            int total,
+            Map<String, Integer> scores,
+            String theme,
+            String completedAt
+    ) {
+        GameScore game = new GameScore(UUID.randomUUID(), user, total, false, scores, theme);
+        ReflectionTestUtils.setField(game, "completedAt", Instant.parse(completedAt));
+        return game;
     }
 
     private static Map<String, Integer> scorecard(Map<String, Integer> scoredCategories) {
