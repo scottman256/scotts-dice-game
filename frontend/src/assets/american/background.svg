@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" aria-hidden="true">
+  <defs>
+    <linearGradient id="american-scene" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071932"/>
+      <stop offset=".58" stop-color="#0c315f"/>
+      <stop offset="1" stop-color="#061226"/>
+    </linearGradient>
+    <linearGradient id="flag-red" x1="0" y1="0" x2="1" y2=".4">
+      <stop stop-color="#8f1f30"/>
+      <stop offset=".5" stop-color="#ef5260"/>
+      <stop offset="1" stop-color="#8c1d2d"/>
+    </linearGradient>
+    <linearGradient id="flag-white" x1="0" y1="0" x2="1" y2=".3">
+      <stop stop-color="#d9e3eb"/>
+      <stop offset=".5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#b7c5d2"/>
+    </linearGradient>
+    <filter id="firework-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect id="american-scene" width="1600" height="1000" fill="url(#american-scene)"/>
+  <g fill="#e8f2ff" opacity=".55">
+    <circle cx="115" cy="110" r="3"/><circle cx="250" cy="190" r="4"/><circle cx="410" cy="88" r="3"/>
+    <circle cx="640" cy="148" r="4"/><circle cx="820" cy="82" r="3"/><circle cx="1050" cy="164" r="4"/>
+    <circle cx="1290" cy="92" r="3"/><circle cx="1480" cy="188" r="4"/>
+  </g>
+  <g id="flag-ribbon" opacity=".54">
+    <path d="M-80 210c325-152 517 104 815-13 312-122 557 69 945-94v73c-361 151-621-23-932 96-320 122-519-122-828 20Z" fill="url(#flag-red)"/>
+    <path d="M-80 284c309-142 508 102 828-20 311-119 571 55 932-96v73c-350 145-621-8-933 107-326 120-526-117-827 18Z" fill="url(#flag-white)"/>
+    <path d="M-80 358c301-135 501 102 827-18 312-115 583 38 933-107v72c-336 136-617 9-928 118-332 116-533-107-832 16Z" fill="url(#flag-red)"/>
+  </g>
+  <g id="freedom-fireworks" fill="none" stroke-linecap="round" filter="url(#firework-glow)">
+    <g stroke="#ef5360" stroke-width="7" opacity=".75" transform="translate(350 360)">
+      <path d="M0-26v-105M18-18l75-75M26 0h105M18 18l75 75M0 26v105M-18 18l-75 75M-26 0h-105M-18-18l-75-75"/>
+    </g>
+    <g stroke="#dceeff" stroke-width="6" opacity=".7" transform="translate(1280 380) scale(.8)">
+      <path d="M0-26v-105M18-18l75-75M26 0h105M18 18l75 75M0 26v105M-18 18l-75 75M-26 0h-105M-18-18l-75-75"/>
+    </g>
+    <g stroke="#68a9ee" stroke-width="6" opacity=".65" transform="translate(910 260) scale(.65)">
+      <path d="M0-26v-105M18-18l75-75M26 0h105M18 18l75 75M0 26v105M-18 18l-75 75M-26 0h-105M-18-18l-75-75"/>
+    </g>
+  </g>
+  <g id="liberty-silhouette" fill="#051323" opacity=".94" transform="translate(105 430)">
+    <path d="M100 490h245l-25-52h-62l-18-207-34-66-7-74-21-38-19 38-6 75-35 65-18 207H64l-24 52Z"/>
+    <path d="m177 52 9-62 18 58 42-47-15 62 62-19-51 44 65 12-65 14-24-36-41 1-22 35-64-14 62-13-50-45 61 21-14-62Z"/>
+    <path d="m153 188-96-118 26-18 105 93Z"/>
+    <path d="M45 52c-9-26 11-48 33-48s40 22 31 48Z" fill="#f3c85e" opacity=".75"/>
+  </g>
+  <g fill="#071829" opacity=".96">
+    <path d="M0 890V760h120v130h70V704h122v186h90V790h144v100h86V740h176v150h110V778h130v112h84V716h160v174h120V752h208v248H0Z"/>
+    <path d="M730 890V650h34v-118h34v118h34v240Z"/>
+  </g>
+  <g fill="#ffeaa5" opacity=".35">
+    <rect x="33" y="790" width="15" height="10"/><rect x="85" y="820" width="15" height="10"/><rect x="222" y="745" width="15" height="10"/>
+    <rect x="450" y="827" width="15" height="10"/><rect x="967" y="812" width="15" height="10"/><rect x="1250" y="750" width="15" height="10"/>
+    <rect x="1455" y="794" width="15" height="10"/>
+  </g>
+</svg>

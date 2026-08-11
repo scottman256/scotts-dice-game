@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="frozen-sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#06162f"/><stop offset=".52" stop-color="#155b8c"/><stop offset="1" stop-color="#62bad5"/></linearGradient>
+    <linearGradient id="aurora" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7bf6e6" stop-opacity="0"/><stop offset=".25" stop-color="#80f5e0" stop-opacity=".72"/><stop offset=".53" stop-color="#a67dff" stop-opacity=".65"/><stop offset=".8" stop-color="#62d9ff" stop-opacity=".7"/><stop offset="1" stop-color="#62d9ff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ice-face" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9fdff" stop-opacity=".94"/><stop offset=".38" stop-color="#78d6ee" stop-opacity=".7"/><stop offset="1" stop-color="#526bd1" stop-opacity=".56"/></linearGradient>
+    <linearGradient id="frozen-lake" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9de5ef"/><stop offset="1" stop-color="#173f72"/></linearGradient>
+    <filter id="ice-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <g id="frozen-scene">
+    <rect width="1600" height="1000" fill="url(#frozen-sky)"/>
+    <g id="aurora-sky">
+      <path d="M-120 180Q260 15 575 160t604-18q260-130 541 0" fill="none" stroke="url(#aurora)" stroke-width="95" opacity=".62" filter="url(#ice-glow)"/>
+      <path d="M-80 192Q270 38 580 176t600-15q245-118 500-7" fill="none" stroke="url(#aurora)" stroke-width="31" opacity=".76"/>
+    </g>
+    <g fill="#e8fbff" opacity=".8">
+      <circle cx="126" cy="138" r="3"/><circle cx="298" cy="274" r="2"/><circle cx="478" cy="88" r="3"/><circle cx="697" cy="245" r="2"/>
+      <circle cx="930" cy="94" r="3"/><circle cx="1118" cy="263" r="2"/><circle cx="1340" cy="116" r="3"/><circle cx="1500" cy="250" r="2"/>
+    </g>
+    <path d="M0 665 196 342l147 204 175-279 172 276 130-183 141 191 181-271 157 256 121-168 180 299v333H0Z" fill="#0a3a68" opacity=".75"/>
+    <path d="M0 685 196 342l22 221 125-17 74 87 101-366 35 276 137 0 28 106 102-289 42 209 99-18 64 92 117-363 28 269 149-13 40 105 81-273 48 236 132 59v313H0Z" fill="url(#ice-face)" opacity=".86"/>
+    <path d="M0 760q410-90 800 0t800 0v240H0Z" fill="url(#frozen-lake)" opacity=".9"/>
+    <g fill="none" stroke="#d8faff" opacity=".55"><path d="M64 858 445 802l240 64 301-72 536 70" stroke-width="8"/><path d="M210 956 590 875l287 43 313-64 260 69" stroke-width="5"/><path d="M620 1000 800 760l165 240" stroke-width="4"/></g>
+    <g id="crystal-cavern">
+      <g fill="url(#ice-face)" stroke="#dcfbff" stroke-width="6">
+        <path d="M0 1000V510l105-193 62 238 95-164 45 265 91-91 28 435Z"/>
+        <path d="M1600 1000V492l-94-189-72 250-96-179-42 284-100-105-32 447Z"/>
+        <path d="M352 1000 415 770l61 116 68-182 74 296Z"/><path d="M990 1000 1060 716l68 175 70-119 48 228Z"/>
+      </g>
+      <g fill="#effeff" opacity=".4"><path d="M64 766 105 405l30 311Z"/><path d="M1495 717l11-323 39 358Z"/><path d="M432 929l44-159 17 159Z"/><path d="M1058 913l70-159 18 185Z"/></g>
+    </g>
+    <g id="snow-crystals" fill="none" stroke="#f1feff" stroke-width="4" opacity=".72">
+      <path d="M285 170v90m-39-68 78 46m-78 0 78-46M1305 190v106m-46-80 92 54m-92 0 92-54"/>
+      <path d="M792 93v72m-31-55 62 36m-62 0 62-36"/>
+    </g>
+  </g>
+</svg>

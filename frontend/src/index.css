@@ -107,11 +107,8 @@ a:focus-visible {
   --teal: #70f0d4;
   --muted: #c0b9df;
   --game-background:
-    radial-gradient(circle at 8% 16%, rgba(255, 78, 139, 0.46), transparent 23rem),
-    radial-gradient(circle at 36% 2%, rgba(255, 193, 66, 0.32), transparent 22rem),
-    radial-gradient(circle at 68% 14%, rgba(55, 221, 164, 0.34), transparent 24rem),
-    radial-gradient(circle at 94% 36%, rgba(74, 156, 255, 0.42), transparent 26rem),
-    radial-gradient(circle at 54% 94%, rgba(164, 91, 255, 0.34), transparent 28rem),
+    linear-gradient(rgba(18, 11, 40, 0.03), rgba(11, 17, 40, 0.24)),
+    url("./assets/rainbow/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #19122e, #221746 46%, #101d3c);
   --nav-background: rgba(37, 25, 72, 0.92);
   --theme-focus: rgba(255, 217, 94, 0.88);
@@ -143,9 +140,8 @@ a:focus-visible {
   --teal: #ffb347;
   --muted: #d6a58d;
   --game-background:
-    radial-gradient(ellipse at 18% 105%, rgba(255, 54, 19, 0.58), transparent 37rem),
-    radial-gradient(ellipse at 78% 112%, rgba(255, 151, 36, 0.5), transparent 34rem),
-    radial-gradient(circle at 50% 78%, rgba(151, 19, 8, 0.3), transparent 28rem),
+    linear-gradient(rgba(15, 3, 2, 0.08), rgba(10, 1, 1, 0.24)),
+    url("./assets/fire/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #120706, #260b07 46%, #090303);
   --nav-background: rgba(43, 14, 9, 0.94);
   --theme-heading: #fff1dc;
@@ -178,8 +174,8 @@ a:focus-visible {
   --teal: #70f1d2;
   --muted: #b9deda;
   --game-background:
-    linear-gradient(180deg, rgba(2, 33, 50, 0.4), rgba(3, 47, 60, 0.48)),
-    radial-gradient(circle at 82% 9%, rgba(255, 221, 115, 0.66), transparent 12rem),
+    linear-gradient(rgba(3, 45, 59, 0.06), rgba(4, 42, 50, 0.3)),
+    url("./assets/beach/background.svg") var(--theme-scene-position, center) / cover no-repeat fixed,
     linear-gradient(180deg, #49bade 0%, #1c9fba 38%, #087986 67%, #8b6845 100%);
   --nav-background: rgba(7, 78, 86, 0.92);
   --theme-heading: #f5ffff;
@@ -213,10 +209,8 @@ a:focus-visible {
   --teal: #9ceaff;
   --muted: #c4dded;
   --game-background:
-    linear-gradient(180deg, rgba(5, 37, 72, 0.3), rgba(12, 62, 98, 0.2)),
-    radial-gradient(ellipse at 12% 17%, rgba(255, 255, 255, 0.27), transparent 12rem),
-    radial-gradient(ellipse at 82% 28%, rgba(255, 255, 255, 0.24), transparent 15rem),
-    radial-gradient(ellipse at 48% 84%, rgba(197, 237, 255, 0.16), transparent 22rem),
+    linear-gradient(rgba(5, 37, 72, 0.06), rgba(12, 62, 98, 0.2)),
+    url("./assets/sky/background.svg") var(--theme-scene-position, center) / cover no-repeat fixed,
     linear-gradient(165deg, #0d477b 0%, #1877b7 48%, #55afd8 100%);
   --nav-background: rgba(19, 79, 126, 0.9);
   --theme-heading: #f5fbff;
@@ -250,9 +244,8 @@ a:focus-visible {
   --teal: #63d99d;
   --muted: #b8d9ca;
   --game-background:
-    radial-gradient(circle at 15% 7%, rgba(211, 35, 51, 0.48), transparent 24rem),
-    radial-gradient(circle at 87% 20%, rgba(246, 211, 112, 0.2), transparent 24rem),
-    radial-gradient(circle at 52% 96%, rgba(39, 147, 91, 0.3), transparent 28rem),
+    linear-gradient(rgba(3, 24, 18, 0.08), rgba(3, 18, 14, 0.25)),
+    url("./assets/christmas/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #06271e, #073e2d 48%, #071c18);
   --nav-background: rgba(8, 62, 44, 0.93);
   --theme-heading: #fff8e9;
@@ -286,9 +279,8 @@ a:focus-visible {
   --teal: #a7dc55;
   --muted: #c9b3d2;
   --game-background:
-    radial-gradient(circle at 13% 13%, rgba(151, 58, 191, 0.38), transparent 25rem),
-    radial-gradient(circle at 88% 18%, rgba(255, 119, 28, 0.3), transparent 24rem),
-    radial-gradient(ellipse at 50% 106%, rgba(75, 129, 35, 0.24), transparent 32rem),
+    linear-gradient(rgba(15, 7, 25, 0.04), rgba(5, 4, 9, 0.25)),
+    url("./assets/halloween/background.svg") var(--theme-scene-position, center) / cover no-repeat fixed,
     linear-gradient(155deg, #130a1b, #25102f 50%, #09070d);
   --nav-background: rgba(40, 16, 53, 0.94);
   --theme-heading: #fff2dc;
@@ -322,9 +314,8 @@ a:focus-visible {
   --teal: #e6b93f;
   --muted: #d8c99d;
   --game-background:
-    radial-gradient(circle at 18% 8%, rgba(255, 215, 91, 0.3), transparent 26rem),
-    radial-gradient(circle at 84% 22%, rgba(166, 103, 10, 0.28), transparent 28rem),
-    radial-gradient(ellipse at 50% 104%, rgba(245, 192, 52, 0.17), transparent 32rem),
+    linear-gradient(rgba(19, 12, 2, 0.02), rgba(8, 5, 1, 0.22)),
+    url("./assets/golden/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #171005, #2e2108 48%, #0d0903);
   --nav-background: rgba(48, 33, 7, 0.94);
   --theme-heading: #fff7d6;
@@ -358,10 +349,8 @@ a:focus-visible {
   --teal: #ff55c8;
   --muted: #aeb5dd;
   --game-background:
-    repeating-linear-gradient(0deg, rgba(57, 230, 255, 0.035) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(90deg, rgba(255, 64, 194, 0.025) 0 1px, transparent 1px 8px),
-    radial-gradient(circle at 12% 12%, rgba(255, 42, 185, 0.38), transparent 23rem),
-    radial-gradient(circle at 88% 20%, rgba(32, 222, 255, 0.36), transparent 25rem),
+    linear-gradient(rgba(3, 5, 20, 0.02), rgba(4, 4, 19, 0.2)),
+    url("./assets/retro-arcade/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #030617, #0b1036 50%, #05051a);
   --nav-background: rgba(8, 12, 39, 0.94);
   --theme-heading: #f3f7ff;
@@ -395,10 +384,8 @@ a:focus-visible {
   --teal: #39edf8;
   --muted: #d4b9dc;
   --game-background:
-    radial-gradient(ellipse at 8% 18%, rgba(255, 28, 163, 0.5), transparent 24rem),
-    radial-gradient(ellipse at 92% 16%, rgba(0, 220, 255, 0.42), transparent 25rem),
-    radial-gradient(ellipse at 48% 100%, rgba(255, 190, 48, 0.3), transparent 30rem),
-    repeating-linear-gradient(115deg, transparent 0 34px, rgba(255, 229, 124, 0.025) 35px 36px),
+    linear-gradient(rgba(8, 1, 14, 0.05), rgba(5, 1, 9, 0.28)),
+    url("./assets/vegas/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #100318, #260631 50%, #09020e);
   --nav-background: rgba(43, 8, 54, 0.94);
   --theme-heading: #fff8df;
@@ -432,9 +419,8 @@ a:focus-visible {
   --teal: #e94b58;
   --muted: #bdcee2;
   --game-background:
-    radial-gradient(circle at 12% 10%, rgba(228, 45, 58, 0.38), transparent 24rem),
-    radial-gradient(circle at 88% 18%, rgba(67, 139, 219, 0.4), transparent 26rem),
-    repeating-linear-gradient(165deg, transparent 0 42px, rgba(255, 255, 255, 0.025) 42px 46px),
+    linear-gradient(rgba(3, 15, 35, 0.05), rgba(3, 11, 25, 0.24)),
+    url("./assets/american/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #06162f, #0b2d5b 50%, #051126);
   --nav-background: rgba(8, 34, 70, 0.94);
   --theme-heading: #f8fbff;
@@ -468,11 +454,8 @@ a:focus-visible {
   --teal: #c16dff;
   --muted: #bdb9da;
   --game-background:
-    radial-gradient(ellipse at 12% 10%, rgba(150, 64, 235, 0.45), transparent 24rem),
-    radial-gradient(ellipse at 88% 18%, rgba(31, 213, 245, 0.38), transparent 26rem),
-    radial-gradient(ellipse at 50% 100%, rgba(241, 77, 194, 0.25), transparent 31rem),
-    radial-gradient(circle at 22% 42%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px),
-    radial-gradient(circle at 73% 31%, rgba(255, 255, 255, 0.2) 0 1px, transparent 2px),
+    linear-gradient(rgba(3, 3, 15, 0.02), rgba(3, 5, 17, 0.2)),
+    url("./assets/cosmic-galaxy/background.svg") var(--theme-scene-position, center) / cover no-repeat fixed,
     linear-gradient(155deg, #030512, #10082d 48%, #05091d);
   --nav-background: rgba(16, 9, 48, 0.94);
   --theme-heading: #f5f3ff;
@@ -544,10 +527,8 @@ a:focus-visible {
   --teal: #78cbbd;
   --muted: #c7d4c8;
   --game-background:
-    radial-gradient(circle at 16% 18%, rgba(218, 159, 91, 0.3), transparent 25rem),
-    radial-gradient(circle at 86% 16%, rgba(78, 163, 152, 0.34), transparent 26rem),
-    repeating-linear-gradient(0deg, transparent 0 42px, rgba(231, 213, 166, 0.035) 42px 43px),
-    repeating-linear-gradient(90deg, transparent 0 42px, rgba(231, 213, 166, 0.03) 42px 43px),
+    linear-gradient(rgba(7, 31, 34, 0.02), rgba(5, 27, 31, 0.2)),
+    url("./assets/world-traveler/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #0b2d31, #174f50 48%, #08252b);
   --nav-background: rgba(16, 68, 68, 0.93);
   --theme-heading: #fff7e3;
@@ -618,11 +599,8 @@ a:focus-visible {
   --teal: #d34a49;
   --muted: #bfd2c7;
   --game-background:
-    radial-gradient(circle at 10% 5%, rgba(255, 248, 215, 0.62) 0 .14rem, transparent .23rem),
-    radial-gradient(circle at 18% 5%, rgba(255, 248, 215, 0.55) 0 .14rem, transparent .23rem),
-    radial-gradient(circle at 82% 5%, rgba(255, 248, 215, 0.55) 0 .14rem, transparent .23rem),
-    radial-gradient(circle at 90% 5%, rgba(255, 248, 215, 0.62) 0 .14rem, transparent .23rem),
-    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.025) 0 3rem, transparent 3rem 6rem),
+    linear-gradient(rgba(3, 24, 22, 0.03), rgba(3, 27, 22, 0.2)),
+    url("./assets/baseball/background.svg") center / cover no-repeat fixed,
     linear-gradient(170deg, #041d1c 0%, #07382c 36%, #0b6241 70%, #073224 100%);
   --nav-background: rgba(6, 51, 39, 0.95);
   --theme-heading: #fff8df;
@@ -656,13 +634,8 @@ a:focus-visible {
   --teal: #72ead2;
   --muted: #efd0e4;
   --game-background:
-    radial-gradient(circle at 9% 15%, #fff1bc 0 .35rem, transparent .42rem),
-    radial-gradient(circle at 16% 21%, #ff8eb5 0 .28rem, transparent .36rem),
-    radial-gradient(circle at 86% 12%, #7ee8d4 0 .34rem, transparent .42rem),
-    radial-gradient(circle at 92% 20%, #ffe179 0 .24rem, transparent .32rem),
-    repeating-linear-gradient(125deg, transparent 0 4.5rem, rgba(255, 240, 249, 0.045) 4.5rem 4.8rem),
-    radial-gradient(ellipse at 18% 105%, rgba(255, 130, 175, 0.54), transparent 31rem),
-    radial-gradient(ellipse at 83% 105%, rgba(101, 228, 205, 0.4), transparent 34rem),
+    linear-gradient(rgba(54, 18, 61, 0.04), rgba(36, 17, 54, 0.24)),
+    url("./assets/candy-kingdom/background.svg") center / cover no-repeat fixed,
     linear-gradient(155deg, #40183f, #7b2e70 48%, #35225b);
   --nav-background: rgba(91, 29, 81, 0.93);
   --theme-heading: #fff4fa;
@@ -696,11 +669,8 @@ a:focus-visible {
   --teal: #8cbfff;
   --muted: #c7dfec;
   --game-background:
-    linear-gradient(135deg, transparent 0 42%, rgba(207, 248, 255, 0.08) 42% 43%, transparent 43% 100%),
-    linear-gradient(45deg, transparent 0 63%, rgba(139, 223, 255, 0.07) 63% 64%, transparent 64% 100%),
-    radial-gradient(ellipse at 12% 13%, rgba(177, 246, 255, 0.42), transparent 25rem),
-    radial-gradient(ellipse at 88% 24%, rgba(104, 148, 255, 0.4), transparent 28rem),
-    radial-gradient(ellipse at 52% 105%, rgba(122, 235, 255, 0.28), transparent 35rem),
+    linear-gradient(rgba(4, 25, 49, 0.02), rgba(5, 31, 57, 0.19)),
+    url("./assets/frozen-crystal/background.svg") center / cover no-repeat fixed,
     linear-gradient(158deg, #071c36, #0d4775 48%, #102755);
   --nav-background: rgba(9, 51, 86, 0.93);
   --theme-heading: #f1fdff;
@@ -1401,8 +1371,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="rainbow"] {
   background:
-    radial-gradient(circle at 10% 20%, #ff5b8e, transparent 40%),
-    radial-gradient(circle at 88% 18%, #5ed9a5, transparent 40%),
+    linear-gradient(rgba(18, 11, 40, 0.01), rgba(11, 17, 40, 0.1)),
+    url("./assets/rainbow/background.svg") center / cover no-repeat,
     linear-gradient(135deg, #4b2a80, #2266a0);
 }
 
@@ -1412,8 +1382,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="fire"] {
   background:
-    radial-gradient(ellipse at 25% 110%, #ff3c1e, transparent 55%),
-    radial-gradient(ellipse at 80% 110%, #ffad2e, transparent 53%),
+    linear-gradient(rgba(12, 2, 1, 0.02), rgba(9, 1, 1, 0.18)),
+    url("./assets/fire/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #180705, #4b160c);
 }
 
@@ -1428,7 +1398,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="beach"] {
   background:
-    radial-gradient(circle at 78% 18%, #ffe28c 0 10%, transparent 11%),
+    linear-gradient(rgba(3, 47, 62, 0.02), rgba(4, 44, 53, 0.12)),
+    url("./assets/beach/background.svg") center / cover no-repeat,
     linear-gradient(180deg, #58c6e5 0 43%, #21a8b8 44% 70%, #d8b477 71% 100%);
 }
 
@@ -1442,8 +1413,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="sky"] {
   background:
-    radial-gradient(ellipse at 18% 24%, rgba(255, 255, 255, 0.8) 0 12%, transparent 14%),
-    radial-gradient(ellipse at 76% 35%, rgba(255, 255, 255, 0.66) 0 16%, transparent 18%),
+    linear-gradient(rgba(5, 37, 72, 0.01), rgba(12, 62, 98, 0.08)),
+    url("./assets/sky/background.svg") center / cover no-repeat,
     linear-gradient(160deg, #278cc9, #84d1ed);
 }
 
@@ -1462,7 +1433,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="christmas"] {
   background:
-    radial-gradient(circle at 80% 20%, #fff6ce 0 7%, transparent 8%),
+    linear-gradient(rgba(3, 24, 18, 0.02), rgba(3, 18, 14, 0.14)),
+    url("./assets/christmas/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #0b6c49, #073d2d);
 }
 
@@ -1481,7 +1453,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="halloween"] {
   background:
-    radial-gradient(circle at 78% 20%, #ff9a35 0 9%, transparent 10%),
+    linear-gradient(rgba(15, 7, 25, 0.01), rgba(5, 4, 9, 0.15)),
+    url("./assets/halloween/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #321340, #14091d);
 }
 
@@ -1500,7 +1473,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="golden"] {
   background:
-    radial-gradient(circle at 80% 18%, rgba(255, 235, 157, 0.5), transparent 24%),
+    linear-gradient(rgba(19, 12, 2, 0.01), rgba(8, 5, 1, 0.1)),
+    url("./assets/golden/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #5a3c08, #1c1203);
 }
 
@@ -1519,8 +1493,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="retro-arcade"] {
   background:
-    repeating-linear-gradient(0deg, transparent 0 5px, rgba(77, 240, 255, 0.08) 5px 6px),
-    radial-gradient(circle at 18% 22%, #ff35bc 0 4%, transparent 5%),
+    linear-gradient(rgba(3, 5, 20, 0.01), rgba(4, 4, 19, 0.1)),
+    url("./assets/retro-arcade/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #101847, #040619);
 }
 
@@ -1542,8 +1516,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="vegas"] {
   background:
-    radial-gradient(circle at 12% 22%, #ff3bad 0 4%, transparent 5%),
-    radial-gradient(circle at 83% 18%, #4cf4ff 0 5%, transparent 6%),
+    linear-gradient(rgba(8, 1, 14, 0.01), rgba(5, 1, 9, 0.16)),
+    url("./assets/vegas/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #53125f, #16051f 72%);
   box-shadow: inset 0 0 18px rgba(255, 38, 170, 0.24), 0 0 9px rgba(43, 231, 255, 0.14);
 }
@@ -1566,7 +1540,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="american"] {
   background:
-    linear-gradient(180deg, transparent 0 24%, rgba(255, 255, 255, 0.11) 24% 28%, transparent 28% 48%, rgba(227, 55, 68, 0.22) 48% 57%, transparent 57%),
+    linear-gradient(rgba(3, 15, 35, 0.01), rgba(3, 11, 25, 0.15)),
+    url("./assets/american/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #174d8d, #071a39);
 }
 
@@ -1586,9 +1561,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="cosmic-galaxy"] {
   background:
-    radial-gradient(ellipse at 22% 25%, rgba(211, 94, 255, 0.75), transparent 30%),
-    radial-gradient(ellipse at 78% 62%, rgba(50, 224, 255, 0.58), transparent 34%),
-    radial-gradient(circle at 72% 18%, #fff 0 1px, transparent 2px),
+    linear-gradient(rgba(3, 3, 15, 0.01), rgba(3, 5, 17, 0.1)),
+    url("./assets/cosmic-galaxy/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #160a44, #030616);
 }
 
@@ -1629,8 +1603,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="world-traveler"] {
   background:
-    repeating-linear-gradient(0deg, transparent 0 13px, rgba(241, 220, 171, 0.08) 13px 14px),
-    repeating-linear-gradient(90deg, transparent 0 18px, rgba(241, 220, 171, 0.07) 18px 19px),
+    linear-gradient(rgba(7, 31, 34, 0.01), rgba(5, 27, 31, 0.1)),
+    url("./assets/world-traveler/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #397f78, #163f45);
 }
 
@@ -1671,9 +1645,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="baseball"] {
   background:
-    radial-gradient(circle at 17% 12%, #fff4cd 0 2%, transparent 3%),
-    radial-gradient(circle at 83% 12%, #fff4cd 0 2%, transparent 3%),
-    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.045) 0 12px, transparent 12px 24px),
+    linear-gradient(rgba(3, 24, 22, 0.01), rgba(3, 27, 22, 0.1)),
+    url("./assets/baseball/background.svg") center / cover no-repeat,
     linear-gradient(160deg, #0c6544, #052a24);
 }
 
@@ -1694,9 +1667,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="candy-kingdom"] {
   background:
-    radial-gradient(circle at 16% 20%, #fff1b3 0 4%, transparent 5%),
-    radial-gradient(circle at 82% 19%, #79e9d4 0 5%, transparent 6%),
-    repeating-linear-gradient(130deg, rgba(255, 255, 255, 0.08) 0 7px, transparent 7px 15px),
+    linear-gradient(rgba(54, 18, 61, 0.01), rgba(36, 17, 54, 0.12)),
+    url("./assets/candy-kingdom/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #d55791, #73316e);
 }
 
@@ -1717,9 +1689,8 @@ a:focus-visible {
 
 .theme-preview[data-preview-theme="frozen-crystal"] {
   background:
-    linear-gradient(135deg, transparent 0 44%, rgba(226, 251, 255, 0.18) 45% 47%, transparent 48%),
-    linear-gradient(45deg, transparent 0 59%, rgba(143, 225, 255, 0.16) 60% 62%, transparent 63%),
-    radial-gradient(ellipse at 22% 20%, rgba(196, 249, 255, 0.72), transparent 30%),
+    linear-gradient(rgba(4, 25, 49, 0.01), rgba(5, 31, 57, 0.09)),
+    url("./assets/frozen-crystal/background.svg") center / cover no-repeat,
     linear-gradient(145deg, #238cb8, #143f82);
 }
 
@@ -3857,6 +3828,19 @@ td small {
 }
 
 @media (max-width: 700px) {
+  .game-session[data-game-theme="beach"],
+  .game-session[data-game-theme="halloween"] {
+    --theme-scene-position: 75% center;
+  }
+
+  .game-session[data-game-theme="sky"] {
+    --theme-scene-position: 62% center;
+  }
+
+  .game-session[data-game-theme="cosmic-galaxy"] {
+    --theme-scene-position: 65% center;
+  }
+
   .scores-heading {
     align-items: stretch;
     flex-direction: column;

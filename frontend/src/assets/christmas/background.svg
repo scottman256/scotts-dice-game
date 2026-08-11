@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" aria-hidden="true">
+  <defs>
+    <linearGradient id="christmas-scene" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#092d2c"/>
+      <stop offset=".55" stop-color="#0b3d31"/>
+      <stop offset="1" stop-color="#071b19"/>
+    </linearGradient>
+    <radialGradient id="winter-glow" cx="50%" cy="20%" r="70%">
+      <stop stop-color="#d9fff0" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#63bd94" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="holiday-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect id="christmas-scene" width="1600" height="1000" fill="url(#christmas-scene)"/>
+  <rect width="1600" height="1000" fill="url(#winter-glow)"/>
+  <g fill="#dfffee" opacity=".55">
+    <circle cx="104" cy="132" r="4"/><circle cx="205" cy="272" r="7"/><circle cx="326" cy="104" r="5"/>
+    <circle cx="470" cy="224" r="4"/><circle cx="612" cy="76" r="6"/><circle cx="760" cy="286" r="5"/>
+    <circle cx="900" cy="128" r="4"/><circle cx="1038" cy="245" r="7"/><circle cx="1195" cy="92" r="5"/>
+    <circle cx="1340" cy="280" r="4"/><circle cx="1490" cy="132" r="7"/><circle cx="1552" cy="410" r="4"/>
+    <circle cx="48" cy="438" r="6"/><circle cx="420" cy="438" r="5"/><circle cx="1120" cy="430" r="5"/>
+  </g>
+  <g id="festive-lights" filter="url(#holiday-glow)">
+    <path d="M-20 70c290 153 524-31 812 86 276 112 531-49 828 52" fill="none" stroke="#17362e" stroke-width="12"/>
+    <g>
+      <circle cx="90" cy="118" r="11" fill="#f04a51"/><circle cx="225" cy="151" r="11" fill="#ffd768"/>
+      <circle cx="370" cy="143" r="11" fill="#63e2aa"/><circle cx="515" cy="118" r="11" fill="#e84954"/>
+      <circle cx="660" cy="125" r="11" fill="#ffd768"/><circle cx="805" cy="161" r="11" fill="#65e4ae"/>
+      <circle cx="950" cy="180" r="11" fill="#ed4b55"/><circle cx="1095" cy="166" r="11" fill="#ffd768"/>
+      <circle cx="1240" cy="141" r="11" fill="#64e2ab"/><circle cx="1385" cy="148" r="11" fill="#eb4b54"/>
+      <circle cx="1525" cy="188" r="11" fill="#ffd768"/>
+    </g>
+  </g>
+  <g fill="#103f2b" opacity=".92">
+    <path d="M0 820 145 400l145 420Z"/><path d="m115 810 178-525 178 525Z"/><path d="m1320 820 154-456 154 456Z"/>
+    <path d="m1160 835 194-574 194 574Z" fill="#124c31"/>
+  </g>
+  <g stroke="#f5d873" stroke-width="6" fill="none" opacity=".55">
+    <path d="m1354 336-43 125h86l-86 103h92l-107 119M292 366l-40 112h80l-83 96h91l-99 110"/>
+  </g>
+  <g fill="#ef4a54" filter="url(#holiday-glow)">
+    <circle cx="1268" cy="485" r="9"/><circle cx="1410" cy="570" r="10"/><circle cx="1320" cy="660" r="8"/>
+    <circle cx="235" cy="508" r="9"/><circle cx="330" cy="610" r="10"/><circle cx="190" cy="680" r="8"/>
+  </g>
+  <path d="M0 840c196-72 362 33 541 8 232-33 392-24 606 9 173 27 306-52 453-20v163H0Z" fill="#dcefe1" opacity=".88"/>
+  <g id="gift-pile">
+    <rect x="60" y="786" width="146" height="122" rx="8" fill="#bf283b"/><path d="M124 786v122M60 838h146" stroke="#f3d66e" stroke-width="17"/>
+    <rect x="205" y="820" width="116" height="94" rx="8" fill="#d9b847"/><path d="M255 820v94M205 858h116" stroke="#276d49" stroke-width="15"/>
+    <rect x="1375" y="801" width="150" height="118" rx="8" fill="#2b8b5c"/><path d="M1441 801v118M1375 849h150" stroke="#e74751" stroke-width="17"/>
+  </g>
+</svg>

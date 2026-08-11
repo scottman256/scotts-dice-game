@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="golden-night" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#100b03"/><stop offset=".55" stop-color="#2a1c05"/><stop offset="1" stop-color="#090602"/></linearGradient>
+    <radialGradient id="golden-aura" cx="50%" cy="38%" r="58%"><stop stop-color="#ffd96a" stop-opacity=".3"/><stop offset=".45" stop-color="#b06e0c" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gold-metal" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6f4307"/><stop offset=".22" stop-color="#f7dc80"/><stop offset=".5" stop-color="#a56809"/><stop offset=".78" stop-color="#fff0a8"/><stop offset="1" stop-color="#6b3c05"/></linearGradient>
+    <filter id="gold-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <g id="golden-scene">
+    <rect width="1600" height="1000" fill="url(#golden-night)"/>
+    <rect width="1600" height="1000" fill="url(#golden-aura)"/>
+    <g id="art-deco-fan" fill="#e8b637" opacity=".14">
+      <path d="M800 770 410 0h92Z"/><path d="M800 770 610 0h88Z"/><path d="M800 770 758 0h84Z"/>
+      <path d="M800 770 902 0h88Z"/><path d="M800 770 1096 0h92Z"/>
+    </g>
+    <g fill="none" stroke="#e8b84a" opacity=".65">
+      <path d="M279 790V296L395 180l116 116v494M1089 790V296l116-116 116 116v494" stroke-width="7"/>
+      <path d="M316 790V320l79-80 79 80v470M1126 790V320l79-80 79 80v470" stroke-width="3"/>
+      <path d="M522 790V205l84-83 84 83v585M910 790V205l84-83 84 83v585" stroke-width="5"/>
+    </g>
+    <g id="golden-columns">
+      <path d="M0 116h218l48 48-48 48H0ZM0 788h224l52 52-52 52H0Z" fill="url(#gold-metal)" opacity=".8"/>
+      <path d="M1600 116h-218l-48 48 48 48h218Zm0 672h-224l-52 52 52 52h224Z" fill="url(#gold-metal)" opacity=".8"/>
+      <path d="M72 205h78v590H72Zm1378 0h78v590h-78Z" fill="url(#gold-metal)"/>
+      <path d="M48 200h126v35H48Zm0 565h126v35H48Zm1378-565h126v35h-126Zm0 565h126v35h-126Z" fill="#f6d971"/>
+      <path d="M93 250h36v500H93Zm1378 0h36v500h-36Z" fill="#fff0a0" opacity=".42"/>
+    </g>
+    <g fill="none" stroke="#f1c85b">
+      <path d="M410 820h780M470 858h660M545 896h510" stroke-width="5" opacity=".75"/>
+      <ellipse cx="800" cy="397" rx="192" ry="192" stroke-width="6" opacity=".58"/>
+      <ellipse cx="800" cy="397" rx="155" ry="155" stroke-width="2" opacity=".42"/>
+    </g>
+    <path d="m800 214 25 119 112-47-89 77 99 67-119-29-8 121-28-118-111 48 88-79-100-65 120 27Z" fill="#f8d76c" opacity=".2"/>
+    <circle cx="800" cy="397" r="24" fill="#ffe78a" filter="url(#gold-soft)"/>
+    <circle cx="800" cy="397" r="9" fill="#fff8cd"/>
+    <g fill="#ffeb96">
+      <circle cx="235" cy="95" r="3"/><circle cx="342" cy="312" r="2"/><circle cx="535" cy="78" r="3"/><circle cx="684" cy="170" r="2"/>
+      <circle cx="1058" cy="90" r="3"/><circle cx="1262" cy="330" r="2"/><circle cx="1390" cy="104" r="3"/><circle cx="1128" cy="710" r="2"/>
+    </g>
+  </g>
+</svg>

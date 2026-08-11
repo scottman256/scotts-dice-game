@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="arcade-night" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#030414"/><stop offset=".56" stop-color="#161045"/><stop offset="1" stop-color="#050518"/></linearGradient>
+    <linearGradient id="arcade-sun" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe85e"/><stop offset=".48" stop-color="#ff557e"/><stop offset="1" stop-color="#e938d1"/></linearGradient>
+    <linearGradient id="arcade-grid" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ff3cc8"/><stop offset=".5" stop-color="#704eff"/><stop offset="1" stop-color="#36edff"/></linearGradient>
+    <filter id="arcade-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <g id="arcade-scene">
+    <rect width="1600" height="1000" fill="url(#arcade-night)"/>
+    <g fill="#bdfbff" opacity=".72">
+      <rect x="109" y="100" width="5" height="5"/><rect x="248" y="174" width="4" height="4"/><rect x="407" y="82" width="5" height="5"/>
+      <rect x="1190" y="108" width="5" height="5"/><rect x="1340" y="177" width="4" height="4"/><rect x="1484" y="76" width="5" height="5"/>
+    </g>
+    <circle cx="800" cy="420" r="212" fill="url(#arcade-sun)" opacity=".92"/>
+    <g stroke="#12103d" stroke-width="14"><path d="M594 332h412M584 378h432M582 427h436M590 478h420M615 527h370"/></g>
+    <path d="M0 624 210 448l126 97 178-204 167 213 122-105 146 113 175-190 173 181 125-95 198 172V715H0Z" fill="#08071d" stroke="#ff49cb" stroke-width="7"/>
+    <path d="M0 650 180 521l155 115 175-211 168 204 126-94 145 105 174-185 174 174 127-83 176 115" fill="none" stroke="#3cecff" stroke-width="4" opacity=".8"/>
+    <g id="neon-grid" fill="none" stroke="url(#arcade-grid)" opacity=".72">
+      <path d="M0 704H1600M0 760H1600M0 829H1600M0 910H1600M0 995H1600" stroke-width="4"/>
+      <path d="M800 657 645 1000M800 657 465 1000M800 657 222 1000M800 657 955 1000M800 657l335 343M800 657l578 343" stroke-width="4"/>
+    </g>
+    <g id="arcade-cabinets">
+      <path d="M70 710V265h260l52 96-28 349Z" fill="#09091e" stroke="#43f2ff" stroke-width="9"/>
+      <path d="M104 307h214l28 58H116Z" fill="#ff3fc4" opacity=".82"/><path d="M125 391h192v145H125Z" fill="#101d4c" stroke="#8a70ff" stroke-width="6"/>
+      <path d="M151 418h140v88H151Z" fill="#030715"/><path d="m220 436 12 18 22 1-16 14 5 22-23-12-22 12 5-22-16-14 22-1Z" fill="#ffe758"/>
+      <circle cx="178" cy="594" r="18" fill="#ff4bc7"/><path d="M258 565v50m-25-25h50" stroke="#41efff" stroke-width="10"/>
+      <path d="M1270 710V265h260l-24 445h-288l-28-349 52-96Z" fill="#09091e" stroke="#ff4bc7" stroke-width="9"/>
+      <path d="M1282 307h214l-12 58h-230Z" fill="#42efff" opacity=".82"/><path d="M1284 391h192v145h-192Z" fill="#231047" stroke="#ff55ca" stroke-width="6"/>
+      <g fill="#7bf5ff"><rect x="1332" y="429" width="24" height="24"/><rect x="1404" y="429" width="24" height="24"/><rect x="1356" y="453" width="48" height="24"/><rect x="1332" y="477" width="24" height="24"/><rect x="1404" y="477" width="24" height="24"/></g>
+      <circle cx="1350" cy="594" r="18" fill="#ffe55f"/><path d="M1424 565v50m-25-25h50" stroke="#ff4bc7" stroke-width="10"/>
+    </g>
+    <g fill="none" stroke-linecap="round" filter="url(#arcade-glow)" opacity=".36"><path d="M38 704h420" stroke="#43efff" stroke-width="15"/><path d="M1160 704h402" stroke="#ff43c8" stroke-width="15"/></g>
+  </g>
+</svg>
