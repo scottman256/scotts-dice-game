@@ -24,7 +24,29 @@ Important optional environment variables:
 - `DICE_DATABASE_URL`, `DICE_DATABASE_USERNAME`, `DICE_DATABASE_PASSWORD` — override H2 for another JDBC deployment.
 - `DICE_SEED_TEST_USER=false`, `DICE_SEED_ADMIN_USER=false`, and `DICE_H2_CONSOLE_ENABLED=false` — disable local-only conveniences outside development. Disable admin seeding after provisioning production administration through your deployment process.
 
-The H2 console uses `jdbc:h2:file:./data/dicegame` when the backend runs directly. In Docker it uses `jdbc:h2:tcp://database:9092/dicegame`; both use user `sa` with a blank local-development password.
+### Access the H2 console
+
+With the backend running, open [http://localhost:8080/h2-console/](http://localhost:8080/h2-console/). If `SERVER_PORT` or the Compose `BACKEND_PORT` is set, replace `8080` with that port.
+
+When the backend runs directly, connect with:
+
+- **Driver Class:** `org.h2.Driver`
+- **JDBC URL:** `jdbc:h2:file:./data/dicegame`
+- **User Name:** `sa`
+- **Password:** leave blank
+
+The database file is stored at `backend/data/dicegame.mv.db`. If the relative JDBC URL does not resolve as expected, use the absolute form `jdbc:h2:file:C:/path/to/dice-app/backend/data/dicegame`. Do not include the `.mv.db` extension.
+
+When the application runs through Docker Compose, use:
+
+- **Driver Class:** `org.h2.Driver`
+- **JDBC URL:** `jdbc:h2:tcp://database:9092/dicegame`
+- **User Name:** `sa`
+- **Password:** leave blank
+
+The console initially displays H2's sample URL, `jdbc:h2:~/test`. Replace it with the appropriate application JDBC URL above; the sample points to a different database.
+
+The console is enabled by default for local development. Set `DICE_H2_CONSOLE_ENABLED=false` outside development, and restart the backend after changing this setting. The H2 console is not intended to be exposed publicly.
 
 ## API
 

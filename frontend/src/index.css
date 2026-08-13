@@ -3593,13 +3593,26 @@ td small {
 
 .achievement-slot-earned {
   position: relative;
+  z-index: 0;
   display: flex;
+  overflow: visible;
   padding: 8px 8px 10px;
   align-items: center;
   flex-direction: column;
   border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--line));
   background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, transparent), rgba(255, 255, 255, 0.025));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.16);
+  cursor: help;
+}
+
+.achievement-slot-earned:is(:hover, :focus-visible) {
+  z-index: 5;
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line-strong));
+}
+
+.achievement-slot-earned:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 78%, transparent);
+  outline-offset: -2px;
 }
 
 .achievement-slot-earned::after {
@@ -3740,20 +3753,37 @@ td small {
   transform: translateX(-50%) rotate(45deg);
 }
 
+.achievement-help-tip-earned {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent-light) 18%, transparent), transparent 60%),
+    color-mix(in srgb, var(--accent) 28%, var(--panel-strong));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 22px color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--theme-heading) 88%, white);
+}
+
+.achievement-help-tip-earned::after {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--line));
+  background: color-mix(in srgb, var(--accent) 28%, var(--panel-strong));
+}
+
 .achievement-help-tip[data-secret="true"] {
   color: var(--accent-light);
   font-size: 0.76rem;
   letter-spacing: 0.16em;
 }
 
-.achievement-slot-locked[data-column="0"] .achievement-help-tip,
-.achievement-slot-locked[data-column="1"] .achievement-help-tip {
+.achievement-slot[data-column="0"] .achievement-help-tip,
+.achievement-slot[data-column="1"] .achievement-help-tip {
   left: 8px;
   transform: translateY(6px);
 }
 
-.achievement-slot-locked[data-column="4"] .achievement-help-tip,
-.achievement-slot-locked[data-column="5"] .achievement-help-tip {
+.achievement-slot[data-column="4"] .achievement-help-tip,
+.achievement-slot[data-column="5"] .achievement-help-tip {
   right: 8px;
   left: auto;
   transform: translateY(6px);
@@ -3764,15 +3794,15 @@ td small {
   transform: translateY(34px);
 }
 
-.achievement-slot-locked:is(:hover, :focus-visible) .achievement-help-tip {
+.achievement-slot:is(:hover, :focus-visible) .achievement-help-tip {
   opacity: 1;
   transform: translate(-50%, 0);
 }
 
-.achievement-slot-locked:is(:hover, :focus-visible)[data-column="0"] .achievement-help-tip,
-.achievement-slot-locked:is(:hover, :focus-visible)[data-column="1"] .achievement-help-tip,
-.achievement-slot-locked:is(:hover, :focus-visible)[data-column="4"] .achievement-help-tip,
-.achievement-slot-locked:is(:hover, :focus-visible)[data-column="5"] .achievement-help-tip {
+.achievement-slot:is(:hover, :focus-visible)[data-column="0"] .achievement-help-tip,
+.achievement-slot:is(:hover, :focus-visible)[data-column="1"] .achievement-help-tip,
+.achievement-slot:is(:hover, :focus-visible)[data-column="4"] .achievement-help-tip,
+.achievement-slot:is(:hover, :focus-visible)[data-column="5"] .achievement-help-tip {
   transform: translateY(0);
 }
 

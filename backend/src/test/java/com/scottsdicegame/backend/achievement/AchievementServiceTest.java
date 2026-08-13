@@ -50,6 +50,8 @@ class AchievementServiceTest {
         assertThat(response.capacity()).isEqualTo(36);
         assertThat(response.achievements()).extracting(achievement -> achievement.key())
                 .containsExactly("first-game", "golden-game");
+        assertThat(response.achievements()).extracting(achievement -> achievement.achievedAt())
+                .containsExactly(Instant.EPOCH, Instant.EPOCH.plusSeconds(1));
         assertThat(response.lockedAchievements()).hasSize(34);
         assertThat(response.lockedAchievements())
                 .extracting(AchievementHintResponse::unlockDescription)
