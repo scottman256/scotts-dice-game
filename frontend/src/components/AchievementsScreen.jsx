@@ -3,6 +3,18 @@ import { getAchievementBadge } from '../assets/achievementBadges'
 
 const DEFAULT_CAPACITY = 36
 const DEFAULT_UNLOCK_HINT = 'Keep playing to discover this achievement.'
+const ACHIEVEMENT_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+function formatAchievementDate(achievedAt) {
+  if (!achievedAt) return null
+
+  const date = new Date(achievedAt)
+  return Number.isNaN(date.getTime()) ? null : ACHIEVEMENT_DATE_FORMATTER.format(date)
+}
 
 export default function AchievementsScreen({ loadAchievements, onBack }) {
   const [collection, setCollection] = useState(null)
@@ -109,11 +121,29 @@ export default function AchievementsScreen({ loadAchievements, onBack }) {
                         )
                       }
 
+                      const tooltipId = `achievement-earned-${slotIndex}`
+                      const achievedOn = formatAchievementDate(achievement.achievedAt)
                       return (
-                        <article className="achievement-slot achievement-slot-earned" role="cell" key={achievement.key}>
+                        <article
+                          className="achievement-slot achievement-slot-earned"
+                          role="cell"
+                          aria-describedby={tooltipId}
+                          data-column={columnIndex}
+                          key={achievement.key}
+                          tabIndex={0}
+                        >
                           {badge && <img src={badge} alt="" width="320" height="320" />}
                           <h2>{achievement.title}</h2>
                           <p>{achievement.description}</p>
+                          <span
+                            className="achievement-help-tip achievement-help-tip-earned"
+                            id={tooltipId}
+                            role="tooltip"
+                          >
+                            {achievedOn ? (
+                              <>Unlocked on <time dateTime={achievement.achievedAt}>{achievedOn}</time>.</>
+                            ) : 'First-earned date unavailable.'}
+                          </span>
                         </article>
                       )
                     })}

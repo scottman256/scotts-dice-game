@@ -1,8 +1,12 @@
 package com.scottsdicegame.backend.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,6 +36,18 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @ConditionalOnProperty(name = "spring.h2.console.enabled", havingValue = "true")
+    SecurityFilterChain h2ConsoleSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(PathRequest.toH2Console())
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+        return http.build();
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -41,7 +57,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/public/**", "/api/auth/register", "/api/auth/login", "/api/auth/firebase")
                         .permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->

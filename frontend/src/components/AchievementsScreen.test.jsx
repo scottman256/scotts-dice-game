@@ -47,8 +47,27 @@ describe('AchievementsScreen', () => {
     expect(container.querySelectorAll('.achievement-slot-earned img')).toHaveLength(2)
     expect(container.querySelectorAll('.achievement-slot-earned')[0]).toHaveTextContent('First Finish')
     expect(container.querySelectorAll('.achievement-slot-earned')[1]).toHaveTextContent('Golden')
+    const earnedCells = container.querySelectorAll('.achievement-slot-earned')
+    const earnedDate = new Intl.DateTimeFormat(undefined, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(COLLECTION.achievements[0].achievedAt))
+    const earnedHint = within(earnedCells[0]).getByRole('tooltip')
+    expect(earnedHint).toHaveTextContent(`Unlocked on ${earnedDate}.`)
+    expect(earnedHint).toHaveClass('achievement-help-tip-earned')
+    expect(earnedHint.querySelector('time')).toHaveAttribute(
+      'datetime',
+      COLLECTION.achievements[0].achievedAt,
+    )
+    expect(earnedCells[0]).toHaveAttribute('aria-describedby', earnedHint.id)
+    expect(earnedCells[0]).toHaveAttribute('tabindex', '0')
+    earnedCells[0].focus()
+    expect(earnedCells[0]).toHaveFocus()
+
     const firstHint = within(lockedCells[0]).getByRole('tooltip')
     expect(firstHint).toHaveTextContent('Complete 10 games.')
+    expect(firstHint).not.toHaveClass('achievement-help-tip-earned')
     expect(lockedCells[0]).toHaveAttribute('aria-describedby', firstHint.id)
     expect(lockedCells[0]).toHaveAttribute('tabindex', '0')
     expect(screen.queryByText('Double Digits')).not.toBeInTheDocument()
@@ -58,6 +77,36 @@ describe('AchievementsScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back to game' }))
     expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps earned achievements accessible when a timestamp is missing or invalid', async () => {
+    const { container } = render(
+      <AchievementsScreen
+        loadAchievements={() => Promise.resolve({
+          capacity: 2,
+          achievements: [
+            { key: 'missing-date', title: 'Missing date', description: 'No timestamp.' },
+            {
+              key: 'invalid-date',
+              title: 'Invalid date',
+              description: 'Bad timestamp.',
+              achievedAt: 'not-a-date',
+            },
+          ],
+        })}
+        onBack={jest.fn()}
+      />,
+    )
+
+    expect(await screen.findByText('2 / 2')).toBeVisible()
+    const earnedCells = container.querySelectorAll('.achievement-slot-earned')
+    expect(earnedCells).toHaveLength(2)
+    earnedCells.forEach((cell) => {
+      const tooltip = within(cell).getByRole('tooltip')
+      expect(tooltip).toHaveTextContent('First-earned date unavailable.')
+      expect(tooltip.querySelector('time')).not.toBeInTheDocument()
+      expect(cell).toHaveAttribute('aria-describedby', tooltip.id)
+    })
   })
 
   it('renders the server-controlled Grand Master hint without its title or artwork', async () => {
