@@ -2,6 +2,25 @@
 
 Spring Boot service for local/manual authentication, verified Firebase identities, users, resumable games, theme preferences, completed-game high scores, player statistics, and achievements. It uses a conventional controller/service/repository split, stateless signed access tokens, Spring Data JPA/Hibernate, Flyway migrations, and an automatically started H2 database. Flyway also installs ten non-login system players with initial leaderboard scores from 499 down to 250.
 
+## Java package layout
+
+Java code is grouped by feature under `com.scottsdicegame.backend` (`achievement`, `admin`, `api`, `auth`, `game`, `score`, `stats`, and `user`). Within each feature, use packages named for the role of the code:
+
+- `controller` for HTTP endpoints.
+- `service` for application services and their implementation helpers.
+- `repository` for Spring Data repositories.
+- `entity` for JPA entities and embeddable persistence types.
+- `dto` for API request and response types.
+- `model` for non-persistent domain types, enums, and scoring rules.
+- `catalog` for predefined game, achievement, and leaderboard definitions.
+- `event` for application events and their listeners.
+- `validation` for reusable input validation and policies.
+- `exception` for API exceptions and exception handlers.
+
+Only create role packages when the feature has code for them. For example, score persistence lives in `score.entity.GameScore` and `score.repository.GameScoreRepository`, while its HTTP endpoint lives in `score.controller.ScoreController`. Shared Spring configuration remains in `config`, and the application entry point remains in the base package so component, entity, and repository scanning covers every feature.
+
+Unit tests mirror the package of the class they test under `src/test/java`. Whole-application HTTP/H2 tests live in `com.scottsdicegame.backend.integration`.
+
 ## Run without Docker
 
 ```powershell

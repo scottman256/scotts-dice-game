@@ -1,7 +1,7 @@
 package com.scottsdicegame.backend.auth.dto;
 
+import com.scottsdicegame.backend.user.validation.EmailAddress;
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.scottsdicegame.backend.user.EmailAddress;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

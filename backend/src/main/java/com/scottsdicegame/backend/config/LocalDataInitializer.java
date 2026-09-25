@@ -1,7 +1,7 @@
 package com.scottsdicegame.backend.config;
 
-import com.scottsdicegame.backend.user.UserAccount;
-import com.scottsdicegame.backend.user.UserAccountRepository;
+import com.scottsdicegame.backend.user.entity.UserAccount;
+import com.scottsdicegame.backend.user.repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;

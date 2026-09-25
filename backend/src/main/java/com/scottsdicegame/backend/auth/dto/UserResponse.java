@@ -1,6 +1,6 @@
 package com.scottsdicegame.backend.auth.dto;
 
-import com.scottsdicegame.backend.user.UserAccount;
+import com.scottsdicegame.backend.user.entity.UserAccount;
 
 import java.util.UUID;
 
