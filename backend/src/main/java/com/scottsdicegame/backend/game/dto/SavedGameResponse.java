@@ -1,7 +1,7 @@
 package com.scottsdicegame.backend.game.dto;
 
-import com.scottsdicegame.backend.game.SavedDie;
-import com.scottsdicegame.backend.game.SavedGame;
+import com.scottsdicegame.backend.game.entity.SavedDie;
+import com.scottsdicegame.backend.game.entity.SavedGame;
 
 import java.time.Instant;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.scottsdicegame.backend.score.dto;
 
-import com.scottsdicegame.backend.score.GameScore;
+import com.scottsdicegame.backend.score.entity.GameScore;
 
 import java.time.Instant;
 import java.util.UUID;

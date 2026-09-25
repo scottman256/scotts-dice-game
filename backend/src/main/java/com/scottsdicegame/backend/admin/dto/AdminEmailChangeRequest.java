@@ -1,6 +1,6 @@
 package com.scottsdicegame.backend.admin.dto;
 
-import com.scottsdicegame.backend.user.EmailAddress;
+import com.scottsdicegame.backend.user.validation.EmailAddress;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

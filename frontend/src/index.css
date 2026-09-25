@@ -3473,7 +3473,7 @@ td small {
   color: var(--theme-heading);
   font-size: clamp(1.08rem, 2.2vw, 1.42rem);
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

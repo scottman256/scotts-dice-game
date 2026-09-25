@@ -1,7 +1,7 @@
 package com.scottsdicegame.backend.admin.dto;
 
-import com.scottsdicegame.backend.user.AuthProvider;
-import com.scottsdicegame.backend.user.UserAccount;
+import com.scottsdicegame.backend.user.entity.UserAccount;
+import com.scottsdicegame.backend.user.model.AuthProvider;
 
 import java.time.Instant;
 import java.util.UUID;
