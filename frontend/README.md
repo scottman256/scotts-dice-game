@@ -21,6 +21,8 @@ The login page and in-game navigation both link to a themed How to Play guide. I
 
 The local administrator can sign in with `admin` or `admin@admin.com` and password `admin`, then use a separate Admin menu for enabling themes, resetting game data, and managing user accounts. New username accounts require a valid email address, and either identifier can be used on later sign-ins. The user-management table displays every account email and lets administrators update username-account addresses and passwords; Google and Facebook addresses remain managed by Firebase. Its global leaderboard view can add fictional system scores or remove individual entries. Classic cannot be disabled.
 
+Scratch confirmation is enabled by default. Choosing an eligible zero-point score opens a dialog styled for the current theme; Cancel or Escape keeps the turn intact, and Score zero fills the selected category and ends the turn. Turn off **Confirm before scratching** under **Game settings > Scoring** for immediate scratches. This preference is remembered in the current browser for both guest and signed-in play; it does not change which categories are eligible to scratch.
+
 ## Google and Facebook sign-in
 
 The app uses the modular Firebase Authentication SDK:

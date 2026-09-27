@@ -62,14 +62,29 @@ describe('game theme settings', () => {
   })
 
   it('uses Classic by default and normalizes invalid settings', () => {
-    expect(DEFAULT_GAME_SETTINGS).toEqual({ theme: 'classic' })
-    expect(normalizeGameSettings()).toEqual({ theme: 'classic' })
-    expect(normalizeGameSettings({ theme: 'unknown' })).toEqual({ theme: 'classic' })
+    expect(DEFAULT_GAME_SETTINGS).toEqual({ theme: 'classic', confirmScratches: true })
+    expect(normalizeGameSettings()).toEqual({ theme: 'classic', confirmScratches: true })
+    expect(normalizeGameSettings({ theme: 'unknown' })).toEqual({ theme: 'classic', confirmScratches: true })
   })
+
+  it.each([true, false])('preserves the explicit scratch-confirmation preference %s', (confirmScratches) => {
+    expect(normalizeGameSettings({ theme: 'vegas', confirmScratches })).toEqual({
+      theme: 'vegas',
+      confirmScratches,
+    })
+  })
+
+  it.each([undefined, null, 'false', 'true', 0, 1])(
+    'enables scratch confirmation when the incoming preference is invalid: %s',
+    (confirmScratches) => {
+      expect(normalizeGameSettings({ confirmScratches }).confirmScratches).toBe(true)
+    },
+  )
 
   it('keeps valid and future setting values while normalizing the theme', () => {
     expect(normalizeGameSettings({ theme: 'beach', sound: 'quiet' })).toEqual({
       theme: 'beach',
+      confirmScratches: true,
       sound: 'quiet',
     })
   })

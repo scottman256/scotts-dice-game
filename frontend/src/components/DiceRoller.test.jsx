@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, expect, it, jest } from '@jest/globals'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DiceRoller from './DiceRoller'
 import { ALL_CATEGORIES } from '../gameRules'
@@ -193,9 +193,122 @@ describe('DiceRoller', () => {
     expect(scratchAction).toBeEnabled()
     await user.click(scratchAction)
 
+    expect(screen.getByRole('dialog', { name: 'Score zero in this category?' })).toBeVisible()
+    expect(screen.queryByLabelText('Large Straight: 0 points')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Score zero' }))
+
     expect(screen.getByLabelText('Large Straight: 0 points')).toHaveTextContent('0')
     expect(screen.getByText('Large Straight scored 0 points. Roll to start the next turn.')).toBeVisible()
     expect(screen.getByText('1/10 filled')).toBeVisible()
+  })
+
+  it.each(['Cancel', 'Escape', 'Enter'])('keeps the turn intact when a scratch is dismissed with %s', async (dismissal) => {
+    const onGameStateChange = jest.fn()
+    const { user } = renderGame({
+      initialState: {
+        dice: [1, 2, 2, 3, 4],
+        heldDice: [true, false, false, false, false],
+        rollCount: 3,
+        extraRollsUsed: 1,
+        scores: { sixes: 12 },
+      },
+      onGameStateChange,
+    })
+    const scratchAction = screen.getByRole('button', { name: 'Record zero points in Large Straight' })
+    await user.click(scratchAction)
+
+    const dialog = screen.getByRole('dialog', { name: 'Score zero in this category?' })
+    expect(dialog).toHaveAccessibleDescription('Large Straight will be filled with 0 points, ending this turn.')
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
+    expect(onGameStateChange).not.toHaveBeenCalled()
+
+    if (dismissal === 'Escape') {
+      fireEvent(dialog, new Event('cancel', { cancelable: true }))
+    } else if (dismissal === 'Enter') {
+      await user.keyboard('{Enter}')
+    } else {
+      await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    }
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(scratchAction).toHaveFocus()
+    expect(screen.getByLabelText('Roll 3')).toHaveTextContent('3/3')
+    expect(screen.getByLabelText('Dice total 12')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Die 1 showing 1\. Held/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Sixes: 12 points')).toBeVisible()
+    expect(screen.queryByLabelText('Large Straight: 0 points')).not.toBeInTheDocument()
+    expect(onGameStateChange).not.toHaveBeenCalled()
+  })
+
+  it.each([3, 4])('confirms a scratch once after roll %i without spending an extra roll', async (rollCount) => {
+    const onGameStateChange = jest.fn()
+    const { user } = renderGame({
+      initialState: {
+        dice: [1, 2, 2, 3, 4],
+        heldDice: [true, false, false, false, false],
+        rollCount,
+        extraRollsUsed: 1,
+      },
+      onGameStateChange,
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Large Straight' }))
+    expect(onGameStateChange).not.toHaveBeenCalled()
+    await user.dblClick(screen.getByRole('button', { name: 'Score zero' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Large Straight: 0 points')).toHaveTextContent('0')
+    expect(screen.getByRole('button', { name: 'Roll Dice' })).toHaveFocus()
+    expect(onGameStateChange).toHaveBeenCalledTimes(1)
+    expect(onGameStateChange).toHaveBeenLastCalledWith({
+      gameId: expect.any(String),
+      state: expect.objectContaining({
+        dice: [null, null, null, null, null],
+        heldDice: [false, false, false, false, false],
+        rollCount: 0,
+        extraRollsUsed: 1,
+        scores: { largeStraight: 0 },
+      }),
+    })
+  })
+
+  it('scratches immediately when confirmation is disabled', async () => {
+    const { user } = renderGame({
+      confirmScratches: false,
+      initialState: { dice: [1, 2, 2, 3, 4], rollCount: 3 },
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Large Straight' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Large Straight: 0 points')).toBeVisible()
+    expect(screen.getByLabelText('Dice have not been rolled')).toBeVisible()
+  })
+
+  it('submits a final-category scratch only after confirmation and focuses New Game', async () => {
+    const scores = completeScores()
+    delete scores.largeStraight
+    const onGameComplete = jest.fn()
+    const { user } = renderGame({
+      initialGameId: 'final-scratch-game',
+      initialState: { dice: [2, 2, 2, 2, 2], rollCount: 3, scores },
+      onGameComplete,
+      theme: 'vegas',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Large Straight' }))
+    expect(onGameComplete).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Score zero' }))
+
+    expect(screen.getByText('19/19 filled')).toBeVisible()
+    expect(screen.getAllByRole('button', { name: 'New Game' })[0]).toHaveFocus()
+    expect(onGameComplete).toHaveBeenCalledTimes(1)
+    expect(onGameComplete).toHaveBeenCalledWith({
+      gameId: 'final-scratch-game',
+      theme: 'vegas',
+      score: 0,
+      categoryScores: { ...scores, largeStraight: 0 },
+    })
   })
 
   it('keeps the 5 of a Kind scratch locked until its bonus category is closed', () => {

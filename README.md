@@ -1,6 +1,6 @@
 # Scott's Dice Game
 
-Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott built when he first got into coding. This version was created with ChatGPT 5.6 (Sol), carrying the original idea into a polished contemporary experience.
+Scott's Dice Game is a modern, full-featured reimagining of a dice game Scott built when he first got into coding. This version was created with ChatGPT 5.6 (Sol), carrying the original idea into a polished contemporary experience. Subsequent edits and enhancements have been made with ChatGPT 6 (Astra).
 
 ## The Game
 

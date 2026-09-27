@@ -25,6 +25,7 @@ import {
   GAME_THEMES,
   normalizeGameSettings,
 } from './settings/gameThemes'
+import { loadConfirmScratches, saveConfirmScratches } from './settings/scratchPreference'
 
 const unavailableAuthService = createUnavailableAuthService()
 const unavailableBackendClient = createUnavailableBackendClient()
@@ -51,7 +52,10 @@ export default function App({
   const [backendStatus, setBackendStatus] = useState(OFFLINE_BACKEND)
   const [busyAction, setBusyAction] = useState(null)
   const [authError, setAuthError] = useState('')
-  const [gameSettings, setGameSettings] = useState(() => ({ ...DEFAULT_GAME_SETTINGS }))
+  const [gameSettings, setGameSettings] = useState(() => ({
+    ...DEFAULT_GAME_SETTINGS,
+    confirmScratches: loadConfirmScratches(),
+  }))
   const [activeScreen, setActiveScreen] = useState('game')
   const [playerView, setPlayerView] = useState('personal')
   const [adminView, setAdminView] = useState('settings')
@@ -69,7 +73,7 @@ export default function App({
   function resetGamePresentation() {
     persistenceGenerationRef.current += 1
     persistenceQueueRef.current = Promise.resolve()
-    setGameSettings({ ...DEFAULT_GAME_SETTINGS })
+    setGameSettings((current) => ({ ...DEFAULT_GAME_SETTINGS, confirmScratches: current.confirmScratches }))
     setActiveScreen('game')
     setHighScoreStatus(null)
     setGamePersistenceStatus('idle')
@@ -178,9 +182,12 @@ export default function App({
       .then((gameSession) => {
         if (!active) return
         const restoredSettings = normalizeGameSettings({ theme: gameSession?.theme })
-        setGameSettings(enabledThemeIds.includes(restoredSettings.theme)
-          ? restoredSettings
-          : { ...DEFAULT_GAME_SETTINGS })
+        setGameSettings((current) => ({
+          ...current,
+          theme: enabledThemeIds.includes(restoredSettings.theme)
+            ? restoredSettings.theme
+            : DEFAULT_GAME_SETTINGS.theme,
+        }))
         if (gameSession?.savedGame) {
           setSavedGameToResume(gameSession.savedGame)
           setGamePersistenceStatus('prompting')
@@ -313,7 +320,7 @@ export default function App({
     setEnabledThemeIds(enabled)
     setGameSettings((current) => enabled.includes(current.theme)
       ? current
-      : { ...DEFAULT_GAME_SETTINGS })
+      : { ...current, theme: DEFAULT_GAME_SETTINGS.theme })
   }
 
   function handleAdminGameDataReset() {
@@ -333,6 +340,7 @@ export default function App({
   function handleSaveSettings(settings) {
     const normalizedSettings = normalizeGameSettings(settings)
     setGameSettings(normalizedSettings)
+    saveConfirmScratches(normalizedSettings.confirmScratches)
     if (session.kind === 'authenticated') {
       enqueuePersistence(
         () => backendClient.saveTheme(normalizedSettings.theme),
@@ -500,6 +508,7 @@ export default function App({
             <DiceRoller
               key={gameBootstrap.key}
               theme={gameSettings.theme}
+              confirmScratches={gameSettings.confirmScratches}
               highScoreStatus={highScoreStatus}
               initialGameId={gameBootstrap.gameId}
               initialState={gameBootstrap.state}
