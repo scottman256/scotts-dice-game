@@ -49,6 +49,24 @@ export default function SettingsScreen({ currentSettings, availableThemeIds, onC
 
       <form className="settings-form" onSubmit={handleSubmit}>
         <div className="settings-groups">
+          <fieldset className="setting-group">
+            <legend>Scoring</legend>
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={draftSettings.confirmScratches}
+                onChange={(event) => handleSettingChange('confirmScratches', event.target.checked)}
+                aria-labelledby="confirm-scratches-label"
+                aria-describedby="confirm-scratches-help"
+              />
+              <span className="setting-toggle-copy">
+                <strong id="confirm-scratches-label">Confirm before scratching</strong>
+                <small id="confirm-scratches-help">
+                  Ask before recording zero points in a category. Saved in this browser.
+                </small>
+              </span>
+            </label>
+          </fieldset>
           {GAME_SETTING_DEFINITIONS.map((setting) => (
             <fieldset
               className="setting-group"
@@ -92,7 +110,7 @@ export default function SettingsScreen({ currentSettings, availableThemeIds, onC
             Cancel
           </button>
           <button type="submit" className="settings-save-button">
-            Save style &amp; return to game
+            Save settings &amp; return to game
           </button>
         </div>
       </form>

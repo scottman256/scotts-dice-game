@@ -1,9 +1,27 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, jest } from '@jest/globals'
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals'
 import App from './App'
 import { BackendApiError } from './api/backendClient'
+
+const SCRATCH_PREFERENCE_KEY = 'scotts-dice-game.confirm-scratches'
+
+beforeEach(() => localStorage.clear())
+afterEach(() => localStorage.clear())
+
+function savedScratchGame() {
+  return {
+    gameId: '83d35313-a908-4516-b132-c599f460df6a',
+    dice: [1, 2, 3, 4, 5],
+    heldDice: [true, false, true, false, false],
+    rollCount: 3,
+    scores: { sixes: 6 },
+    extraRollsUsed: 1,
+    status: 'Roll 3 of 3. Hold any dice you want to keep, cash in, or spend one fourth-roll chance.',
+    statusTone: 'normal',
+  }
+}
 
 function authenticatedUser(overrides = {}) {
   return {
@@ -323,7 +341,7 @@ describe('App authentication shell', () => {
 
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Vegas/ }))
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
     await waitFor(() => expect(saveTheme).toHaveBeenCalledWith('vegas'))
   })
@@ -337,7 +355,7 @@ describe('App authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
     await user.click(screen.getByRole('link', { name: 'How to Play' }))
 
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
@@ -346,6 +364,120 @@ describe('App authentication shell', () => {
     expect(backendClient.saveGame).not.toHaveBeenCalled()
     expect(backendClient.saveTheme).not.toHaveBeenCalled()
     expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+  })
+
+  it('leaves a scratch unsaved until confirmed and preserves the current turn when canceled', async () => {
+    const savedGame = savedScratchGame()
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn(() => Promise.resolve({ theme: 'vegas', savedGame })),
+    })
+    const user = userEvent.setup()
+    const { container } = render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Continue Last Game' }))
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Full House' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Score zero in this category?' })
+    expect(dialog).toHaveTextContent('Full House')
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'vegas')
+    expect(backendClient.saveGame).not.toHaveBeenCalled()
+    expect(backendClient.saveScore).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Roll 3')).toBeVisible()
+    expect(screen.getByLabelText('Dice total 15')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Die 1 showing 1.*Held/ }))
+      .toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Sixes: 6 points')).toBeVisible()
+    expect(screen.getByText('2 of 3 remaining for this game')).toBeVisible()
+    expect(screen.queryByLabelText('Full House: 0 points')).not.toBeInTheDocument()
+    expect(backendClient.saveGame).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Full House' }))
+    await user.click(screen.getByRole('button', { name: 'Score zero' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Full House: 0 points')).toBeVisible()
+    expect(screen.getByLabelText('Turn not started')).toBeVisible()
+    await waitFor(() => expect(backendClient.saveGame).toHaveBeenCalledTimes(1))
+    expect(backendClient.saveGame).toHaveBeenCalledWith(savedGame.gameId, expect.objectContaining({
+      dice: [null, null, null, null, null],
+      heldDice: [false, false, false, false, false],
+      rollCount: 0,
+      scores: { sixes: 6, fullHouse: 0 },
+      extraRollsUsed: 1,
+    }))
+    expect(backendClient.saveScore).not.toHaveBeenCalled()
+  })
+
+  it('lets a guest disable confirmations for immediate scratches and enable them again', async () => {
+    const backendClient = createMockBackendClient()
+    const user = userEvent.setup()
+    render(<App backendClient={backendClient} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    const confirmationPreference = screen.getByRole('checkbox', { name: 'Confirm before scratching' })
+    expect(confirmationPreference).toBeChecked()
+    await user.click(confirmationPreference)
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBe('false')
+
+    jest.spyOn(Math, 'random').mockReturnValue(0)
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Again (2 left)' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Again (1 left)' }))
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Twos' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Twos: 0 points')).toBeVisible()
+    expect(screen.getByLabelText('Turn not started')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Again (2 left)' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Again (1 left)' }))
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Threes' }))
+
+    expect(screen.getByRole('dialog', { name: 'Score zero in this category?' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByLabelText('Twos: 0 points')).toBeVisible()
+    expect(screen.queryByLabelText('Threes: 0 points')).not.toBeInTheDocument()
+    expect(backendClient.saveGame).not.toHaveBeenCalled()
+    expect(backendClient.saveTheme).not.toHaveBeenCalled()
+  })
+
+  it('keeps the browser preference across a remount and authenticated theme restoration', async () => {
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn(() => Promise.resolve({ theme: 'fire', savedGame: savedScratchGame() })),
+    })
+    const user = userEvent.setup()
+    const firstApp = render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    firstApp.unmount()
+
+    const { container } = render(<App backendClient={backendClient} />)
+    await user.click(await screen.findByRole('button', { name: 'Continue Last Game' }))
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Record zero points in Full House' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Full House: 0 points')).toBeVisible()
+    await waitFor(() => expect(backendClient.saveGame).toHaveBeenCalledTimes(1))
   })
 
   it.each([
@@ -576,6 +708,7 @@ describe('App authentication shell', () => {
   })
 
   it('returns a persisted disabled theme to Classic when the session loads', async () => {
+    localStorage.setItem(SCRATCH_PREFERENCE_KEY, 'false')
     const backendClient = createMockBackendClient({
       status: {
         available: true,
@@ -587,9 +720,12 @@ describe('App authentication shell', () => {
       getGameSession: jest.fn(() => Promise.resolve({ theme: 'fire', savedGame: null })),
     })
     const { container } = render(<App backendClient={backendClient} />)
+    const user = userEvent.setup()
 
     expect(await screen.findByRole('button', { name: 'Roll Dice' })).toBeVisible()
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
   })
 
   it('changes theme mid-game without losing the current roll or held dice', async () => {
@@ -614,8 +750,9 @@ describe('App authentication shell', () => {
     expect(screen.getByLabelText('Roll 1')).not.toBeVisible()
 
     await user.click(screen.getByRole('radio', { name: /Rainbow/ }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
     expect(gameSession).toHaveAttribute('data-game-theme', 'classic')
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
     expect(gameSession).toHaveAttribute('data-game-theme', 'rainbow')
     expect(container.querySelector('.dice-row')).toHaveAttribute('data-dice-theme', 'rainbow')
@@ -625,6 +762,7 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('button', { name: 'Roll Again (2 left)' })).toBeEnabled()
     expect(settingsButton).toHaveFocus()
     expect(settingsButton).toHaveAttribute('aria-pressed', 'false')
+    expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBe('false')
   })
 
   it.each([
@@ -653,14 +791,14 @@ describe('App authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: new RegExp(themeLabel) }))
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', themeId)
     expect(container.querySelector('.dice-row')).toHaveAttribute('data-dice-theme', themeId)
     expect(screen.getByRole('heading', { name: 'Your Roll' })).toBeVisible()
   })
 
-  it('discards a draft theme and returns focus to settings when canceled', async () => {
+  it('discards draft theme and scratch preferences and returns focus to settings when canceled', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
 
@@ -668,21 +806,26 @@ describe('App authentication shell', () => {
     const settingsButton = screen.getByRole('button', { name: 'Game settings' })
     await user.click(settingsButton)
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
     expect(screen.getByRole('heading', { name: 'Your Roll' })).toBeVisible()
     expect(settingsButton).toHaveFocus()
+    expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBeNull()
+    await user.click(settingsButton)
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).toBeChecked()
   })
 
-  it('resets to Classic after a guest returns to sign-in', async () => {
+  it('resets to Classic but keeps the scratch preference after a guest returns to sign-in', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Beach/ }))
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'beach')
 
     await user.click(screen.getByRole('link', { name: /Return to sign in/ }))
@@ -690,20 +833,28 @@ describe('App authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
 
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
   })
 
-  it('resets to Classic after an authenticated user signs out', async () => {
+  it('resets to Classic but keeps the scratch preference after an authenticated user signs out', async () => {
     const backendClient = createMockBackendClient({ restoredUser: authenticatedUser() })
     const user = userEvent.setup()
     const { container } = render(<App backendClient={backendClient} />)
 
     await user.click(await screen.findByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
     expect(container.querySelector('.game-session')).not.toBeInTheDocument()
+    expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBe('false')
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
   })
 })

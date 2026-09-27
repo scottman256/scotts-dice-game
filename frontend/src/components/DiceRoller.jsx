@@ -1,4 +1,5 @@
-import React, { useEffect, useReducer, useRef } from 'react'
+import React, { useEffect, useReducer, useRef, useState } from 'react'
+import ScratchConfirmModal from './ScratchConfirmModal'
 import { getDiceSet } from '../assets/diceSets'
 import { randomFace, rollUnheldDice } from '../diceLogic'
 import {
@@ -279,6 +280,7 @@ function Scorecard({ dice, rollCount, scores, gameComplete, onScore, onNewGame }
 }
 
 export default function DiceRoller({
+  confirmScratches = true,
   faceRoller = randomFace,
   highScoreStatus = null,
   initialGameId,
@@ -289,6 +291,10 @@ export default function DiceRoller({
   theme = 'classic',
 } = {}) {
   const [state, dispatch] = useReducer(gameReducer, initialState, createInitialGameState)
+  const [pendingScratch, setPendingScratch] = useState(null)
+  const rollButtonRef = useRef(null)
+  const newGameButtonRef = useRef(null)
+  const focusAfterScratchRef = useRef(false)
   const gameIdRef = useRef(initialGameId || createGameId())
   const hasRenderedInitialStateRef = useRef(false)
   const submittedGameRef = useRef(null)
@@ -316,6 +322,14 @@ export default function DiceRoller({
   } = getGameViewState(state)
 
   useEffect(() => {
+    if (!pendingScratch && focusAfterScratchRef.current) {
+      focusAfterScratchRef.current = false
+      const nextAction = gameComplete ? newGameButtonRef.current : rollButtonRef.current
+      nextAction?.focus()
+    }
+  }, [pendingScratch, gameComplete])
+
+  useEffect(() => {
     if (!hasRenderedInitialStateRef.current) {
       hasRenderedInitialStateRef.current = true
       return
@@ -340,7 +354,7 @@ export default function DiceRoller({
   }, [gameComplete, onGameComplete, scores, theme, totals.grandTotal])
 
   function handleRoll() {
-    if (rollDisabled) return
+    if (rollDisabled || pendingScratch) return
 
     dispatch({
       type: GAME_ACTIONS.roll,
@@ -349,14 +363,32 @@ export default function DiceRoller({
   }
 
   function handleToggleHold(index) {
+    if (pendingScratch) return
     dispatch({ type: GAME_ACTIONS.toggleHold, index })
   }
 
   function handleScore(category) {
+    if (pendingScratch) return
+    const { canScore, canScratch } = getCategoryScoreAvailability(category, {
+      dice, rollCount, scores, gameComplete,
+    })
+    if (!canScore) return
+    if (confirmScratches && canScratch) {
+      setPendingScratch(category)
+      return
+    }
     dispatch({ type: GAME_ACTIONS.score, category })
   }
 
+  function handleConfirmScratch() {
+    if (!pendingScratch) return
+    focusAfterScratchRef.current = true
+    dispatch({ type: GAME_ACTIONS.score, category: pendingScratch })
+    setPendingScratch(null)
+  }
+
   function handleNewGame() {
+    if (pendingScratch) return
     gameIdRef.current = createGameId()
     submittedGameRef.current = null
     onNewGame?.({ gameId: gameIdRef.current })
@@ -449,12 +481,12 @@ export default function DiceRoller({
         </p>
 
         <div className="controls">
-          <button type="button" className="roll-button" onClick={handleRoll} disabled={rollDisabled}>
+          <button type="button" className="roll-button" ref={rollButtonRef} onClick={handleRoll} disabled={rollDisabled}>
             {rollButtonLabel}
           </button>
           <div className="sum">Sum <strong>{sum ?? '—'}</strong></div>
           {gameComplete && (
-            <button type="button" className="new-game-button top-new-game-button" onClick={handleNewGame}>
+            <button type="button" className="new-game-button top-new-game-button" ref={newGameButtonRef} onClick={handleNewGame}>
               New Game
             </button>
           )}
@@ -495,6 +527,13 @@ export default function DiceRoller({
         onScore={handleScore}
         onNewGame={handleNewGame}
       />
+      {pendingScratch && (
+        <ScratchConfirmModal
+          categoryLabel={pendingScratch.label}
+          onCancel={() => setPendingScratch(null)}
+          onConfirm={handleConfirmScratch}
+        />
+      )}
     </main>
   )
 }

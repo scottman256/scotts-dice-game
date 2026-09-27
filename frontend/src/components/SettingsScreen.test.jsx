@@ -20,6 +20,10 @@ describe('SettingsScreen', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Game settings' })).toHaveFocus()
     expect(screen.getByRole('group', { name: 'Game style' })).toBeVisible()
+    expect(screen.getByRole('group', { name: 'Scoring' })).toBeVisible()
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+      .toHaveAccessibleDescription('Ask before recording zero points in a category. Saved in this browser.')
     expect(screen.getByText(/without interrupting your current turn or score/i)).toBeVisible()
 
     const expectedThemes = [
@@ -74,9 +78,9 @@ describe('SettingsScreen', () => {
 
     await user.click(screen.getByRole('radio', { name: new RegExp(`^${label}`) }))
     expect(props.onSave).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Save style & return to game' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
-    expect(props.onSave).toHaveBeenCalledWith({ theme: themeId })
+    expect(props.onSave).toHaveBeenCalledWith({ theme: themeId, confirmScratches: true })
     expect(props.onCancel).not.toHaveBeenCalled()
   })
 
@@ -84,10 +88,27 @@ describe('SettingsScreen', () => {
     const { props, user } = renderSettings()
 
     await user.click(screen.getByRole('radio', { name: /Sky/ }))
+    await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(props.onCancel).toHaveBeenCalledTimes(1)
     expect(props.onSave).not.toHaveBeenCalled()
+  })
+
+  it.each([true, false])('saves a change to the existing scratch-confirmation preference %s', async (enabled) => {
+    const { props, user } = renderSettings({
+      currentSettings: { theme: 'vegas', confirmScratches: enabled },
+    })
+    const confirmationToggle = screen.getByRole('checkbox', { name: 'Confirm before scratching' })
+    expect(confirmationToggle.checked).toBe(enabled)
+
+    await user.click(confirmationToggle)
+    expect(confirmationToggle.checked).toBe(!enabled)
+    expect(props.onSave).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+
+    expect(props.onSave).toHaveBeenCalledWith({ theme: 'vegas', confirmScratches: !enabled })
+    expect(props.onCancel).not.toHaveBeenCalled()
   })
 
   it('falls back to Classic for invalid incoming settings', () => {
