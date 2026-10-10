@@ -65,6 +65,7 @@ export function getCategoryScoreAvailability(category, {
   const saved = hasSavedScore(scores, category.id)
   const result = evaluateCategory(category.id, dice, { rollCount, scores })
   const scratchBlockedByBonus = category.id === 'fiveKind'
+    && !saved
     && !hasSavedScore(scores, 'fiveKindBonus')
     && rollCount >= NORMAL_ROLL_LIMIT
     && !result.qualifies

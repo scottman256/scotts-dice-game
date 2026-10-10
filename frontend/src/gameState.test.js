@@ -102,6 +102,25 @@ describe('hasSavedScore', () => {
 })
 
 describe('getCategoryScoreAvailability', () => {
+  it.each([[0, 3], [0, 4], [75, 3], [75, 4]])(
+    'does not block an already-filled 5 of a Kind (%i points) after roll %i',
+    (points, rollCount) => {
+      const state = createInitialGameState({
+        dice: [1, 1, 1, 1, 2],
+        rollCount,
+        scores: { fiveKind: points },
+      })
+      const fiveKind = category('fiveKind')
+
+      expect(getCategoryScoreAvailability(fiveKind, state)).toMatchObject({
+        saved: true,
+        scratchBlockedByBonus: false,
+        canScore: false,
+      })
+      expect(gameReducer(state, { type: GAME_ACTIONS.score, category: fiveKind })).toBe(state)
+    },
+  )
+
   it('requires the bonus category to be closed before 5 of a Kind can be scratched', () => {
     const fiveKind = category('fiveKind')
     const unqualifiedRoll = {

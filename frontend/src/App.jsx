@@ -63,6 +63,7 @@ export default function App({
   const [adminView, setAdminView] = useState('settings')
   const [enabledThemeIds, setEnabledThemeIds] = useState(ALL_THEME_IDS)
   const [highScoreStatus, setHighScoreStatus] = useState(null)
+  const [gameSummary, setGameSummary] = useState(null)
   const [gamePersistenceStatus, setGamePersistenceStatus] = useState('idle')
   const [savedGameToResume, setSavedGameToResume] = useState(null)
   const [resumeDecisionBusy, setResumeDecisionBusy] = useState(false)
@@ -71,8 +72,14 @@ export default function App({
   const shouldRestoreSettingsFocus = useRef(false)
   const persistenceQueueRef = useRef(Promise.resolve())
   const persistenceGenerationRef = useRef(0)
+  const completionRequestRef = useRef(null)
+
+  useEffect(() => () => {
+    completionRequestRef.current = null
+  }, [])
 
   function resetGamePresentation() {
+    completionRequestRef.current = null
     persistenceGenerationRef.current += 1
     persistenceQueueRef.current = Promise.resolve()
     setGameSettings((current) => ({
@@ -82,6 +89,7 @@ export default function App({
     }))
     setActiveScreen('game')
     setHighScoreStatus(null)
+    setGameSummary(null)
     setGamePersistenceStatus('idle')
     setSavedGameToResume(null)
     setResumeDecisionBusy(false)
@@ -395,7 +403,9 @@ export default function App({
   }, [backendClient, enqueuePersistence, session.kind])
 
   const handleNewGame = useCallback(() => {
+    completionRequestRef.current = null
     setHighScoreStatus(null)
+    setGameSummary(null)
     if (session.kind !== 'authenticated') return
     enqueuePersistence(
       () => backendClient.deleteSavedGame(),
@@ -404,20 +414,29 @@ export default function App({
   }, [backendClient, enqueuePersistence, session.kind])
 
   const handleGameComplete = useCallback(async ({ gameId, score, theme, categoryScores }) => {
-    if (session.kind !== 'authenticated') return
+    const request = { gameId }
+    completionRequestRef.current = request
+    if (session.kind !== 'authenticated') {
+      setGameSummary({ gameId, status: 'guest' })
+      return
+    }
     setHighScoreStatus('saving')
-    const clearSavedGame = enqueuePersistence(
-      () => backendClient.deleteSavedGame(),
-      'Your completed game could not be cleared from saved progress.',
-    )
+    setGameSummary({ gameId, status: 'saving' })
     try {
       const result = await backendClient.saveScore(gameId, score, categoryScores, theme)
+      if (completionRequestRef.current !== request) return
       setHighScoreStatus(result.newHighScore ? 'new' : 'saved')
+      setGameSummary({ ...result, gameId, status: 'ready' })
+      await enqueuePersistence(
+        () => backendClient.deleteSavedGame(),
+        'Your completed game could not be cleared from saved progress.',
+      )
     } catch {
+      if (completionRequestRef.current !== request) return
       setHighScoreStatus('error')
+      setGameSummary({ gameId, status: 'error' })
       setAuthError('Your game is complete, but the score could not be saved. Please check the backend service.')
     }
-    await clearSavedGame
   }, [backendClient, enqueuePersistence, session.kind])
 
   const loadScores = useCallback((mode) => (
@@ -518,6 +537,8 @@ export default function App({
               confirmScratches={gameSettings.confirmScratches}
               animateRolls={gameSettings.animateRolls && activeScreen === 'game'}
               highScoreStatus={highScoreStatus}
+              gameSummary={gameSummary}
+              isActive={activeScreen === 'game'}
               initialGameId={gameBootstrap.gameId}
               initialState={gameBootstrap.state}
               onGameComplete={handleGameComplete}

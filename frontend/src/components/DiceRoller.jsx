@@ -1,5 +1,7 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import ScratchConfirmModal from './ScratchConfirmModal'
+import GameSummary from './GameSummary'
+import GameSummaryModal from './GameSummaryModal'
 import { getDiceSet } from '../assets/diceSets'
 import { randomFace, rollUnheldDice } from '../diceLogic'
 import {
@@ -284,6 +286,8 @@ export default function DiceRoller({
   confirmScratches = true,
   faceRoller = randomFace,
   highScoreStatus = null,
+  gameSummary = null,
+  isActive = true,
   initialGameId,
   initialState,
   onGameComplete,
@@ -294,6 +298,8 @@ export default function DiceRoller({
   const [state, dispatch] = useReducer(gameReducer, initialState, createInitialGameState)
   const [pendingScratch, setPendingScratch] = useState(null)
   const [rollingDice, setRollingDice] = useState([])
+  const [dismissedSummaryId, setDismissedSummaryId] = useState(null)
+  const summaryButtonRef = useRef(null)
   const rollButtonRef = useRef(null)
   const newGameButtonRef = useRef(null)
   const focusAfterScratchRef = useRef(false)
@@ -322,6 +328,12 @@ export default function DiceRoller({
     heldCount,
     rollButtonLabel,
   } = getGameViewState(state)
+  const currentSummary = gameComplete && gameSummary?.gameId === gameIdRef.current ? gameSummary : null
+
+  function handleCloseSummary() {
+    setDismissedSummaryId(gameIdRef.current)
+    summaryButtonRef.current?.focus()
+  }
 
   useEffect(() => {
     if (!animateRolls) setRollingDice([])
@@ -448,6 +460,19 @@ export default function DiceRoller({
             {highScoreStatus === 'new' && (
               <strong className="new-high-score-message">NEW HIGH SCORE</strong>
             )}
+            {currentSummary && (
+              <>
+                <GameSummary summary={currentSummary} compact />
+                <button
+                  type="button"
+                  className="view-game-summary-button"
+                  ref={summaryButtonRef}
+                  onClick={() => setDismissedSummaryId(null)}
+                >
+                  View game summary
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -549,6 +574,9 @@ export default function DiceRoller({
         onScore={handleScore}
         onNewGame={handleNewGame}
       />
+      {isActive && currentSummary && dismissedSummaryId !== gameIdRef.current && (
+        <GameSummaryModal summary={currentSummary} score={totals.grandTotal} onClose={handleCloseSummary} />
+      )}
       {pendingScratch && (
         <ScratchConfirmModal
           categoryLabel={pendingScratch.label}
