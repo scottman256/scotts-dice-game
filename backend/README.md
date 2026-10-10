@@ -101,6 +101,8 @@ Each user can have one resumable game. Dice and in-progress category scores are 
 
 Classic is permanently available. Disabling another theme changes affected saved preferences to Classic and prevents new saves or completed games from using the disabled theme. Deleting a player's score rebuilds that player's achievements from the remaining completed-game history. A full game-data reset removes player scores, stats, achievements, and saved games without deleting accounts, then restores any missing original fictional leaderboard entries.
 
+`POST /api/scores` returns `personalRank`, `totalGames`, `tiedRank`, and `unlockedAchievements` alongside the existing score fields. Rank is one plus the number of this player's saved scores strictly greater than the submitted score; ties share a rank, and the total includes the submitted game and older score-only games. Awards include only achievements whose persisted qualifying game is the submitted game, not milestones backfilled from earlier games. Score persistence and achievement reconciliation share one transaction, with a per-player lock serializing submissions. Retrying the same game ID returns its existing score and awards without counting or awarding it twice; ranking reflects the player's current history.
+
 ## Tests and package
 
 Run all unit and real HTTP/H2 integration tests with:

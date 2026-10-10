@@ -1,6 +1,7 @@
 package com.scottsdicegame.backend.score.service;
 
 import com.scottsdicegame.backend.api.exception.ApiException;
+import com.scottsdicegame.backend.achievement.service.AchievementService;
 import com.scottsdicegame.backend.auth.service.AuthenticationService;
 import com.scottsdicegame.backend.game.catalog.GameCatalog;
 import com.scottsdicegame.backend.game.service.ThemeAvailabilityService;
@@ -8,13 +9,12 @@ import com.scottsdicegame.backend.score.dto.LeaderboardEntry;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionResponse;
 import com.scottsdicegame.backend.score.entity.GameScore;
-import com.scottsdicegame.backend.score.event.CompletedGameRecordedEvent;
 import com.scottsdicegame.backend.score.model.ScoreCategories;
 import com.scottsdicegame.backend.score.repository.GameScoreRepository;
 import com.scottsdicegame.backend.user.entity.UserAccount;
+import com.scottsdicegame.backend.user.repository.UserAccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -26,36 +26,52 @@ public class ScoreService {
 
     private final GameScoreRepository scoreRepository;
     private final AuthenticationService authenticationService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AchievementService achievementService;
+    private final UserAccountRepository userRepository;
     private final ThemeAvailabilityService themeAvailabilityService;
 
     public ScoreService(
             GameScoreRepository scoreRepository,
             AuthenticationService authenticationService,
-            ApplicationEventPublisher eventPublisher,
+            AchievementService achievementService,
+            UserAccountRepository userRepository,
             ThemeAvailabilityService themeAvailabilityService
     ) {
         this.scoreRepository = scoreRepository;
         this.authenticationService = authenticationService;
-        this.eventPublisher = eventPublisher;
+        this.achievementService = achievementService;
+        this.userRepository = userRepository;
         this.themeAvailabilityService = themeAvailabilityService;
     }
 
     @Transactional
     public ScoreSubmissionResponse submit(UUID userId, ScoreSubmissionRequest request) {
         validateCompletedScorecard(request);
-        return scoreRepository.findByUserIdAndGameId(userId, request.gameId())
-                .map(ScoreSubmissionResponse::from)
-                .orElseGet(() -> saveNewScore(userId, request));
+        // Serialize submissions for this player, including retries of the same game.
+        UserAccount user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.UNAUTHORIZED,
+                        "ACCOUNT_NOT_FOUND",
+                        "The signed-in account no longer exists."
+                ));
+        GameScore saved = scoreRepository.findByUserIdAndGameId(userId, request.gameId())
+                .orElseGet(() -> saveNewScore(userId, user, request));
+        var unlockedAchievements = achievementService.reconcileForGame(userId, saved.getId());
+        return ScoreSubmissionResponse.from(
+                saved,
+                scoreRepository.countByUserIdAndScoreGreaterThan(userId, saved.getScore()) + 1,
+                scoreRepository.countByUserId(userId),
+                scoreRepository.countByUserIdAndScore(userId, saved.getScore()) > 1,
+                unlockedAchievements
+        );
     }
 
-    private ScoreSubmissionResponse saveNewScore(UUID userId, ScoreSubmissionRequest request) {
-        UserAccount user = authenticationService.requireUser(userId);
+    private GameScore saveNewScore(UUID userId, UserAccount user, ScoreSubmissionRequest request) {
         boolean newPersonalBest = scoreRepository
                 .findTopByUserIdOrderByScoreDescCompletedAtAsc(userId)
                 .map(previousBest -> request.score() > previousBest.getScore())
                 .orElse(true);
-        GameScore saved = scoreRepository.saveAndFlush(
+        return scoreRepository.saveAndFlush(
                 new GameScore(
                         request.gameId(),
                         user,
@@ -65,8 +81,6 @@ public class ScoreService {
                         request.theme()
                 )
         );
-        eventPublisher.publishEvent(new CompletedGameRecordedEvent(userId));
-        return ScoreSubmissionResponse.from(saved);
     }
 
     private void validateCompletedScorecard(ScoreSubmissionRequest request) {

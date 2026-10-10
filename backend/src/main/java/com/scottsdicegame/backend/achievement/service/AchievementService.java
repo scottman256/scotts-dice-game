@@ -47,12 +47,32 @@ public class AchievementService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public AchievementCollectionResponse reconcileForUser(UUID userId) {
-        UserAccount user = userRepository.findByIdForUpdate(userId)
+        List<AchievementResponse> responses = responses(reconcile(lockUser(userId)));
+        return new AchievementCollectionResponse(
+                AchievementCatalog.DISPLAY_CAPACITY,
+                responses,
+                lockedAchievementHints(responses)
+        );
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public List<AchievementResponse> reconcileForGame(UUID userId, UUID gameScoreId) {
+        // Join score submission so the score and its awards succeed or roll back together.
+        reconcile(lockUser(userId));
+        return responses(achievementRepository.findByUserIdAndQualifyingGameScoreId(userId, gameScoreId));
+    }
+
+    private UserAccount lockUser(UUID userId) {
+        return userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.UNAUTHORIZED,
                         "ACCOUNT_NOT_FOUND",
                         "The signed-in account no longer exists."
                 ));
+    }
+
+    private List<UserAchievement> reconcile(UserAccount user) {
+        UUID userId = user.getId();
         List<UserAchievement> earned = new ArrayList<>(achievementRepository.findByUserId(userId));
         Set<String> earnedKeys = new HashSet<>();
         earned.forEach(achievement -> earnedKeys.add(achievement.getAchievementKey()));
@@ -65,18 +85,17 @@ public class AchievementService {
             earned.addAll(achievementRepository.saveAll(newlyEarned));
         }
 
-        List<AchievementResponse> responses = earned.stream()
+        return earned;
+    }
+
+    private static List<AchievementResponse> responses(List<UserAchievement> earned) {
+        return earned.stream()
                 .filter(achievement -> AchievementCatalog.find(achievement.getAchievementKey()).isPresent())
                 .sorted(Comparator
                         .comparing(UserAchievement::getAchievedAt)
                         .thenComparingInt(AchievementService::catalogOrder))
                 .map(AchievementService::toResponse)
                 .toList();
-        return new AchievementCollectionResponse(
-                AchievementCatalog.DISPLAY_CAPACITY,
-                responses,
-                lockedAchievementHints(responses)
-        );
     }
 
     @Transactional

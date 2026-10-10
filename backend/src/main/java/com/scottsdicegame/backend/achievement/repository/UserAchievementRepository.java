@@ -10,6 +10,8 @@ public interface UserAchievementRepository extends JpaRepository<UserAchievement
 
     List<UserAchievement> findByUserId(UUID userId);
 
+    List<UserAchievement> findByUserIdAndQualifyingGameScoreId(UUID userId, UUID gameScoreId);
+
     long countByUserId(UUID userId);
 
     void deleteByUserId(UUID userId);

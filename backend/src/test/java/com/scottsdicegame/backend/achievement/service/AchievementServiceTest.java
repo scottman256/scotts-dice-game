@@ -37,12 +37,8 @@ class AchievementServiceTest {
         achievementService = new AchievementService(achievementRepository, scoreRepository, userRepository);
         userId = UUID.randomUUID();
 
-        UserAccount user = UserAccount.manual(
-                "player",
-                "player",
-                "player@example.com",
-                "encoded-password"
-        );
+        UserAccount user = mock(UserAccount.class);
+        when(user.getId()).thenReturn(userId);
         when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
         when(scoreRepository.findByUserIdOrderByCompletedAtAscIdAsc(userId)).thenReturn(List.of());
     }

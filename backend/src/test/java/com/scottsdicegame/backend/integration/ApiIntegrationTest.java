@@ -1,11 +1,16 @@
 package com.scottsdicegame.backend.integration;
 
+import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
+import com.scottsdicegame.backend.score.model.ScoreCategories;
+import com.scottsdicegame.backend.score.service.ScoreService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,11 +18,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(
         webEnvironment = WebEnvironment.RANDOM_PORT,
@@ -57,6 +65,12 @@ class ApiIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ScoreService scoreService;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -507,6 +521,123 @@ class ApiIntegrationTest {
         assertThat(get("/api/game-session", null).statusCode()).isEqualTo(401);
         assertThat(get("/api/stats/me", null).statusCode()).isEqualTo(401);
         assertThat(get("/api/achievements/me", null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void scoreResponsesIncludePersonalRankAndOnlyAwardsEarnedByThatGame() throws Exception {
+        String token = registerSummaryPlayer();
+        var first = submitSummaryScore(token, UUID.randomUUID(), 410, "golden", SCORECARD_410);
+        assertThat(first.body()).contains(
+                "\"personalRank\":1", "\"totalGames\":1", "\"tiedRank\":false",
+                "\"key\":\"first-game\"", "\"key\":\"golden-game\""
+        );
+
+        var lower = submitSummaryScore(token, UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        assertThat(lower.body()).contains(
+                "\"personalRank\":2", "\"totalGames\":2", "\"tiedRank\":false",
+                "\"unlockedAchievements\":[]"
+        );
+        var tied = submitSummaryScore(token, UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        assertThat(tied.body()).contains(
+                "\"personalRank\":2", "\"totalGames\":3", "\"tiedRank\":true",
+                "\"newHighScore\":false", "\"unlockedAchievements\":[]"
+        );
+
+        UUID bestGameId = UUID.randomUUID();
+        var best = submitSummaryScore(token, bestGameId, 675, "classic", SCORECARD_675);
+        assertThat(best.body()).contains(
+                "\"personalRank\":1", "\"totalGames\":4", "\"newHighScore\":true",
+                "\"key\":\"score-500\"", "\"key\":\"score-600\"", "\"key\":\"triple-crown\""
+        ).doesNotContain("\"key\":\"first-game\"", "\"key\":\"golden-game\"");
+        var retry = submitSummaryScore(token, bestGameId, 675, "classic", SCORECARD_675);
+        assertThat(retry.body()).isEqualTo(best.body());
+
+        // A different player's history and awards must not influence this response.
+        var otherPlayer = submitSummaryScore(registerSummaryPlayer(), UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        assertThat(otherPlayer.body()).contains(
+                "\"personalRank\":1", "\"totalGames\":1", "\"tiedRank\":false", "\"key\":\"first-game\""
+        );
+    }
+
+    @Test
+    void retroactivelyReconciledAwardsAreNotAnnouncedForTheWrongGame() throws Exception {
+        String token = registerSummaryPlayer();
+        UUID firstGameId = UUID.randomUUID();
+        submitSummaryScore(token, firstGameId, 410, "golden", SCORECARD_410);
+        jdbcTemplate.update("""
+                DELETE FROM user_achievements
+                WHERE user_id = (SELECT user_id FROM game_scores WHERE game_id = ?)
+                """, firstGameId);
+
+        var next = submitSummaryScore(token, UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        assertThat(next.body()).contains("\"unlockedAchievements\":[]", "\"totalGames\":2");
+        assertThat(get("/api/achievements/me", token).body())
+                .contains("\"key\":\"first-game\"", "\"key\":\"golden-game\"");
+    }
+
+    @Test
+    void concurrentRetriesSaveOneGameAndReturnTheSameAwardsAndRanking() throws Exception {
+        String token = registerSummaryPlayer();
+        UUID gameId = UUID.randomUUID();
+        HttpRequest request = HttpRequest.newBuilder(uri("/api/scores"))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("""
+                        {"gameId":"%s","score":410,"theme":"golden","categoryScores":%s}
+                        """.formatted(gameId, SCORECARD_410)))
+                .build();
+        var first = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        var second = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(first.join().statusCode()).isEqualTo(201);
+        assertThat(second.join().statusCode()).isEqualTo(201);
+        assertThat(first.join().body()).isEqualTo(second.join().body())
+                .contains("\"personalRank\":1", "\"totalGames\":1", "\"key\":\"first-game\"");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM game_scores WHERE game_id = ?", Integer.class, gameId
+        )).isEqualTo(1);
+    }
+
+    @Test
+    void scoreAndAchievementAwardsRollBackTogether() throws Exception {
+        String token = registerSummaryPlayer();
+        String userId = extractJsonString(get("/api/auth/me", token).body(), "id");
+        UUID gameId = UUID.randomUUID();
+        Map<String, Integer> categories = new LinkedHashMap<>();
+        ScoreCategories.ALL.forEach(category -> categories.put(category, 0));
+        var request = new ScoreSubmissionRequest(gameId, 0, "classic", categories);
+        var transaction = new TransactionTemplate(transactionManager);
+
+        assertThatThrownBy(() -> transaction.executeWithoutResult(status -> {
+            var result = scoreService.submit(UUID.fromString(userId), request);
+            assertThat(result.unlockedAchievements()).isNotEmpty();
+            throw new IllegalStateException("Rollback the completed game");
+        })).isInstanceOf(IllegalStateException.class).hasMessage("Rollback the completed game");
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM game_scores WHERE game_id = ?", Integer.class, gameId
+        )).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user_achievements WHERE user_id = ?", Integer.class, UUID.fromString(userId)
+        )).isZero();
+    }
+
+    private String registerSummaryPlayer() throws Exception {
+        String username = "Summary_" + UUID.randomUUID().toString().substring(0, 8);
+        var response = post("/api/auth/register", """
+                {"username":"%s","email":"%s@example.com","password":"DiceGame!2026","passwordConfirmation":"DiceGame!2026"}
+                """.formatted(username, username.toLowerCase()), null);
+        assertThat(response.statusCode()).isEqualTo(201);
+        return extractToken(response.body());
+    }
+
+    private HttpResponse<String> submitSummaryScore(
+            String token, UUID gameId, int score, String theme, String categories
+    ) throws Exception {
+        var response = post("/api/scores", """
+                {"gameId":"%s","score":%d,"theme":"%s","categoryScores":%s}
+                """.formatted(gameId, score, theme, categories), token);
+        assertThat(response.statusCode()).isEqualTo(201);
+        return response;
     }
 
     private HttpResponse<String> get(String path, String token) throws IOException, InterruptedException {
