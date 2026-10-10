@@ -25,6 +25,8 @@ Scratch confirmation is enabled by default. Choosing an eligible zero-point scor
 
 Dice rolls include a 400 ms tumble for unheld dice in every theme; held dice stay still. Turn off **Animate dice rolls** under **Game settings > Motion** for instant rolls. This preference is remembered in the current browser, and the device’s reduced-motion preference is always respected. Animation does not delay scoring, holding, or saving a roll.
 
+When a game ends, a themed results dialog shows the final score. Signed-in players also see that score's rank among all their saved games and the badge art, names, and descriptions of achievements earned by that game. Equal scores share a rank. With no new achievements, the dialog shows only the score and ranking; guests see their final score without account history. Escape or **Back to scorecard** dismisses the dialog, while the ranking and badges remain on the final-score panel and **View game summary** reopens it. Failed submissions display an error without inventing a rank or clearing saved progress, and late responses cannot change a new game's results.
+
 ## Google and Facebook sign-in
 
 The app uses the modular Firebase Authentication SDK:

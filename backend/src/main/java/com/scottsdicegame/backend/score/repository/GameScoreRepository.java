@@ -15,6 +15,12 @@ public interface GameScoreRepository extends JpaRepository<GameScore, UUID> {
 
     Optional<GameScore> findByUserIdAndGameId(UUID userId, UUID gameId);
 
+    long countByUserId(UUID userId);
+
+    long countByUserIdAndScoreGreaterThan(UUID userId, int score);
+
+    long countByUserIdAndScore(UUID userId, int score);
+
     Optional<GameScore> findTopByUserIdOrderByScoreDescCompletedAtAsc(UUID userId);
 
     @EntityGraph(attributePaths = "user")

@@ -3941,7 +3941,8 @@ td small {
   letter-spacing: -0.04em;
 }
 
-.scratch-confirm-modal {
+.scratch-confirm-modal,
+.game-summary-modal {
   width: min(420px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   padding: clamp(22px, 5vw, 30px);
@@ -3956,7 +3957,8 @@ td small {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
 
-.scratch-confirm-modal::backdrop {
+.scratch-confirm-modal::backdrop,
+.game-summary-modal::backdrop {
   background: rgba(3, 10, 20, 0.7);
   backdrop-filter: blur(5px);
 }
@@ -4016,6 +4018,206 @@ td small {
 
 .scratch-confirm-submit:hover {
   background: var(--theme-primary-hover);
+}
+
+.game-summary-modal {
+  width: min(620px, calc(100% - 32px));
+  max-height: min(90dvh, 840px);
+  padding: 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.game-summary-modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-summary-modal-body {
+  min-height: 0;
+  padding: clamp(22px, 5vw, 30px);
+  overflow-y: auto;
+}
+
+.game-summary-modal .eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent-light);
+}
+
+.game-summary-modal h2 {
+  margin: 0;
+  color: var(--theme-heading);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.3;
+}
+
+.game-summary-modal h2:focus {
+  outline: none;
+}
+
+.game-summary-score {
+  display: grid;
+  gap: 6px;
+  margin: 20px 0 12px;
+}
+
+.game-summary-score span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.game-summary-score strong {
+  color: var(--accent-light);
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.game-summary-high-score {
+  margin: 0 0 16px;
+  color: var(--accent-light);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.game-summary {
+  width: 100%;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.game-summary-message {
+  margin: 16px auto;
+  max-width: 46ch;
+  color: var(--theme-heading);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.game-summary-achievements {
+  padding-top: 18px;
+  margin-top: 20px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.game-summary-achievements h3 {
+  margin: 0 0 16px;
+  color: var(--accent-light);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.game-summary-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 14px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.game-summary-badges li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.game-summary-badges img {
+  display: block;
+  width: min(100%, 112px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.game-summary-badges h4 {
+  margin: 0;
+  color: var(--theme-heading);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.game-summary-badges p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.game-summary-compact .game-summary-badges {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
+}
+
+.game-summary-compact .game-summary-badges img {
+  width: 64px;
+}
+
+.game-summary-actions {
+  flex-shrink: 0;
+  padding: 16px clamp(22px, 5vw, 30px);
+  border-top: 1px solid var(--line);
+}
+
+.game-summary-actions button,
+.view-game-summary-button {
+  position: relative;
+  z-index: 2;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 11px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.game-summary-actions button {
+  width: 100%;
+  background: var(--theme-primary-background);
+  color: var(--theme-primary-text);
+}
+
+.game-summary-actions button:hover {
+  background: var(--theme-primary-hover);
+}
+
+.view-game-summary-button {
+  border: 1px solid var(--line-strong);
+  background: var(--theme-secondary-background);
+  color: var(--theme-secondary-text);
+}
+
+.view-game-summary-button:hover {
+  border-color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .game-summary-modal .game-summary-badges {
+    grid-template-columns: 1fr;
+  }
+
+  .game-summary-modal .game-summary-badges li {
+    flex-direction: row;
+    padding: 12px;
+    text-align: left;
+  }
+
+  .game-summary-modal .game-summary-badges img {
+    flex-shrink: 0;
+    width: 72px;
+  }
 }
 
 .resume-game-modal > p:not(.eyebrow) {

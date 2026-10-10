@@ -1,26 +1,32 @@
 package com.scottsdicegame.backend.score.service;
 
 import com.scottsdicegame.backend.auth.service.AuthenticationService;
+import com.scottsdicegame.backend.achievement.service.AchievementService;
+import com.scottsdicegame.backend.achievement.dto.AchievementResponse;
+import com.scottsdicegame.backend.api.exception.ApiException;
 import com.scottsdicegame.backend.game.service.ThemeAvailabilityService;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.entity.GameScore;
-import com.scottsdicegame.backend.score.event.CompletedGameRecordedEvent;
 import com.scottsdicegame.backend.score.model.ScoreCategories;
 import com.scottsdicegame.backend.score.repository.GameScoreRepository;
 import com.scottsdicegame.backend.user.entity.UserAccount;
+import com.scottsdicegame.backend.user.repository.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
+import java.util.List;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,7 +35,8 @@ class ScoreServiceTest {
 
     private GameScoreRepository scoreRepository;
     private AuthenticationService authenticationService;
-    private ApplicationEventPublisher eventPublisher;
+    private AchievementService achievementService;
+    private UserAccountRepository userRepository;
     private ScoreService scoreService;
     private ThemeAvailabilityService themeAvailabilityService;
 
@@ -37,13 +44,15 @@ class ScoreServiceTest {
     void setUp() {
         scoreRepository = mock(GameScoreRepository.class);
         authenticationService = mock(AuthenticationService.class);
-        eventPublisher = mock(ApplicationEventPublisher.class);
+        achievementService = mock(AchievementService.class);
+        userRepository = mock(UserAccountRepository.class);
         themeAvailabilityService = mock(ThemeAvailabilityService.class);
         when(themeAvailabilityService.isEnabled(any())).thenReturn(true);
         scoreService = new ScoreService(
                 scoreRepository,
                 authenticationService,
-                eventPublisher,
+                achievementService,
+                userRepository,
                 themeAvailabilityService
         );
     }
@@ -54,7 +63,11 @@ class ScoreServiceTest {
         UUID gameId = UUID.randomUUID();
         UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
         when(scoreRepository.findByUserIdAndGameId(userId, gameId)).thenReturn(Optional.empty());
-        when(authenticationService.requireUser(userId)).thenReturn(user);
+        when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
+        when(scoreRepository.countByUserId(userId)).thenReturn(1L);
+        when(scoreRepository.countByUserIdAndScore(userId, 425)).thenReturn(1L);
+        var achievement = new AchievementResponse("first-game", "First Finish", "Completed your first game.", Instant.EPOCH);
+        when(achievementService.reconcileForGame(userId, null)).thenReturn(List.of(achievement));
         when(scoreRepository.findTopByUserIdOrderByScoreDescCompletedAtAsc(userId)).thenReturn(Optional.empty());
         when(scoreRepository.saveAndFlush(any(GameScore.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -71,7 +84,15 @@ class ScoreServiceTest {
         verify(scoreRepository).saveAndFlush(scoreCaptor.capture());
         assertThat(scoreCaptor.getValue().isNewPersonalBest()).isTrue();
         assertThat(scoreCaptor.getValue().getTheme()).isEqualTo("golden");
-        verify(eventPublisher).publishEvent(new CompletedGameRecordedEvent(userId));
+        assertThat(response.personalRank()).isEqualTo(1);
+        assertThat(response.totalGames()).isEqualTo(1);
+        assertThat(response.tiedRank()).isFalse();
+        assertThat(response.unlockedAchievements()).containsExactly(achievement);
+        var order = inOrder(userRepository, scoreRepository, achievementService);
+        order.verify(userRepository).findByIdForUpdate(userId);
+        order.verify(scoreRepository).findByUserIdAndGameId(userId, gameId);
+        order.verify(scoreRepository).saveAndFlush(any(GameScore.class));
+        order.verify(achievementService).reconcileForGame(userId, null);
     }
 
     @Test
@@ -80,7 +101,11 @@ class ScoreServiceTest {
         UUID gameId = UUID.randomUUID();
         UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
         GameScore existing = new GameScore(gameId, user, 350, true);
+        when(userRepository.findByIdForUpdate(userId)).thenReturn(Optional.of(user));
         when(scoreRepository.findByUserIdAndGameId(userId, gameId)).thenReturn(Optional.of(existing));
+        when(scoreRepository.countByUserIdAndScoreGreaterThan(userId, 350)).thenReturn(2L);
+        when(scoreRepository.countByUserId(userId)).thenReturn(47L);
+        when(scoreRepository.countByUserIdAndScore(userId, 350)).thenReturn(3L);
 
         var response = scoreService.submit(userId, new ScoreSubmissionRequest(
                 gameId,
@@ -92,7 +117,20 @@ class ScoreServiceTest {
         assertThat(response.score()).isEqualTo(350);
         assertThat(response.newHighScore()).isTrue();
         verify(scoreRepository, never()).saveAndFlush(any());
-        verify(eventPublisher, never()).publishEvent(any());
+        assertThat(response.personalRank()).isEqualTo(3);
+        assertThat(response.totalGames()).isEqualTo(47);
+        assertThat(response.tiedRank()).isTrue();
+        assertThat(response.unlockedAchievements()).isEmpty();
+        verify(achievementService).reconcileForGame(userId, existing.getId());
+    }
+
+    @Test
+    void rejectsSubmissionsForAnAccountThatNoLongerExists() {
+        assertThatThrownBy(() -> scoreService.submit(UUID.randomUUID(), new ScoreSubmissionRequest(
+                UUID.randomUUID(), 0, "classic", scorecard(Map.of())
+        ))).isInstanceOf(ApiException.class).hasMessage("The signed-in account no longer exists.");
+        verify(scoreRepository, never()).saveAndFlush(any());
+        verify(achievementService, never()).reconcileForGame(any(), any());
     }
 
     private static Map<String, Integer> scorecard(Map<String, Integer> scoredCategories) {

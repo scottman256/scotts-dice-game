@@ -1,9 +1,10 @@
 import React from 'react'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals'
 import App from './App'
 import { BackendApiError } from './api/backendClient'
+import { ALL_CATEGORIES } from './gameRules'
 
 const SCRATCH_PREFERENCE_KEY = 'scotts-dice-game.confirm-scratches'
 const MOTION_PREFERENCE_KEY = 'scotts-dice-game.animate-rolls'
@@ -34,6 +35,34 @@ function authenticatedUser(overrides = {}) {
     providerLabel: 'Google',
     ...overrides,
   }
+}
+
+function almostCompleteGame() {
+  return {
+    ...savedScratchGame(),
+    rollCount: 1,
+    scores: Object.fromEntries(ALL_CATEGORIES.filter(({ id }) => id !== 'any').map(({ id }) => [id, 0])),
+  }
+}
+
+function deferredScore() {
+  let resolve
+  let reject
+  const promise = new Promise((onResolve, onReject) => { resolve = onResolve; reject = onReject })
+  return { promise, resolve, reject }
+}
+
+async function finishAuthenticatedGame(saveScore) {
+  const backendClient = createMockBackendClient({
+    restoredUser: authenticatedUser(),
+    getGameSession: jest.fn(() => Promise.resolve({ theme: 'vegas', savedGame: almostCompleteGame() })),
+    saveScore,
+  })
+  const user = userEvent.setup()
+  const rendered = render(<App backendClient={backendClient} />)
+  await user.click(await screen.findByRole('button', { name: 'Continue Last Game' }))
+  await user.click(screen.getByRole('button', { name: 'Score 15 points in Any' }))
+  return { ...rendered, user, backendClient }
 }
 
 function createMockAuthService({
@@ -143,6 +172,121 @@ function createMockBackendClient({
     resetAdminGameData,
   }
 }
+
+describe('end-of-game results', () => {
+  const result = {
+    personalRank: 3, totalGames: 47, newHighScore: false, tiedRank: false,
+    unlockedAchievements: [{ key: 'first-game', title: 'First Finish', description: 'Completed your first game.' }],
+  }
+
+  it('shows returned badges and ranking, saves once, and retains the summary on the final-score panel', async () => {
+    const pending = deferredScore()
+    const saveScore = jest.fn(() => pending.promise)
+    const { container, user, backendClient } = await finishAuthenticatedGame(saveScore)
+    const dialog = screen.getByRole('dialog', { name: 'Game Complete' })
+    expect(dialog).toHaveTextContent('Saving your score and checking achievements')
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+
+    await act(async () => pending.resolve(result))
+
+    expect(dialog).toHaveTextContent('3rd best score out of the 47 games you played.')
+    expect(within(dialog).getByText('First Finish')).toBeVisible()
+    expect(dialog.closest('.game-session')).toHaveAttribute('data-game-theme', 'vegas')
+    expect(saveScore).toHaveBeenCalledTimes(1)
+    expect(saveScore).toHaveBeenCalledWith(almostCompleteGame().gameId, 15, { ...almostCompleteGame().scores, any: 15 }, 'vegas')
+    expect(backendClient.deleteSavedGame).toHaveBeenCalledTimes(1)
+    expect(backendClient.getAchievements).not.toHaveBeenCalled()
+    expect(backendClient.getGameStats).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Back to scorecard' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(container.querySelector('.final-score-display')).toHaveTextContent('First Finish')
+    await user.click(screen.getAllByRole('button', { name: 'New Game' })[0])
+    expect(screen.queryByText('First Finish')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Roll Dice' })).toBeEnabled()
+  })
+
+  it('shows the ranking alone when no achievements unlocked, including a tied personal best', async () => {
+    await finishAuthenticatedGame(jest.fn(() => Promise.resolve({
+      ...result, personalRank: 1, totalGames: 8, tiedRank: true, unlockedAchievements: [],
+    })))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('You tied for the 1st best score out of the 8 games you played.')
+    expect(within(dialog).queryByRole('region', { name: 'Achievements unlocked this game' })).not.toBeInTheDocument()
+    expect(screen.queryByText('NEW HIGH SCORE')).not.toBeInTheDocument()
+  })
+
+  it('preserves the existing new-high-score announcement', async () => {
+    await finishAuthenticatedGame(jest.fn(() => Promise.resolve({ ...result, personalRank: 1, newHighScore: true })))
+    expect(within(screen.getByRole('dialog')).getByText('NEW HIGH SCORE')).toBeVisible()
+    expect(screen.getAllByText('NEW HIGH SCORE')).toHaveLength(2)
+  })
+
+  it('keeps the scorecard available and saved progress intact if submitting the score fails', async () => {
+    const { user, backendClient } = await finishAuthenticatedGame(jest.fn(() => Promise.reject(new Error('Offline'))))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('Your score could not be saved. Your ranking and new achievements are unavailable.')
+    expect(dialog).toHaveTextContent('Final score15')
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Back to scorecard' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('the score could not be saved')
+    expect(screen.getAllByRole('button', { name: 'New Game' })[0]).toBeEnabled()
+  })
+
+  it.each(['resolve', 'reject'])('ignores a late %s after a new game begins', async (outcome) => {
+    const pending = deferredScore()
+    const { user, backendClient } = await finishAuthenticatedGame(jest.fn(() => pending.promise))
+    await user.click(screen.getByRole('button', { name: 'Back to scorecard' }))
+    await user.click(screen.getAllByRole('button', { name: 'New Game' })[0])
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    await act(async () => pending[outcome](outcome === 'resolve' ? result : new Error('Offline')))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByText('First Finish')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Roll 1')).toBeVisible()
+    // Starting the new game clears old progress once; the old response must not clear the new roll.
+    expect(backendClient.deleteSavedGame).toHaveBeenCalledTimes(1)
+    expect(backendClient.saveGame).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['resolve', 'reject'])('ignores a late %s after signing out and starting a guest session', async (outcome) => {
+    const pending = deferredScore()
+    const { user, backendClient } = await finishAuthenticatedGame(jest.fn(() => pending.promise))
+    await user.click(screen.getByRole('button', { name: 'Back to scorecard' }))
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    await act(async () => pending[outcome](outcome === 'resolve' ? result : new Error('Offline')))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Roll Dice' })).toBeEnabled()
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+  })
+
+  it('ignores a response after the app unmounts', async () => {
+    const pending = deferredScore()
+    const { unmount, backendClient } = await finishAuthenticatedGame(jest.fn(() => pending.promise))
+    unmount()
+    await act(async () => pending.resolve(result))
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+  })
+
+  it('gives guests a final-score summary without making authenticated requests or inventing history', async () => {
+    localStorage.setItem(SCRATCH_PREFERENCE_KEY, 'false')
+    const backendClient = createMockBackendClient()
+    const user = userEvent.setup()
+    const { container } = render(<App backendClient={backendClient} />)
+    await user.click(await screen.findByRole('button', { name: 'Continue as Guest' }))
+    for (let turn = 0; turn < ALL_CATEGORIES.length; turn++) {
+      for (let roll = 0; roll < 3; roll++) fireEvent.click(container.querySelector('.roll-button'))
+      fireEvent.click(container.querySelector('.score-coin:not(:disabled)'))
+    }
+    const dialog = screen.getByRole('dialog', { name: 'Game Complete' })
+    expect(within(dialog).getByRole('status')).toHaveTextContent(/^The game is over\.$/)
+    expect(within(dialog).queryByRole('list')).not.toBeInTheDocument()
+    expect(backendClient.saveScore).not.toHaveBeenCalled()
+    expect(backendClient.getAchievements).not.toHaveBeenCalled()
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+  })
+})
 
 describe('App authentication shell', () => {
   it('offers only guest play when the backend is unavailable', () => {

@@ -311,6 +311,23 @@ describe('DiceRoller', () => {
     })
   })
 
+  it.each([[0, 3], [0, 4], [75, 3], [75, 4]])(
+    'removes the bonus-scratch guidance for a filled 5 of a Kind (%i points) after roll %i',
+    (points, rollCount) => {
+      renderGame({
+        initialState: { dice: [1, 1, 1, 1, 2], rollCount, scores: { fiveKind: points } },
+      })
+      const savedScore = screen.getByLabelText(`5 of a Kind: ${points} points`)
+      const row = savedScore.closest('tr')
+
+      expect(savedScore).toBeVisible()
+      expect(within(row).getByText('Score 75 points')).toBeVisible()
+      expect(row).not.toHaveClass('scratch-blocked-row')
+      expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+      expect(screen.queryByText('Scratch the 5 of a Kind Bonus first')).not.toBeInTheDocument()
+    },
+  )
+
   it('keeps the 5 of a Kind scratch locked until its bonus category is closed', () => {
     const blockedGame = renderGame({
       initialState: {
