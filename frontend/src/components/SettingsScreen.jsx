@@ -67,6 +67,24 @@ export default function SettingsScreen({ currentSettings, availableThemeIds, onC
               </span>
             </label>
           </fieldset>
+          <fieldset className="setting-group">
+            <legend>Motion</legend>
+            <label className="setting-toggle">
+              <input
+                type="checkbox"
+                checked={draftSettings.animateRolls}
+                onChange={(event) => handleSettingChange('animateRolls', event.target.checked)}
+                aria-labelledby="animate-rolls-label"
+                aria-describedby="animate-rolls-help"
+              />
+              <span className="setting-toggle-copy">
+                <strong id="animate-rolls-label">Animate dice rolls</strong>
+                <small id="animate-rolls-help">
+                  Give unheld dice a short tumble. Respects your device’s reduced-motion preference. Saved in this browser.
+                </small>
+              </span>
+            </label>
+          </fieldset>
           {GAME_SETTING_DEFINITIONS.map((setting) => (
             <fieldset
               className="setting-group"

@@ -6,6 +6,7 @@ import App from './App'
 import { BackendApiError } from './api/backendClient'
 
 const SCRATCH_PREFERENCE_KEY = 'scotts-dice-game.confirm-scratches'
+const MOTION_PREFERENCE_KEY = 'scotts-dice-game.animate-rolls'
 
 beforeEach(() => localStorage.clear())
 afterEach(() => localStorage.clear())
@@ -728,6 +729,73 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
   })
 
+  it('changes roll motion mid-turn without losing holds and animates only subsequent rolls', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    expect(container.querySelectorAll('.die-tumbling')).toHaveLength(5)
+    await user.click(screen.getByRole('button', { name: /Die 1 showing/ }))
+    const heldLabel = screen.getByRole('button', { name: /Die 1 showing/ }).getAttribute('aria-label')
+
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    expect(localStorage.getItem(MOTION_PREFERENCE_KEY)).toBe('false')
+    expect(screen.getByLabelText('Roll 1')).toBeVisible()
+    expect(screen.getByRole('button', { name: heldLabel })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Roll Again (2 left)' }))
+    expect(container.querySelector('.die-tumbling')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Roll 2')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    expect(localStorage.getItem(MOTION_PREFERENCE_KEY)).toBe('true')
+    expect(container.querySelector('.die-tumbling')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Roll Again (1 left)' }))
+    expect(container.querySelectorAll('.die-tumbling')).toHaveLength(4)
+    expect(screen.getByRole('button', { name: heldLabel })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('remembers disabled roll motion across a remount and authenticated game restoration', async () => {
+    const user = userEvent.setup()
+    const firstApp = render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    firstApp.unmount()
+
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn(() => Promise.resolve({ theme: 'vegas', savedGame: savedScratchGame() })),
+    })
+    const { container } = render(<App backendClient={backendClient} />)
+    await user.click(await screen.findByRole('button', { name: 'Continue Last Game' }))
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'vegas')
+    expect(container.querySelector('.die-tumbling')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Use 4th Roll (2 left)' }))
+    expect(screen.getByLabelText('Roll 4')).toBeVisible()
+    expect(container.querySelector('.die-tumbling')).not.toBeInTheDocument()
+    await waitFor(() => expect(backendClient.saveGame).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).not.toBeChecked()
+  })
+
+  it('does not replay a roll when returning from settings with motion still enabled', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    await user.click(screen.getByRole('button', { name: 'Roll Dice' }))
+    await user.click(screen.getByRole('button', { name: 'Game settings' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(container.querySelector('.die-tumbling')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Roll 1')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Roll Again (2 left)' }))
+    expect(container.querySelectorAll('.die-tumbling')).toHaveLength(5)
+  })
+
   it('changes theme mid-game without losing the current roll or held dice', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
@@ -798,7 +866,7 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('heading', { name: 'Your Roll' })).toBeVisible()
   })
 
-  it('discards draft theme and scratch preferences and returns focus to settings when canceled', async () => {
+  it('discards draft preferences and returns focus to settings when canceled', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
 
@@ -807,17 +875,20 @@ describe('App authentication shell', () => {
     await user.click(settingsButton)
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
     expect(screen.getByRole('heading', { name: 'Your Roll' })).toBeVisible()
     expect(settingsButton).toHaveFocus()
     expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBeNull()
+    expect(localStorage.getItem(MOTION_PREFERENCE_KEY)).toBeNull()
     await user.click(settingsButton)
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).toBeChecked()
   })
 
-  it('resets to Classic but keeps the scratch preference after a guest returns to sign-in', async () => {
+  it('resets to Classic but keeps browser preferences after a guest returns to sign-in', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
 
@@ -825,6 +896,7 @@ describe('App authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Beach/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
     await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'beach')
 
@@ -835,9 +907,10 @@ describe('App authentication shell', () => {
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).not.toBeChecked()
   })
 
-  it('resets to Classic but keeps the scratch preference after an authenticated user signs out', async () => {
+  it('resets to Classic but keeps browser preferences after an authenticated user signs out', async () => {
     const backendClient = createMockBackendClient({ restoredUser: authenticatedUser() })
     const user = userEvent.setup()
     const { container } = render(<App backendClient={backendClient} />)
@@ -845,6 +918,7 @@ describe('App authentication shell', () => {
     await user.click(await screen.findByRole('button', { name: 'Game settings' }))
     await user.click(screen.getByRole('radio', { name: /Fire/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
     await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
 
@@ -852,9 +926,11 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
     expect(container.querySelector('.game-session')).not.toBeInTheDocument()
     expect(localStorage.getItem(SCRATCH_PREFERENCE_KEY)).toBe('false')
+    expect(localStorage.getItem(MOTION_PREFERENCE_KEY)).toBe('false')
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
     expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).not.toBeChecked()
   })
 })

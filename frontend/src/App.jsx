@@ -26,6 +26,7 @@ import {
   normalizeGameSettings,
 } from './settings/gameThemes'
 import { loadConfirmScratches, saveConfirmScratches } from './settings/scratchPreference'
+import { loadAnimateRolls, saveAnimateRolls } from './settings/rollMotionPreference'
 
 const unavailableAuthService = createUnavailableAuthService()
 const unavailableBackendClient = createUnavailableBackendClient()
@@ -55,6 +56,7 @@ export default function App({
   const [gameSettings, setGameSettings] = useState(() => ({
     ...DEFAULT_GAME_SETTINGS,
     confirmScratches: loadConfirmScratches(),
+    animateRolls: loadAnimateRolls(),
   }))
   const [activeScreen, setActiveScreen] = useState('game')
   const [playerView, setPlayerView] = useState('personal')
@@ -73,7 +75,11 @@ export default function App({
   function resetGamePresentation() {
     persistenceGenerationRef.current += 1
     persistenceQueueRef.current = Promise.resolve()
-    setGameSettings((current) => ({ ...DEFAULT_GAME_SETTINGS, confirmScratches: current.confirmScratches }))
+    setGameSettings((current) => ({
+      ...DEFAULT_GAME_SETTINGS,
+      confirmScratches: current.confirmScratches,
+      animateRolls: current.animateRolls,
+    }))
     setActiveScreen('game')
     setHighScoreStatus(null)
     setGamePersistenceStatus('idle')
@@ -341,6 +347,7 @@ export default function App({
     const normalizedSettings = normalizeGameSettings(settings)
     setGameSettings(normalizedSettings)
     saveConfirmScratches(normalizedSettings.confirmScratches)
+    saveAnimateRolls(normalizedSettings.animateRolls)
     if (session.kind === 'authenticated') {
       enqueuePersistence(
         () => backendClient.saveTheme(normalizedSettings.theme),
@@ -509,6 +516,7 @@ export default function App({
               key={gameBootstrap.key}
               theme={gameSettings.theme}
               confirmScratches={gameSettings.confirmScratches}
+              animateRolls={gameSettings.animateRolls && activeScreen === 'game'}
               highScoreStatus={highScoreStatus}
               initialGameId={gameBootstrap.gameId}
               initialState={gameBootstrap.state}

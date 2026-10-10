@@ -23,6 +23,8 @@ The local administrator can sign in with `admin` or `admin@admin.com` and passwo
 
 Scratch confirmation is enabled by default. Choosing an eligible zero-point score opens a dialog styled for the current theme; Cancel or Escape keeps the turn intact, and Score zero fills the selected category and ends the turn. Turn off **Confirm before scratching** under **Game settings > Scoring** for immediate scratches. This preference is remembered in the current browser for both guest and signed-in play; it does not change which categories are eligible to scratch.
 
+Dice rolls include a 400 ms tumble for unheld dice in every theme; held dice stay still. Turn off **Animate dice rolls** under **Game settings > Motion** for instant rolls. This preference is remembered in the current browser, and the device’s reduced-motion preference is always respected. Animation does not delay scoring, holding, or saving a roll.
+
 ## Google and Facebook sign-in
 
 The app uses the modular Firebase Authentication SDK:
