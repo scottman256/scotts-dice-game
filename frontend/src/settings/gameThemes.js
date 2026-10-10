@@ -1,6 +1,7 @@
 export const DEFAULT_GAME_SETTINGS = Object.freeze({
   theme: 'classic',
   confirmScratches: true,
+  animateRolls: true,
 })
 
 export const GAME_THEMES = Object.freeze([
@@ -127,5 +128,8 @@ export function normalizeGameSettings(settings = {}) {
     confirmScratches: typeof settings.confirmScratches === 'boolean'
       ? settings.confirmScratches
       : DEFAULT_GAME_SETTINGS.confirmScratches,
+    animateRolls: typeof settings.animateRolls === 'boolean'
+      ? settings.animateRolls
+      : DEFAULT_GAME_SETTINGS.animateRolls,
   }
 }

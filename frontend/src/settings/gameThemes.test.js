@@ -62,15 +62,16 @@ describe('game theme settings', () => {
   })
 
   it('uses Classic by default and normalizes invalid settings', () => {
-    expect(DEFAULT_GAME_SETTINGS).toEqual({ theme: 'classic', confirmScratches: true })
-    expect(normalizeGameSettings()).toEqual({ theme: 'classic', confirmScratches: true })
-    expect(normalizeGameSettings({ theme: 'unknown' })).toEqual({ theme: 'classic', confirmScratches: true })
+    expect(DEFAULT_GAME_SETTINGS).toEqual({ theme: 'classic', confirmScratches: true, animateRolls: true })
+    expect(normalizeGameSettings()).toEqual(DEFAULT_GAME_SETTINGS)
+    expect(normalizeGameSettings({ theme: 'unknown' })).toEqual(DEFAULT_GAME_SETTINGS)
   })
 
   it.each([true, false])('preserves the explicit scratch-confirmation preference %s', (confirmScratches) => {
     expect(normalizeGameSettings({ theme: 'vegas', confirmScratches })).toEqual({
       theme: 'vegas',
       confirmScratches,
+      animateRolls: true,
     })
   })
 
@@ -81,10 +82,24 @@ describe('game theme settings', () => {
     },
   )
 
+  it.each([true, false])('preserves the explicit roll-motion preference %s', (animateRolls) => {
+    expect(normalizeGameSettings({ theme: 'vegas', animateRolls })).toEqual({
+      theme: 'vegas', confirmScratches: true, animateRolls,
+    })
+  })
+
+  it.each([undefined, null, 'false', 'true', 0, 1])(
+    'defaults to animated rolls for invalid preferences: %s',
+    (animateRolls) => {
+      expect(normalizeGameSettings({ animateRolls }).animateRolls).toBe(true)
+    },
+  )
+
   it('keeps valid and future setting values while normalizing the theme', () => {
     expect(normalizeGameSettings({ theme: 'beach', sound: 'quiet' })).toEqual({
       theme: 'beach',
       confirmScratches: true,
+      animateRolls: true,
       sound: 'quiet',
     })
   })

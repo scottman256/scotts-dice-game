@@ -280,6 +280,7 @@ function Scorecard({ dice, rollCount, scores, gameComplete, onScore, onNewGame }
 }
 
 export default function DiceRoller({
+  animateRolls = true,
   confirmScratches = true,
   faceRoller = randomFace,
   highScoreStatus = null,
@@ -292,6 +293,7 @@ export default function DiceRoller({
 } = {}) {
   const [state, dispatch] = useReducer(gameReducer, initialState, createInitialGameState)
   const [pendingScratch, setPendingScratch] = useState(null)
+  const [rollingDice, setRollingDice] = useState([])
   const rollButtonRef = useRef(null)
   const newGameButtonRef = useRef(null)
   const focusAfterScratchRef = useRef(false)
@@ -320,6 +322,10 @@ export default function DiceRoller({
     heldCount,
     rollButtonLabel,
   } = getGameViewState(state)
+
+  useEffect(() => {
+    if (!animateRolls) setRollingDice([])
+  }, [animateRolls])
 
   useEffect(() => {
     if (!pendingScratch && focusAfterScratchRef.current) {
@@ -356,6 +362,7 @@ export default function DiceRoller({
   function handleRoll() {
     if (rollDisabled || pendingScratch) return
 
+    setRollingDice(animateRolls ? heldDice.map((held) => !held) : [])
     dispatch({
       type: GAME_ACTIONS.roll,
       dice: rollUnheldDice(dice, heldDice, faceRoller),
@@ -364,7 +371,12 @@ export default function DiceRoller({
 
   function handleToggleHold(index) {
     if (pendingScratch) return
+    stopDieAnimation(index)
     dispatch({ type: GAME_ACTIONS.toggleHold, index })
+  }
+
+  function stopDieAnimation(index) {
+    setRollingDice((current) => current.map((rolling, dieIndex) => dieIndex === index ? false : rolling))
   }
 
   function handleScore(category) {
@@ -462,7 +474,17 @@ export default function DiceRoller({
             >
               {value ? (
                 <>
-                  <img src={diceSet.faces[value - 1]} alt="" width="64" height="64" draggable="false" />
+                  <img
+                    // Restart each unheld die's animation even when its face stays the same.
+                    key={heldDice[index] ? 'held' : rollCount}
+                    className={animateRolls && rollingDice[index] ? 'die-tumbling' : undefined}
+                    onAnimationEnd={() => stopDieAnimation(index)}
+                    src={diceSet.faces[value - 1]}
+                    alt=""
+                    width="64"
+                    height="64"
+                    draggable="false"
+                  />
                   {heldDice[index] && <span className="held-badge" aria-hidden="true">Held</span>}
                 </>
               ) : (

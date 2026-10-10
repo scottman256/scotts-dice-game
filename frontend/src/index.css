@@ -2144,6 +2144,28 @@ a:focus-visible {
   height: 80%;
 }
 
+.die-tumbling {
+  animation: die-tumble 400ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.die:nth-child(even) .die-tumbling {
+  animation-name: die-tumble-reverse;
+}
+
+@keyframes die-tumble {
+  0% { transform: translateY(0) rotate(-150deg) scale(0.84); }
+  35% { transform: translateY(-8px) rotate(-65deg) scale(0.94); }
+  70% { transform: translateY(2px) rotate(12deg) scale(1.02); }
+  100% { transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes die-tumble-reverse {
+  0% { transform: translateY(0) rotate(150deg) scale(0.84); }
+  35% { transform: translateY(-8px) rotate(65deg) scale(0.94); }
+  70% { transform: translateY(2px) rotate(-12deg) scale(1.02); }
+  100% { transform: translateY(0) rotate(0) scale(1); }
+}
+
 .die-empty {
   border-style: dashed;
   color: rgba(154, 178, 188, 0.45);

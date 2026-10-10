@@ -21,6 +21,10 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Game settings' })).toHaveFocus()
     expect(screen.getByRole('group', { name: 'Game style' })).toBeVisible()
     expect(screen.getByRole('group', { name: 'Scoring' })).toBeVisible()
+    expect(screen.getByRole('group', { name: 'Motion' })).toBeVisible()
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
+      .toHaveAccessibleDescription('Give unheld dice a short tumble. Respects your device’s reduced-motion preference. Saved in this browser.')
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
       .toHaveAccessibleDescription('Ask before recording zero points in a category. Saved in this browser.')
@@ -80,7 +84,7 @@ describe('SettingsScreen', () => {
     expect(props.onSave).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
-    expect(props.onSave).toHaveBeenCalledWith({ theme: themeId, confirmScratches: true })
+    expect(props.onSave).toHaveBeenCalledWith({ theme: themeId, confirmScratches: true, animateRolls: true })
     expect(props.onCancel).not.toHaveBeenCalled()
   })
 
@@ -89,6 +93,7 @@ describe('SettingsScreen', () => {
 
     await user.click(screen.getByRole('radio', { name: /Sky/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Confirm before scratching' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Animate dice rolls' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(props.onCancel).toHaveBeenCalledTimes(1)
@@ -107,8 +112,21 @@ describe('SettingsScreen', () => {
     expect(props.onSave).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
 
-    expect(props.onSave).toHaveBeenCalledWith({ theme: 'vegas', confirmScratches: !enabled })
+    expect(props.onSave).toHaveBeenCalledWith({ theme: 'vegas', confirmScratches: !enabled, animateRolls: true })
     expect(props.onCancel).not.toHaveBeenCalled()
+  })
+
+  it.each([true, false])('saves a change to the existing roll-motion preference %s', async (enabled) => {
+    const { props, user } = renderSettings({
+      currentSettings: { theme: 'fire', confirmScratches: false, animateRolls: enabled },
+    })
+    const motionToggle = screen.getByRole('checkbox', { name: 'Animate dice rolls' })
+    expect(motionToggle.checked).toBe(enabled)
+    await user.click(motionToggle)
+    expect(motionToggle.checked).toBe(!enabled)
+    expect(props.onSave).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Save settings & return to game' }))
+    expect(props.onSave).toHaveBeenCalledWith({ theme: 'fire', confirmScratches: false, animateRolls: !enabled })
   })
 
   it('falls back to Classic for invalid incoming settings', () => {
