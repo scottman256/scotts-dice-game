@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ScoreServiceTest {
@@ -55,6 +56,57 @@ class ScoreServiceTest {
                 userRepository,
                 themeAvailabilityService
         );
+    }
+
+    @Test
+    void readsSavedCategoryScoresWithoutChangingTheGameOrRequiringAnEnabledTheme() {
+        UUID userId = UUID.randomUUID();
+        UUID scoreId = UUID.randomUUID();
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
+        Map<String, Integer> categories = scorecard(Map.of("fiveKind", 75));
+        GameScore game = new GameScore(UUID.randomUUID(), user, 75, false, categories, "vegas");
+        when(scoreRepository.findByIdAndUserId(scoreId, userId)).thenReturn(Optional.of(game));
+
+        var response = scoreService.completedGame(userId, scoreId);
+
+        assertThat(response.categoryScores()).isEqualTo(categories);
+        assertThat(response.categoryScores()).hasSize(19).containsEntry("fiveKindBonus", 0);
+        assertThat(response.score()).isEqualTo(75);
+        assertThat(response.theme()).isEqualTo("vegas");
+        assertThat(response.scorecardAvailable()).isTrue();
+        game.getCategoryScores().clear();
+        assertThat(response.categoryScores()).hasSize(19);
+        verify(authenticationService).requireUser(userId);
+        verify(scoreRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(achievementService, themeAvailabilityService, userRepository);
+    }
+
+    @Test
+    void reportsMissingHistoricalScorecardsWithoutFillingInZeros() {
+        UUID userId = UUID.randomUUID();
+        UUID scoreId = UUID.randomUUID();
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
+        when(scoreRepository.findByIdAndUserId(scoreId, userId))
+                .thenReturn(Optional.of(new GameScore(UUID.randomUUID(), user, 500, true)));
+
+        var response = scoreService.completedGame(userId, scoreId);
+
+        assertThat(response.score()).isEqualTo(500);
+        assertThat(response.theme()).isNull();
+        assertThat(response.categoryScores()).isEmpty();
+        assertThat(response.scorecardAvailable()).isFalse();
+    }
+
+    @Test
+    void refusesToReturnAScoreThatDoesNotBelongToThePlayer() {
+        UUID userId = UUID.randomUUID();
+        UUID scoreId = UUID.randomUUID();
+        when(scoreRepository.findByIdAndUserId(scoreId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> scoreService.completedGame(userId, scoreId))
+                .isInstanceOf(ApiException.class).hasMessage("That completed game could not be found.");
+        verify(authenticationService).requireUser(userId);
+        verifyNoInteractions(achievementService, themeAvailabilityService, userRepository);
     }
 
     @Test

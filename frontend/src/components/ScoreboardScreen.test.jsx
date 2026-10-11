@@ -1,10 +1,123 @@
 import React from 'react'
 import { describe, expect, it, jest } from '@jest/globals'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ScoreboardScreen from './ScoreboardScreen'
+import { ALL_CATEGORIES } from '../gameRules'
+
+const scratchedCard = Object.fromEntries(ALL_CATEGORIES.map(({ id }) => [id, 0]))
+const completedCard = {
+  ...scratchedCard, ones: 5, twos: 10, threes: 15, fours: 20, fives: 25, sixes: 30,
+  any: 20, fiveKind: 75, fiveKindBonus: 150, firstRollFiveKind: 250,
+}
+const completedEntries = [
+  { scoreId: 'first', rank: 1, playerName: 'Ada', score: 665, completedAt: '2026-10-11T12:00:00Z' },
+  { scoreId: 'second', rank: 2, playerName: 'Ada', score: 0, completedAt: null },
+]
+
+function renderHistory(loadGame, onThemePreview = jest.fn()) {
+  const loadScores = jest.fn().mockResolvedValue(completedEntries)
+  const props = { mode: 'personal', loadScores, loadGame, onThemePreview, onBack: jest.fn() }
+  return { ...render(<ScoreboardScreen {...props} />), props, user: userEvent.setup() }
+}
 
 describe('ScoreboardScreen', () => {
+  it('opens each personal score as a read-only card and returns focus to the score link', async () => {
+    const loadGame = jest.fn()
+      .mockResolvedValueOnce({ score: 665, theme: 'vegas', categoryScores: completedCard, scorecardAvailable: true })
+      .mockResolvedValueOnce({ score: 0, theme: 'classic', categoryScores: scratchedCard, scorecardAvailable: true })
+    const { user, props } = renderHistory(loadGame)
+    const scoreLink = await screen.findByRole('link', { name: '665' })
+    scoreLink.focus()
+    await user.keyboard('{Enter}')
+
+    const card = await screen.findByRole('region', { name: 'Scorecard' })
+    expect(screen.getByRole('heading', { name: 'Finished Scorecard' })).toHaveFocus()
+    expect(loadGame).toHaveBeenLastCalledWith('first')
+    expect(props.onThemePreview).toHaveBeenLastCalledWith('vegas')
+    for (const { id, label } of ALL_CATEGORIES) {
+      expect(within(card).getByLabelText(`${label}: ${completedCard[id]} points`)).toHaveTextContent(String(completedCard[id]))
+    }
+    expect(within(card).getByRole('row', { name: 'Grand Total 665' })).toBeVisible()
+    expect(within(card).getByRole('row', { name: 'Total Bonuses Earned 215' })).toBeVisible()
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByText('Scratch the 5 of a Kind Bonus first')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gold dollar buttons can be scored now/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Game' })).not.toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('button', { name: 'Back to My Top 10' })[1])
+    expect(scoreLink).toHaveFocus()
+    expect(props.onThemePreview).toHaveBeenLastCalledWith(null)
+    expect(props.loadScores).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('link', { name: '0' }))
+    expect(await screen.findByRole('row', { name: 'Grand Total 0' })).toBeVisible()
+    expect(loadGame).toHaveBeenLastCalledWith('second')
+    expect(screen.getByLabelText('5 of a Kind: 0 points')).toBeVisible()
+    expect(props.onThemePreview).toHaveBeenLastCalledWith('classic')
+  })
+
+  it('offers a retry after a failed request', async () => {
+    const loadGame = jest.fn().mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ score: 0, theme: 'classic', categoryScores: scratchedCard, scorecardAvailable: true })
+    const { user } = renderHistory(loadGame)
+    await user.click(await screen.findByRole('link', { name: '0' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('We could not load this scorecard.')
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('row', { name: 'Grand Total 0' })).toBeVisible()
+    expect(loadGame).toHaveBeenCalledTimes(2)
+  })
+
+  it('handles a deleted score with a way back to the list', async () => {
+    const { user } = renderHistory(jest.fn().mockRejectedValue({ status: 404 }))
+    await user.click(await screen.findByRole('link', { name: '665' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('This completed game is no longer available.')
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to My Top 10' }))
+    expect(screen.getByRole('heading', { name: 'My Top 10 Scores' })).toBeVisible()
+  })
+
+  it('explains missing historical details without inventing category scores', async () => {
+    const { user, props } = renderHistory(jest.fn().mockResolvedValue({
+      score: 665, theme: null, categoryScores: {}, scorecardAvailable: false,
+    }))
+    await user.click(await screen.findByRole('link', { name: '665' }))
+    expect(await screen.findByText(/category scores were not recorded/)).toBeVisible()
+    expect(screen.getByText(/Final score: 665/)).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Scorecard' })).not.toBeInTheDocument()
+    expect(props.onThemePreview).toHaveBeenLastCalledWith('classic')
+  })
+
+  it.each(['resolve', 'reject'])('ignores a late %s after leaving the loading view', async (outcome) => {
+    let resolve, reject
+    const pending = new Promise((res, rej) => { resolve = res; reject = rej })
+    const { user, props } = renderHistory(jest.fn(() => pending))
+    await user.click(await screen.findByRole('link', { name: '665' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Loading scorecard')
+    await user.click(screen.getByRole('button', { name: 'Back to My Top 10' }))
+    await act(async () => {
+      if (outcome === 'resolve') resolve({ theme: 'vegas', categoryScores: completedCard, scorecardAvailable: true })
+      else reject(new Error('offline'))
+    })
+    expect(screen.getByRole('link', { name: '665' })).toHaveFocus()
+    expect(screen.queryByRole('heading', { name: 'Finished Scorecard' })).not.toBeInTheDocument()
+    expect(props.onThemePreview).not.toHaveBeenCalledWith('vegas')
+  })
+
+  it('closes a historical card when switching to the global leaderboard', async () => {
+    const { user, props, rerender } = renderHistory(jest.fn().mockResolvedValue({
+      score: 665, theme: 'vegas', categoryScores: completedCard, scorecardAvailable: true,
+    }))
+    await user.click(await screen.findByRole('link', { name: '665' }))
+    await screen.findByRole('region', { name: 'Scorecard' })
+    rerender(<ScoreboardScreen {...props} mode="global" />)
+    expect(await screen.findByRole('cell', { name: '665' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: '665' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Finished Scorecard' })).not.toBeInTheDocument()
+    expect(props.onThemePreview).toHaveBeenLastCalledWith(null)
+    rerender(<ScoreboardScreen {...props} />)
+    expect(await screen.findByRole('link', { name: '665' })).toBeVisible()
+  })
+
   it('loads and displays the personal top ten', async () => {
     const loadScores = jest.fn(() => Promise.resolve([{
       scoreId: 1,

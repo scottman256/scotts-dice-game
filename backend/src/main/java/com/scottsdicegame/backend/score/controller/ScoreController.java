@@ -2,6 +2,7 @@ package com.scottsdicegame.backend.score.controller;
 
 import com.scottsdicegame.backend.auth.service.AuthenticationService;
 import com.scottsdicegame.backend.score.dto.LeaderboardEntry;
+import com.scottsdicegame.backend.score.dto.CompletedGameResponse;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionResponse;
 import com.scottsdicegame.backend.score.service.ScoreService;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +47,11 @@ public class ScoreController {
     @GetMapping("/leaderboard")
     List<LeaderboardEntry> globalTopTen(Authentication authentication) {
         return scoreService.globalTopTen(userId(authentication));
+    }
+
+    @GetMapping("/me/{scoreId}")
+    CompletedGameResponse completedGame(Authentication authentication, @PathVariable UUID scoreId) {
+        return scoreService.completedGame(userId(authentication), scoreId);
     }
 
     private static UUID userId(Authentication authentication) {

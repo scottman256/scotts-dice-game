@@ -60,6 +60,7 @@ export default function App({
   }))
   const [activeScreen, setActiveScreen] = useState('game')
   const [playerView, setPlayerView] = useState('personal')
+  const [scorecardTheme, setScorecardTheme] = useState(null)
   const [adminView, setAdminView] = useState('settings')
   const [enabledThemeIds, setEnabledThemeIds] = useState(ALL_THEME_IDS)
   const [highScoreStatus, setHighScoreStatus] = useState(null)
@@ -484,7 +485,7 @@ export default function App({
   const gameReady = session.kind === 'guest' || gamePersistenceStatus === 'ready'
 
   return (
-    <div className="app-shell game-session" data-game-theme={gameSettings.theme}>
+    <div className="app-shell game-session" data-game-theme={scorecardTheme || gameSettings.theme}>
       <AppNavbar
         sessionKind={session.kind}
         user={session.user}
@@ -556,8 +557,11 @@ export default function App({
           )}
           {activeScreen === 'player' && (playerView === 'personal' || playerView === 'global') && (
             <ScoreboardScreen
+              key={playerView}
               mode={playerView}
               loadScores={loadScores}
+              loadGame={backendClient.getCompletedGame}
+              onThemePreview={setScorecardTheme}
               isAdmin={Boolean(session.user.admin)}
               deleteScore={backendClient.deleteAdminScore}
               resetGameData={backendClient.resetAdminGameData}

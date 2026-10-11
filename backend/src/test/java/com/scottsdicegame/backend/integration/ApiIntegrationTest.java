@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -73,6 +74,63 @@ class ApiIntegrationTest {
     private PlatformTransactionManager transactionManager;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void completedScorecardsAreReadableOnlyByTheirOwnerAndDoNotChangeSavedProgress() throws Exception {
+        String owner = registerSummaryPlayer();
+        String otherPlayer = registerSummaryPlayer();
+        var submission = submitSummaryScore(owner, UUID.randomUUID(), 410, "golden", SCORECARD_410);
+        String scoreId = extractJsonString(submission.body(), "id");
+        var personalScores = objectMapper.readTree(get("/api/scores/me", owner).body());
+        assertThat(personalScores.get(0).get("scoreId").asString()).isEqualTo(scoreId);
+        String sessionBefore = get("/api/game-session", owner).body();
+        String achievementsBefore = get("/api/achievements/me", owner).body();
+        String path = "/api/scores/me/" + scoreId;
+
+        var response = get(path, owner);
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        var game = objectMapper.readTree(response.body());
+        assertThat(game.get("scoreId").asString()).isEqualTo(scoreId);
+        assertThat(game.get("score").asInt()).isEqualTo(410);
+        assertThat(game.get("theme").asString()).isEqualTo("golden");
+        assertThat(game.get("completedAt").asString()).isEqualTo(personalScores.get(0).get("completedAt").asString());
+        assertThat(game.get("categoryScores")).isEqualTo(objectMapper.readTree(SCORECARD_410));
+        assertThat(game.get("categoryScores").size()).isEqualTo(19);
+        assertThat(game.get("scorecardAvailable").asBoolean()).isTrue();
+        assertThat(get(path, null).statusCode()).isEqualTo(401);
+        var forbidden = get(path, otherPlayer);
+        var missing = get("/api/scores/me/" + UUID.randomUUID(), owner);
+        assertThat(forbidden.statusCode()).isEqualTo(404);
+        assertThat(missing.statusCode()).isEqualTo(404);
+        assertThat(forbidden.body()).contains("\"code\":\"SCORE_NOT_FOUND\"").doesNotContain("categoryScores");
+        assertThat(missing.body()).contains("\"code\":\"SCORE_NOT_FOUND\"");
+        assertThat(get("/api/game-session", owner).body()).isEqualTo(sessionBefore);
+        assertThat(get("/api/achievements/me", owner).body()).isEqualTo(achievementsBefore);
+        assertThat(objectMapper.readTree(get("/api/scores/me", owner).body())).isEqualTo(personalScores);
+    }
+
+    @Test
+    void historicalScoresWithoutCategoryDetailsRemainReadable() throws Exception {
+        String owner = registerSummaryPlayer();
+        var submission = submitSummaryScore(owner, UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        String scoreId = extractJsonString(submission.body(), "id");
+        // Represent games saved before category scores and themes were recorded.
+        jdbcTemplate.update("DELETE FROM completed_game_category_scores WHERE game_score_id = ?", UUID.fromString(scoreId));
+        jdbcTemplate.update("UPDATE game_scores SET theme = NULL WHERE id = ?", UUID.fromString(scoreId));
+
+        var response = get("/api/scores/me/" + scoreId, owner);
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        var game = objectMapper.readTree(response.body());
+        assertThat(game.get("score").asInt()).isEqualTo(275);
+        assertThat(game.get("categoryScores").isEmpty()).isTrue();
+        assertThat(game.get("theme").isNull()).isTrue();
+        assertThat(game.get("scorecardAvailable").asBoolean()).isFalse();
+    }
 
     @Test
     void statusEndpointIsPublicAndReportsAvailableManualAuthentication() throws Exception {

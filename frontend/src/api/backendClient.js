@@ -164,6 +164,9 @@ export function createBackendClient({
     async getPersonalScores() {
       return request('/api/scores/me')
     },
+    async getCompletedGame(scoreId) {
+      return request(`/api/scores/me/${encodeURIComponent(scoreId)}`)
+    },
     async getLeaderboard() {
       return request('/api/scores/leaderboard')
     },
@@ -250,6 +253,7 @@ export function createUnavailableBackendClient() {
     clearSession() {},
     saveScore: unavailable,
     getPersonalScores: unavailable,
+    getCompletedGame: unavailable,
     getLeaderboard: unavailable,
     getGameStats: unavailable,
     getAchievements: unavailable,

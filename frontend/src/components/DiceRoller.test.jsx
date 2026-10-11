@@ -240,7 +240,7 @@ describe('DiceRoller', () => {
     expect(onGameStateChange).not.toHaveBeenCalled()
   })
 
-  it.each([3, 4])('confirms a scratch once after roll %i without spending an extra roll', async (rollCount) => {
+  it.each([3, 4])('confirms a scratch after roll %i without scrolling or spending an extra roll', async (rollCount) => {
     const onGameStateChange = jest.fn()
     const { user } = renderGame({
       initialState: {
@@ -254,11 +254,15 @@ describe('DiceRoller', () => {
 
     await user.click(screen.getByRole('button', { name: 'Record zero points in Large Straight' }))
     expect(onGameStateChange).not.toHaveBeenCalled()
+    const focus = jest.spyOn(screen.getByRole('button', {
+      name: rollCount === 3 ? 'Use 4th Roll (2 left)' : 'Cash In a Score',
+    }), 'focus')
     await user.dblClick(screen.getByRole('button', { name: 'Score zero' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Large Straight: 0 points')).toHaveTextContent('0')
     expect(screen.getByRole('button', { name: 'Roll Dice' })).toHaveFocus()
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true })
     expect(onGameStateChange).toHaveBeenCalledTimes(1)
     expect(onGameStateChange).toHaveBeenLastCalledWith({
       gameId: expect.any(String),
@@ -285,7 +289,7 @@ describe('DiceRoller', () => {
     expect(screen.getByLabelText('Dice have not been rolled')).toBeVisible()
   })
 
-  it('submits a final-category scratch only after confirmation and focuses New Game', async () => {
+  it('submits a final-category scratch and focuses New Game without scrolling', async () => {
     const scores = completeScores()
     delete scores.largeStraight
     const onGameComplete = jest.fn()
@@ -298,10 +302,12 @@ describe('DiceRoller', () => {
 
     await user.click(screen.getByRole('button', { name: 'Record zero points in Large Straight' }))
     expect(onGameComplete).not.toHaveBeenCalled()
+    const focus = jest.spyOn(HTMLElement.prototype, 'focus')
     await user.click(screen.getByRole('button', { name: 'Score zero' }))
 
     expect(screen.getByText('19/19 filled')).toBeVisible()
     expect(screen.getAllByRole('button', { name: 'New Game' })[0]).toHaveFocus()
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true })
     expect(onGameComplete).toHaveBeenCalledTimes(1)
     expect(onGameComplete).toHaveBeenCalledWith({
       gameId: 'final-scratch-game',

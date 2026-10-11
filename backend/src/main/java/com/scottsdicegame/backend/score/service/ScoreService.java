@@ -6,6 +6,7 @@ import com.scottsdicegame.backend.auth.service.AuthenticationService;
 import com.scottsdicegame.backend.game.catalog.GameCatalog;
 import com.scottsdicegame.backend.game.service.ThemeAvailabilityService;
 import com.scottsdicegame.backend.score.dto.LeaderboardEntry;
+import com.scottsdicegame.backend.score.dto.CompletedGameResponse;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionRequest;
 import com.scottsdicegame.backend.score.dto.ScoreSubmissionResponse;
 import com.scottsdicegame.backend.score.entity.GameScore;
@@ -105,6 +106,18 @@ public class ScoreService {
                     "The final score does not match the completed scorecard."
             );
         }
+    }
+
+    @Transactional(readOnly = true)
+    public CompletedGameResponse completedGame(UUID userId, UUID scoreId) {
+        authenticationService.requireUser(userId);
+        GameScore game = scoreRepository.findByIdAndUserId(scoreId, userId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "SCORE_NOT_FOUND",
+                        "That completed game could not be found."
+                ));
+        return CompletedGameResponse.from(game);
     }
 
     @Transactional(readOnly = true)

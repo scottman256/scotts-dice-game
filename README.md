@@ -8,6 +8,8 @@ Roll five dice, hold the ones you want to keep, and chase scoring combinations t
 
 Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, Deep Sea, Jungle Adventure, and World Traveler.
 
+Select a score in Player Hub → My Top 10 to revisit its finished scorecard in the theme used for that game. The view is read-only, includes all 19 categories and bonuses, and returns to My Top 10 without changing your current game or theme preference. Older scores saved without category details display an explanatory message.
+
 ## Project structure
 
 - `frontend/` — React and Vite web application
