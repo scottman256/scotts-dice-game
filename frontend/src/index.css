@@ -3376,6 +3376,37 @@ td small {
   text-align: center;
 }
 
+.score-details-link {
+  display: inline-block;
+  padding: 8px 10px;
+  margin: -8px -10px;
+  border-radius: 7px;
+  color: var(--accent-light);
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent-light) 40%, transparent);
+  text-underline-offset: 4px;
+}
+
+.score-details-link:hover,
+.score-details-link:focus-visible {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--theme-heading);
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+}
+
+.completed-game-error {
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+.completed-game-back {
+  margin-top: 20px;
+}
+
 .scores-error {
   color: #ffc3c6;
 }

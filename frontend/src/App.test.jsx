@@ -108,6 +108,7 @@ function createMockBackendClient({
   signOut = jest.fn(() => Promise.resolve()),
   saveScore = jest.fn(),
   getPersonalScores = jest.fn(() => Promise.resolve([])),
+  getCompletedGame = jest.fn(),
   getLeaderboard = jest.fn(() => Promise.resolve([])),
   getGameStats = jest.fn(() => Promise.resolve({
     gamesPlayed: 0,
@@ -154,6 +155,7 @@ function createMockBackendClient({
     signOut,
     saveScore,
     getPersonalScores,
+    getCompletedGame,
     getLeaderboard,
     getGameStats,
     getAchievements,
@@ -289,6 +291,53 @@ describe('end-of-game results', () => {
 })
 
 describe('App authentication shell', () => {
+  it('views a past scorecard in its saved theme without changing current progress or preferences', async () => {
+    const categoryScores = Object.fromEntries(ALL_CATEGORIES.map(({ id }) => [id, id === 'fiveKind' ? 75 : 0]))
+    const backendClient = createMockBackendClient({
+      restoredUser: authenticatedUser(),
+      getGameSession: jest.fn().mockResolvedValue({ theme: 'fire', savedGame: savedScratchGame() }),
+      getPersonalScores: jest.fn().mockResolvedValue([
+        { scoreId: 'past-game', rank: 1, score: 75, playerName: 'Ada', completedAt: '2026-10-11T12:00:00Z' },
+      ]),
+      getCompletedGame: jest.fn().mockResolvedValue({ score: 75, theme: 'vegas', categoryScores, scorecardAvailable: true }),
+    })
+    const user = userEvent.setup()
+    const { container } = render(<App backendClient={backendClient} />)
+    await user.click(await screen.findByRole('button', { name: 'Continue Last Game' }))
+    await user.click(screen.getByRole('button', { name: /Die 2 showing 2/ }))
+    await waitFor(() => expect(backendClient.saveGame).toHaveBeenCalled())
+    const savesBefore = backendClient.saveGame.mock.calls.length
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'My Top 10' }))
+    await user.click(await screen.findByRole('link', { name: '75' }))
+    expect(await screen.findByLabelText('5 of a Kind: 75 points')).toBeVisible()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'vegas')
+    expect(screen.queryByRole('button', { name: 'New Game' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Roll Dice|Use 4th Roll/ })).not.toBeInTheDocument()
+    const ids = [...container.querySelectorAll('[id]')].map((element) => element.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    await user.click(screen.getAllByRole('button', { name: 'Back to My Top 10' })[0])
+    expect(screen.getByRole('link', { name: '75' })).toHaveFocus()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
+    await user.click(screen.getByRole('button', { name: 'Back to game' }))
+    expect(screen.getByLabelText('Sixes: 6 points')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Die 1 showing 1.*Held/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Use 4th Roll (2 left)' })).toBeVisible()
+    expect(backendClient.saveGame).toHaveBeenCalledTimes(savesBefore)
+    expect(backendClient.saveTheme).not.toHaveBeenCalled()
+    expect(backendClient.saveScore).not.toHaveBeenCalled()
+    expect(backendClient.deleteSavedGame).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'My Top 10' }))
+    await user.click(await screen.findByRole('link', { name: '75' }))
+    await screen.findByLabelText('5 of a Kind: 75 points')
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Top 10 Overall' }))
+    expect(await screen.findByRole('heading', { name: 'Top 10 Overall' })).toBeVisible()
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'fire')
+  })
+
   it('offers only guest play when the backend is unavailable', () => {
     render(<App />)
 

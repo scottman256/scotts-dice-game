@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ConfirmActionModal from './ConfirmActionModal'
 import SystemScoreModal from './SystemScoreModal'
+import CompletedGameScreen from './CompletedGameScreen'
+
+const noThemePreview = () => {}
 
 function formatCompletedAt(value) {
   if (!value) return '—'
@@ -11,6 +14,8 @@ function formatCompletedAt(value) {
 export default function ScoreboardScreen({
   mode,
   loadScores,
+  loadGame,
+  onThemePreview = noThemePreview,
   isAdmin = false,
   deleteScore,
   resetGameData,
@@ -23,6 +28,8 @@ export default function ScoreboardScreen({
   const [errorMessage, setErrorMessage] = useState('')
   const [refreshCount, setRefreshCount] = useState(0)
   const [selectedScore, setSelectedScore] = useState(null)
+  const [openedGame, setOpenedGame] = useState(null)
+  const scoreLinkRef = useRef(null)
   const [resetOpen, setResetOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
@@ -30,6 +37,14 @@ export default function ScoreboardScreen({
   const [modalError, setModalError] = useState('')
   const isPersonal = mode === 'personal'
   const adminView = isAdmin && !isPersonal
+
+  useEffect(() => {
+    setOpenedGame(null)
+  }, [mode])
+
+  useEffect(() => {
+    if (!openedGame) scoreLinkRef.current?.focus()
+  }, [openedGame])
 
   useEffect(() => {
     let active = true
@@ -103,87 +118,114 @@ export default function ScoreboardScreen({
   }
 
   return (
-    <main className="scores-page" aria-labelledby="scores-title">
-      <div className="scores-heading">
-        <div>
-          <p className="eyebrow">High scores</p>
-          <h1 id="scores-title">{isPersonal ? 'My Top 10 Scores' : 'Top 10 Overall'}</h1>
-          <p>{isPersonal ? 'Your ten best completed games.' : 'The best completed games from every player.'}</p>
-        </div>
-        <button type="button" className="scores-back-button" onClick={onBack}>Back to game</button>
-      </div>
-
-      {adminView && (
-        <div className="admin-score-toolbar" aria-label="Leaderboard administration">
+    <>
+      {isPersonal && openedGame && (
+        <CompletedGameScreen
+          key={openedGame.scoreId}
+          entry={openedGame}
+          completedAtLabel={formatCompletedAt(openedGame.completedAt)}
+          loadGame={loadGame}
+          onThemePreview={onThemePreview}
+          onBack={() => setOpenedGame(null)}
+        />
+      )}
+      <main className="scores-page" aria-labelledby="scores-title" hidden={isPersonal && Boolean(openedGame)}>
+        <div className="scores-heading">
           <div>
-            <strong>Admin leaderboard controls</strong>
-            <span>Add fictional challengers, remove individual entries, or restore the original scoreboard.</span>
+            <p className="eyebrow">High scores</p>
+            <h1 id="scores-title">{isPersonal ? 'My Top 10 Scores' : 'Top 10 Overall'}</h1>
+            <p>{isPersonal ? 'Your ten best completed games. Select a score to view its scorecard.' : 'The best completed games from every player.'}</p>
           </div>
-          <div>
-            <button type="button" className="admin-primary-button" onClick={() => setAddOpen(true)}>Add system score</button>
-            <button type="button" className="admin-danger-button" onClick={() => setResetOpen(true)}>Restore defaults</button>
-          </div>
+          <button type="button" className="scores-back-button" onClick={onBack}>Back to game</button>
         </div>
-      )}
-      {adminError && <p className="admin-inline-error" role="alert">{adminError}</p>}
 
-      <section className="scores-card" aria-live="polite">
-        {status === 'loading' && <p className="scores-state" role="status">Loading scores…</p>}
-        {status === 'error' && <p className="scores-state scores-error" role="alert">{errorMessage}</p>}
-        {status === 'ready' && scores.length === 0 && (
-          <p className="scores-state">No completed games yet. Finish a game to claim the first spot.</p>
+        {adminView && (
+          <div className="admin-score-toolbar" aria-label="Leaderboard administration">
+            <div>
+              <strong>Admin leaderboard controls</strong>
+              <span>Add fictional challengers, remove individual entries, or restore the original scoreboard.</span>
+            </div>
+            <div>
+              <button type="button" className="admin-primary-button" onClick={() => setAddOpen(true)}>Add system score</button>
+              <button type="button" className="admin-danger-button" onClick={() => setResetOpen(true)}>Restore defaults</button>
+            </div>
+          </div>
         )}
-        {status === 'ready' && scores.length > 0 && (
-          <table>
-            <caption className="visually-hidden">
-              {isPersonal ? 'Personal top ten high scores' : 'Overall top ten high scores'}
-            </caption>
-            <thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th><th scope="col">Completed</th>{adminView && <th scope="col">Admin</th>}</tr></thead>
-            <tbody>
-              {scores.map((entry) => (
-                <tr key={entry.scoreId}>
-                  <td><span className="score-rank">#{entry.rank}</span></td>
-                  <td>{entry.playerName}</td>
-                  <td><strong>{entry.score}</strong></td>
-                  <td>{formatCompletedAt(entry.completedAt)}</td>
-                  {adminView && <td><button type="button" className="admin-delete-link" onClick={() => setSelectedScore(entry)}>Delete</button></td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+        {adminError && <p className="admin-inline-error" role="alert">{adminError}</p>}
 
-      {selectedScore && (
-        <ConfirmActionModal
-          title={`Delete ${selectedScore.playerName}'s score?`}
-          description={`Remove the ${selectedScore.score}-point game. The player's statistics and achievements will be rebuilt from their remaining games.`}
-          confirmLabel="Delete score"
-          busyLabel="Deleting…"
-          isBusy={actionBusy}
-          onCancel={() => setSelectedScore(null)}
-          onConfirm={handleDeleteScore}
-        />
-      )}
-      {resetOpen && (
-        <ConfirmActionModal
-          title="Restore the original leaderboard?"
-          description="This deletes all player game history, achievements, saved games, and custom system scores. User accounts remain."
-          confirmLabel="Restore defaults"
-          busyLabel="Restoring…"
-          isBusy={actionBusy}
-          onCancel={() => setResetOpen(false)}
-          onConfirm={handleResetGameData}
-        />
-      )}
-      {addOpen && (
-        <SystemScoreModal
-          isBusy={actionBusy}
-          errorMessage={modalError}
-          onCancel={() => setAddOpen(false)}
-          onSave={handleAddSystemScore}
-        />
-      )}
-    </main>
+        <section className="scores-card" aria-live="polite">
+          {status === 'loading' && <p className="scores-state" role="status">Loading scores…</p>}
+          {status === 'error' && <p className="scores-state scores-error" role="alert">{errorMessage}</p>}
+          {status === 'ready' && scores.length === 0 && (
+            <p className="scores-state">No completed games yet. Finish a game to claim the first spot.</p>
+          )}
+          {status === 'ready' && scores.length > 0 && (
+            <table>
+              <caption className="visually-hidden">
+                {isPersonal ? 'Personal top ten high scores' : 'Overall top ten high scores'}
+              </caption>
+              <thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th><th scope="col">Completed</th>{adminView && <th scope="col">Admin</th>}</tr></thead>
+              <tbody>
+                {scores.map((entry) => (
+                  <tr key={entry.scoreId}>
+                    <td><span className="score-rank">#{entry.rank}</span></td>
+                    <td>{entry.playerName}</td>
+                    <td>
+                      {isPersonal ? (
+                        <a
+                          className="score-details-link"
+                          href={`#completed-game-${entry.scoreId}`}
+                          title="View finished scorecard"
+                          onClick={(event) => {
+                            event.preventDefault()
+                            scoreLinkRef.current = event.currentTarget
+                            setOpenedGame(entry)
+                          }}
+                        >
+                          {entry.score}
+                        </a>
+                      ) : <strong>{entry.score}</strong>}
+                    </td>
+                    <td>{formatCompletedAt(entry.completedAt)}</td>
+                    {adminView && <td><button type="button" className="admin-delete-link" onClick={() => setSelectedScore(entry)}>Delete</button></td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        {selectedScore && (
+          <ConfirmActionModal
+            title={`Delete ${selectedScore.playerName}'s score?`}
+            description={`Remove the ${selectedScore.score}-point game. The player's statistics and achievements will be rebuilt from their remaining games.`}
+            confirmLabel="Delete score"
+            busyLabel="Deleting…"
+            isBusy={actionBusy}
+            onCancel={() => setSelectedScore(null)}
+            onConfirm={handleDeleteScore}
+          />
+        )}
+        {resetOpen && (
+          <ConfirmActionModal
+            title="Restore the original leaderboard?"
+            description="This deletes all player game history, achievements, saved games, and custom system scores. User accounts remain."
+            confirmLabel="Restore defaults"
+            busyLabel="Restoring…"
+            isBusy={actionBusy}
+            onCancel={() => setResetOpen(false)}
+            onConfirm={handleResetGameData}
+          />
+        )}
+        {addOpen && (
+          <SystemScoreModal
+            isBusy={actionBusy}
+            errorMessage={modalError}
+            onCancel={() => setAddOpen(false)}
+            onSave={handleAddSystemScore}
+          />
+        )}
+      </main>
+    </>
   )
 }

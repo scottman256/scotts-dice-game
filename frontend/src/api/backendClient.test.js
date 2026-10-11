@@ -25,6 +25,19 @@ function storageMock() {
 }
 
 describe('backend client', () => {
+  it('loads a completed game through the authenticated personal endpoint', async () => {
+    const storage = storageMock()
+    storage.setItem('scotts-dice-game.access-token', 'backend-token')
+    const game = { scoreId: 'saved-game', score: 75, categoryScores: { fiveKind: 75 }, theme: 'vegas', scorecardAvailable: true }
+    const fetchImpl = jest.fn().mockResolvedValue(response(200, game))
+    const client = createBackendClient({ fetchImpl, storage })
+    await expect(client.getCompletedGame('saved/game')).resolves.toEqual(game)
+    expect(fetchImpl).toHaveBeenCalledWith('http://localhost:8080/api/scores/me/saved%2Fgame', expect.objectContaining({
+      method: 'GET', headers: expect.objectContaining({ Authorization: 'Bearer backend-token' }),
+    }))
+    await expect(createUnavailableBackendClient().getCompletedGame('saved-game')).rejects.toBeInstanceOf(BackendApiError)
+  })
+
   it('reports backend capability flags from the public status endpoint', async () => {
     const fetchImpl = jest.fn(() => Promise.resolve(response(200, {
       status: 'UP',

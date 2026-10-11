@@ -83,6 +83,7 @@ Bearer-token endpoints:
 - `GET /api/auth/me`
 - `POST /api/scores`
 - `GET /api/scores/me`
+- `GET /api/scores/me/{scoreId}`
 - `GET /api/scores/leaderboard`
 - `GET /api/stats/me`
 - `GET /api/achievements/me`
@@ -98,6 +99,8 @@ Administrator-role endpoints:
 - `POST /api/admin/scores`, `DELETE /api/admin/scores/{scoreId}`, and `POST /api/admin/game-data/reset`
 
 Each user can have one resumable game. Dice and in-progress category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted. New score submissions preserve their completed scorecard and completion theme. Stats exclude older score-only games, while the achievement engine replays all available history and can retroactively award milestones supported by the stored facts. Earned achievement keys and their qualifying games are persisted; definitions remain in a versionable catalog so future achievements can evaluate old data without one-off database backfills.
+
+`GET /api/scores/me/{scoreId}` retrieves the signed-in player's completed game, including `scoreId`, `score`, `completedAt`, `theme`, `categoryScores`, and `scorecardAvailable`. Missing scores and scores owned by another player both return `404 SCORE_NOT_FOUND`. Older entries without a full scorecard return `scorecardAvailable: false`; their final score remains available. Reading a past game does not modify current progress, preferences, or achievements, and its recorded theme remains available even if that theme is disabled for new games.
 
 Classic is permanently available. Disabling another theme changes affected saved preferences to Classic and prevents new saves or completed games from using the disabled theme. Deleting a player's score rebuilds that player's achievements from the remaining completed-game history. A full game-data reset removes player scores, stats, achievements, and saved games without deleting accounts, then restores any missing original fictional leaderboard entries.
 
