@@ -366,7 +366,7 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('heading', { name: 'Ready to roll?' })).toBeVisible()
   })
 
-  it('starts a normal guest game, shows the return link, and resets the game after returning', async () => {
+  it('starts a guest game and offers to resume or start over after returning', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -393,6 +393,8 @@ describe('App authentication shell', () => {
     expect(screen.queryByRole('heading', { name: 'Your Roll' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
+    expect(screen.getByRole('dialog', { name: 'Welcome back!' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Start New Game' }))
     expect(screen.getByRole('button', { name: 'Roll Dice' })).toBeEnabled()
     expect(screen.getByLabelText('Turn not started')).toBeVisible()
   })
@@ -1081,7 +1083,7 @@ describe('App authentication shell', () => {
     expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).toBeChecked()
   })
 
-  it('resets to Classic but keeps browser preferences after a guest returns to sign-in', async () => {
+  it('keeps the guest theme and browser preferences after returning to sign-in', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
 
@@ -1097,7 +1099,7 @@ describe('App authentication shell', () => {
     expect(container.querySelector('.game-session')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Continue as Guest' }))
 
-    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'classic')
+    expect(container.querySelector('.game-session')).toHaveAttribute('data-game-theme', 'beach')
     await user.click(screen.getByRole('button', { name: 'Game settings' }))
     expect(screen.getByRole('checkbox', { name: 'Confirm before scratching' })).not.toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Animate dice rolls' })).not.toBeChecked()

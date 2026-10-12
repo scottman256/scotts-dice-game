@@ -27,6 +27,7 @@ import {
 } from './settings/gameThemes'
 import { loadConfirmScratches, saveConfirmScratches } from './settings/scratchPreference'
 import { loadAnimateRolls, saveAnimateRolls } from './settings/rollMotionPreference'
+import { guestGameStore } from './persistence/guestGameStore'
 
 const unavailableAuthService = createUnavailableAuthService()
 const unavailableBackendClient = createUnavailableBackendClient()
@@ -74,6 +75,7 @@ export default function App({
   const persistenceQueueRef = useRef(Promise.resolve())
   const persistenceGenerationRef = useRef(0)
   const completionRequestRef = useRef(null)
+  const gameStore = session.kind === 'guest' ? guestGameStore : backendClient
 
   useEffect(() => () => {
     completionRequestRef.current = null
@@ -187,22 +189,24 @@ export default function App({
   }, [authService, backendClient])
 
   useEffect(() => {
-    if (session.kind !== 'authenticated') return undefined
+    if (session.kind !== 'authenticated' && session.kind !== 'guest') return undefined
 
     let active = true
     setGamePersistenceStatus('loading')
     setSavedGameToResume(null)
 
-    backendClient.getGameSession()
+    Promise.resolve(gameStore.getGameSession())
       .then((gameSession) => {
         if (!active) return
         const restoredSettings = normalizeGameSettings({ theme: gameSession?.theme })
+        const theme = enabledThemeIds.includes(restoredSettings.theme)
+          ? restoredSettings.theme
+          : DEFAULT_GAME_SETTINGS.theme
         setGameSettings((current) => ({
           ...current,
-          theme: enabledThemeIds.includes(restoredSettings.theme)
-            ? restoredSettings.theme
-            : DEFAULT_GAME_SETTINGS.theme,
+          theme,
         }))
+        if (session.kind === 'guest' && theme !== restoredSettings.theme) guestGameStore.saveTheme(theme)
         if (gameSession?.savedGame) {
           setSavedGameToResume(gameSession.savedGame)
           setGamePersistenceStatus('prompting')
@@ -221,7 +225,7 @@ export default function App({
     return () => {
       active = false
     }
-  }, [backendClient, session.kind, session.user?.id])
+  }, [gameStore, session.kind, session.user?.id])
 
   useEffect(() => {
     if (activeScreen === 'game' && shouldRestoreSettingsFocus.current) {
@@ -357,6 +361,7 @@ export default function App({
     setGameSettings(normalizedSettings)
     saveConfirmScratches(normalizedSettings.confirmScratches)
     saveAnimateRolls(normalizedSettings.animateRolls)
+    if (session.kind === 'guest') guestGameStore.saveTheme(normalizedSettings.theme)
     if (session.kind === 'authenticated') {
       enqueuePersistence(
         () => backendClient.saveTheme(normalizedSettings.theme),
@@ -382,7 +387,7 @@ export default function App({
     setResumeDecisionBusy(true)
     setAuthError('')
     try {
-      await backendClient.deleteSavedGame()
+      await gameStore.deleteSavedGame()
       setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
       setSavedGameToResume(null)
       setGamePersistenceStatus('ready')
@@ -395,8 +400,12 @@ export default function App({
   }
 
   const handleGameStateChange = useCallback(({ gameId, state }) => {
-    if (session.kind !== 'authenticated') return
     if (!hasGameProgress(state) || getGameViewState(state).gameComplete) return
+    if (session.kind === 'guest') {
+      guestGameStore.saveGame(gameId, state)
+      return
+    }
+    if (session.kind !== 'authenticated') return
     enqueuePersistence(
       () => backendClient.saveGame(gameId, state),
       'Your latest game progress could not be saved. Please check the backend service.',
@@ -407,6 +416,7 @@ export default function App({
     completionRequestRef.current = null
     setHighScoreStatus(null)
     setGameSummary(null)
+    if (session.kind === 'guest') guestGameStore.deleteSavedGame()
     if (session.kind !== 'authenticated') return
     enqueuePersistence(
       () => backendClient.deleteSavedGame(),
@@ -418,6 +428,7 @@ export default function App({
     const request = { gameId }
     completionRequestRef.current = request
     if (session.kind !== 'authenticated') {
+      guestGameStore.deleteSavedGame()
       setGameSummary({ gameId, status: 'guest' })
       return
     }
@@ -482,7 +493,7 @@ export default function App({
     )
   }
 
-  const gameReady = session.kind === 'guest' || gamePersistenceStatus === 'ready'
+  const gameReady = gamePersistenceStatus === 'ready'
 
   return (
     <div className="app-shell game-session" data-game-theme={scorecardTheme || gameSettings.theme}>
@@ -505,14 +516,13 @@ export default function App({
         settingsButtonRef={settingsButtonRef}
       />
       {authError && <p className="session-error" role="alert">{authError}</p>}
-      {session.kind === 'authenticated' && gamePersistenceStatus === 'loading' && activeScreen !== 'howToPlay' && (
+      {gamePersistenceStatus === 'loading' && activeScreen !== 'howToPlay' && (
         <main className="game-persistence-loading" aria-label="Loading saved game">
           <span className="loading-die" aria-hidden="true">⚄</span>
           <p role="status">Checking for saved game progress…</p>
         </main>
       )}
-      {session.kind === 'authenticated'
-        && gamePersistenceStatus === 'prompting'
+      {gamePersistenceStatus === 'prompting'
         && savedGameToResume
         && activeScreen !== 'howToPlay' && (
         <ResumeGameModal
