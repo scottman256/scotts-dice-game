@@ -8,6 +8,8 @@ Roll five dice, hold the ones you want to keep, and chase scoring combinations t
 
 Open the gear-shaped Settings menu during a game to switch themes without losing progress. Every theme has its own background and dice artwork, with choices including Classic, Vegas, Cosmic Galaxy, Candy Kingdom, Frozen Crystal, Deep Sea, Jungle Adventure, and World Traveler.
 
+Guest progress and the selected theme are saved automatically in this browser, including when the backend is offline. Choose **Continue as Guest** on your next visit to resume or start over. One compact localStorage record holds the latest unfinished game; finishing or discarding it clears the progress while retaining your theme. Guest saves stay separate from account saves and are not shared across browsers or devices. Clearing browser data removes them; if browser storage is blocked or full, you can still play for the current session.
+
 Select a score in Player Hub → My Top 10 to revisit its finished scorecard in the theme used for that game. The view is read-only, includes all 19 categories and bonuses, and returns to My Top 10 without changing your current game or theme preference. Older scores saved without category details display an explanatory message.
 
 ## Project structure
