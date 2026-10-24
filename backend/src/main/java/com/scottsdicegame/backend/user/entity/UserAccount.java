@@ -198,6 +198,13 @@ public class UserAccount {
         return accountRole.isAdmin();
     }
 
+    public void changeAdminRole(boolean admin) {
+        if (authProvider == AuthProvider.SYSTEM) {
+            throw new IllegalStateException("System accounts cannot be administrators.");
+        }
+        accountRole = admin ? AccountRole.ADMIN : AccountRole.USER;
+    }
+
     public String getExternalSubject() {
         return externalSubject;
     }

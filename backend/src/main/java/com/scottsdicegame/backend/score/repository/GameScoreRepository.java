@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -12,6 +14,17 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface GameScoreRepository extends JpaRepository<GameScore, UUID> {
+
+    // Score-only legacy records are finished games; partial scorecards are not.
+    @Query("""
+            SELECT score.user.id AS userId, COUNT(score) AS gamesPlayed, MAX(score.completedAt) AS lastPlayed
+            FROM GameScore score
+            WHERE score.categoryScores IS EMPTY OR SIZE(score.categoryScores) = 19
+            GROUP BY score.user.id
+            """)
+    List<PlayerActivity> findPlayerActivity();
+
+    Page<GameScore> findByUserId(UUID userId, Pageable pageable);
 
     Optional<GameScore> findByUserIdAndGameId(UUID userId, UUID gameId);
 

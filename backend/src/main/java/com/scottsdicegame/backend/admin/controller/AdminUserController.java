@@ -3,6 +3,8 @@ package com.scottsdicegame.backend.admin.controller;
 import com.scottsdicegame.backend.admin.dto.AdminEmailChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminPasswordChangeRequest;
 import com.scottsdicegame.backend.admin.dto.AdminUserResponse;
+import com.scottsdicegame.backend.admin.dto.AdminRoleChangeRequest;
+import com.scottsdicegame.backend.admin.dto.AdminScoreHistoryResponse;
 import com.scottsdicegame.backend.admin.service.AdminUserService;
 import com.scottsdicegame.backend.auth.service.AuthenticationService;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,6 +42,19 @@ public class AdminUserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void deleteUser(Authentication authentication, @PathVariable UUID userId) {
         adminUserService.deleteUser(adminId(authentication), userId);
+    }
+
+    @GetMapping("/{userId}/scores")
+    AdminScoreHistoryResponse scoreHistory(Authentication authentication, @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "newest") String sort) {
+        return adminUserService.scoreHistory(adminId(authentication), userId, page, sort);
+    }
+
+    @PutMapping("/{userId}/role")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void changeRole(Authentication authentication, @PathVariable UUID userId,
+                    @Valid @RequestBody AdminRoleChangeRequest request) {
+        adminUserService.changeRole(adminId(authentication), userId, request);
     }
 
     @PutMapping("/{userId}/password")

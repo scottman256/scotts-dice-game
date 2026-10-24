@@ -40,7 +40,9 @@ class AdminUserServiceTest {
         authenticationService = mock(AuthenticationService.class);
         passwordPolicy = mock(PasswordPolicy.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        service = new AdminUserService(userRepository, authenticationService, passwordPolicy, passwordEncoder);
+        service = new AdminUserService(userRepository, authenticationService, passwordPolicy, passwordEncoder,
+                mock(com.scottsdicegame.backend.score.repository.GameScoreRepository.class),
+                mock(com.scottsdicegame.backend.game.repository.SavedGameRepository.class));
         adminId = UUID.randomUUID();
     }
 

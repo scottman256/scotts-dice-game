@@ -684,6 +684,8 @@ export default function App({
               deleteUser={backendClient.deleteAdminUser}
               changeEmail={backendClient.changeAdminUserEmail}
               changePassword={backendClient.changeAdminUserPassword}
+              changeRole={backendClient.changeAdminUserRole}
+              loadScores={backendClient.getAdminUserScores}
               onEmailChanged={handleAdminUserEmailChanged}
               onBack={returnToGame}
             />

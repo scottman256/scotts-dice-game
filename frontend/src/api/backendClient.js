@@ -203,6 +203,12 @@ export function createBackendClient({
     async getAdminUsers() {
       return request('/api/admin/users')
     },
+    async getAdminUserScores(userId, { page = 0, sort = 'newest' } = {}) {
+      return request(`/api/admin/users/${encodeURIComponent(userId)}/scores?${new URLSearchParams({ page, sort })}`)
+    },
+    async changeAdminUserRole(userId, admin) {
+      return request(`/api/admin/users/${encodeURIComponent(userId)}/role`, { method: 'PUT', body: { admin } })
+    },
     async deleteAdminUser(userId) {
       return request(`/api/admin/users/${encodeURIComponent(userId)}`, { method: 'DELETE' })
     },
@@ -264,6 +270,8 @@ export function createUnavailableBackendClient() {
     getAdminThemes: unavailable,
     updateAdminTheme: unavailable,
     getAdminUsers: unavailable,
+    getAdminUserScores: unavailable,
+    changeAdminUserRole: unavailable,
     deleteAdminUser: unavailable,
     changeAdminUserPassword: unavailable,
     changeAdminUserEmail: unavailable,

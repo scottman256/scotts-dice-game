@@ -14,6 +14,8 @@ To start over during a game, choose **Player Hub → Start New Game** and confir
 
 Select a score in Player Hub → My Top 10 to revisit its finished scorecard in the theme used for that game. The view is read-only, includes all 19 categories and bonuses, and returns to My Top 10 without changing your current game or theme preference. Older scores saved without category details display an explanatory message.
 
+Administrators can use **Admin → User Accounts** to search by name, username, or email. Click the User, E-mail address, Created, Games played, Last played, In progress, or Admin column heading to sort; click it again to reverse the direction. The arrow marks the active sort, and missing values stay last. Click a games-played count to open **Score History**. Its Score and Played headers toggle highest/lowest scores and newest/oldest dates across the full history, returning to page one when the sort changes. The **Admin** toggle asks for confirmation before granting or removing administrator access; you cannot change your own role. Username, Google, and Facebook accounts are eligible. Role changes apply to API access immediately; affected players can refresh to update their navigation.
+
 ## Project structure
 
 - `frontend/` — React and Vite web application

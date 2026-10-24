@@ -723,6 +723,136 @@ class ApiIntegrationTest {
         assertThat(get("/api/stats/me", token).body()).isEqualTo(statsBefore);
     }
 
+    @Test
+    void adminActivityTracksFinishedGamesAndSavedProgressWithoutCountingPartialRecords() throws Exception {
+        String admin = extractToken(post("/api/auth/login", "{\"username\":\"admin\",\"password\":\"admin\"}", null).body());
+        String player = registerSummaryPlayer();
+        UUID userId = UUID.fromString(extractJsonString(get("/api/auth/me", player).body(), "id"));
+        var initial = adminUser(admin, userId);
+        assertThat(initial.get("gamesPlayed").asInt()).isZero();
+        assertThat(initial.get("lastPlayed").isNull()).isTrue();
+        assertThat(initial.get("gameInProgress").asBoolean()).isFalse();
+        UUID gameId = UUID.randomUUID();
+        submitSummaryScore(player, gameId, 275, "classic", SCORECARD_275);
+        String completedAt = adminUser(admin, userId).get("lastPlayed").asString();
+        UUID partial = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO game_scores (id, game_id, user_id, score, new_personal_best, completed_at) VALUES (?, ?, ?, 999, false, CURRENT_TIMESTAMP)", partial, UUID.randomUUID(), userId);
+        jdbcTemplate.update("INSERT INTO completed_game_category_scores (game_score_id, category_id, score) VALUES (?, 'fiveKind', 75)", partial);
+        String saved = """
+                {"gameId":"%s","dice":[1,2,3,4,5],"heldDice":[false,false,false,false,false],
+                 "rollCount":1,"scores":{},"extraRollsUsed":0,"status":"Choose a category.","statusTone":"normal"}
+                """.formatted(UUID.randomUUID());
+        assertThat(put("/api/game-session/game", saved, player).statusCode()).isEqualTo(200);
+        var active = adminUser(admin, userId);
+        assertThat(active.get("gamesPlayed").asInt()).isOne();
+        assertThat(active.get("gameInProgress").asBoolean()).isTrue();
+        assertThat(java.time.Instant.parse(active.get("lastPlayed").asString())).isAfterOrEqualTo(java.time.Instant.parse(completedAt));
+        // A completed game's leftover autosave must not look like a game still in progress.
+        jdbcTemplate.update("UPDATE saved_games SET game_id = ? WHERE user_id = ?", gameId, userId);
+        var stale = adminUser(admin, userId);
+        assertThat(stale.get("gameInProgress").asBoolean()).isFalse();
+        assertThat(stale.get("lastPlayed").asString()).isEqualTo(completedAt);
+        assertThat(get("/api/admin/users/" + userId + "/scores", admin).body()).contains("999", "275");
+    }
+
+    @Test
+    void adminScoreHistoryIsProtectedPaginatedAndSortedAcrossAllRecords() throws Exception {
+        String admin = extractToken(post("/api/auth/login", "{\"username\":\"admin\",\"password\":\"admin\"}", null).body());
+        String player = registerSummaryPlayer();
+        UUID userId = UUID.fromString(extractJsonString(get("/api/auth/me", player).body(), "id"));
+        String path = "/api/admin/users/" + userId + "/scores";
+        assertThat(get(path, null).statusCode()).isEqualTo(401);
+        assertThat(get(path, player).statusCode()).isEqualTo(403);
+        assertThat(get("/api/admin/users/" + UUID.randomUUID() + "/scores", admin).statusCode()).isEqualTo(404);
+        assertThat(objectMapper.readTree(get(path, admin).body()).get("totalScores").asInt()).isZero();
+        for (int index = 0; index < 55; index++) {
+            jdbcTemplate.update("INSERT INTO game_scores (id, game_id, user_id, score, new_personal_best, completed_at) VALUES (?, ?, ?, ?, false, ?)",
+                    UUID.randomUUID(), UUID.randomUUID(), userId, index,
+                    java.time.OffsetDateTime.parse("2026-01-01T00:00:00Z").plusDays(54 - index));
+        }
+        var latest = objectMapper.readTree(get(path, admin).body());
+        assertThat(latest.get("scores").size()).isEqualTo(50);
+        assertThat(latest.get("scores").get(0).get("score").asInt()).isZero();
+        assertThat(latest.get("totalPages").asInt()).isEqualTo(2);
+        assertThat(latest.get("totalScores").asInt()).isEqualTo(55);
+        var next = objectMapper.readTree(get(path + "?page=1", admin).body());
+        assertThat(next.get("scores").size()).isEqualTo(5);
+        assertThat(next.get("scores").get(4).get("score").asInt()).isEqualTo(54);
+        assertThat(objectMapper.readTree(get(path + "?sort=highest", admin).body()).get("scores").get(0).get("score").asInt()).isEqualTo(54);
+        assertThat(objectMapper.readTree(get(path + "?sort=lowest", admin).body()).get("scores").get(0).get("score").asInt()).isZero();
+        var oldest = objectMapper.readTree(get(path + "?sort=oldest", admin).body());
+        assertThat(oldest.get("scores").get(0).get("score").asInt()).isEqualTo(54);
+        assertThat(oldest.get("scores").get(49).get("score").asInt()).isEqualTo(5);
+        var oldestNextPage = objectMapper.readTree(get(path + "?sort=oldest&page=1", admin).body());
+        assertThat(oldestNextPage.get("scores").get(4).get("score").asInt()).isZero();
+        assertThat(get(path + "?page=-1", admin).statusCode()).isEqualTo(400);
+        assertThat(get(path + "?sort=invalid", admin).statusCode()).isEqualTo(400);
+        assertThat(adminUser(admin, userId).get("gamesPlayed").asInt()).isEqualTo(55);
+    }
+
+    @Test
+    void roleChangesRequireAnAdminAndTakeEffectOnExistingTokens() throws Exception {
+        String admin = extractToken(post("/api/auth/login", "{\"username\":\"admin\",\"password\":\"admin\"}", null).body());
+        String player = registerSummaryPlayer();
+        UUID userId = UUID.fromString(extractJsonString(get("/api/auth/me", player).body(), "id"));
+        String path = "/api/admin/users/" + userId + "/role";
+        assertThat(put(path, "{\"admin\":true}", null).statusCode()).isEqualTo(401);
+        assertThat(put(path, "{\"admin\":true}", player).statusCode()).isEqualTo(403);
+        assertThat(put(path, "{}", admin).statusCode()).isEqualTo(400);
+        assertThat(put(path, "{\"admin\":null}", admin).statusCode()).isEqualTo(400);
+        UUID adminId = UUID.fromString(extractJsonString(get("/api/auth/me", admin).body(), "id"));
+        assertThat(put("/api/admin/users/" + adminId + "/role", "{\"admin\":false}", admin).body()).contains("ADMIN_SELF_ROLE_CHANGE");
+        assertThat(adminUser(admin, adminId).get("canChangeRole").asBoolean()).isFalse();
+        assertThat(put("/api/admin/users/" + UUID.randomUUID() + "/role", "{\"admin\":true}", admin).statusCode()).isEqualTo(404);
+        UUID system = jdbcTemplate.queryForObject("SELECT id FROM user_accounts WHERE auth_provider = 'SYSTEM' FETCH FIRST 1 ROW ONLY", UUID.class);
+        assertThat(put("/api/admin/users/" + system + "/role", "{\"admin\":true}", admin).statusCode()).isEqualTo(404);
+        assertThat(get("/api/admin/users/" + system + "/scores", admin).statusCode()).isEqualTo(404);
+        assertThat(put(path, "{\"admin\":true}", admin).statusCode()).isEqualTo(204);
+        assertThat(get("/api/admin/users", player).statusCode()).isEqualTo(200);
+        assertThat(get("/api/auth/me", player).body()).contains("\"admin\":true");
+        String username = extractJsonString(get("/api/auth/me", player).body(), "username");
+        String promotedToken = extractToken(post("/api/auth/login", "{\"username\":\"" + username + "\",\"password\":\"DiceGame!2026\"}", null).body());
+        assertThat(put(path, "{\"admin\":false}", admin).statusCode()).isEqualTo(204);
+        assertThat(get("/api/admin/users", player).statusCode()).isEqualTo(403);
+        assertThat(get("/api/admin/users", promotedToken).statusCode()).isEqualTo(403);
+        // Social identities retain provider-managed credentials after promotion.
+        jdbcTemplate.update("UPDATE user_accounts SET auth_provider = 'GOOGLE', external_subject = ?, username = NULL, normalized_username = NULL, password_hash = NULL WHERE id = ?", UUID.randomUUID().toString(), userId);
+        assertThat(put(path, "{\"admin\":true}", admin).statusCode()).isEqualTo(204);
+        var social = adminUser(admin, userId);
+        assertThat(social.get("admin").asBoolean()).isTrue();
+        assertThat(social.get("canChangePassword").asBoolean()).isFalse();
+        assertThat(social.get("canChangeEmail").asBoolean()).isFalse();
+    }
+
+    @Test
+    void concurrentAdminsCannotRevokeEachOther() throws Exception {
+        String admin = extractToken(post("/api/auth/login", "{\"username\":\"admin\",\"password\":\"admin\"}", null).body());
+        String first = registerSummaryPlayer();
+        String second = registerSummaryPlayer();
+        String firstPath = "/api/admin/users/" + extractJsonString(get("/api/auth/me", first).body(), "id") + "/role";
+        String secondPath = "/api/admin/users/" + extractJsonString(get("/api/auth/me", second).body(), "id") + "/role";
+        assertThat(put(firstPath, "{\"admin\":true}", admin).statusCode()).isEqualTo(204);
+        assertThat(put(secondPath, "{\"admin\":true}", admin).statusCode()).isEqualTo(204);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        var a = java.util.concurrent.CompletableFuture.supplyAsync(() -> revokeAfter(start, secondPath, first));
+        var b = java.util.concurrent.CompletableFuture.supplyAsync(() -> revokeAfter(start, firstPath, second));
+        start.countDown();
+        assertThat(List.of(a.get(15, java.util.concurrent.TimeUnit.SECONDS), b.get(15, java.util.concurrent.TimeUnit.SECONDS)))
+                .containsExactlyInAnyOrder(204, 403);
+    }
+
+    private int revokeAfter(java.util.concurrent.CountDownLatch start, String path, String token) {
+        try { start.await(); return put(path, "{\"admin\":false}", token).statusCode(); }
+        catch (Exception exception) { throw new RuntimeException(exception); }
+    }
+
+    private tools.jackson.databind.JsonNode adminUser(String token, UUID userId) throws Exception {
+        for (var user : objectMapper.readTree(get("/api/admin/users", token).body())) {
+            if (user.get("id").asString().equals(userId.toString())) return user;
+        }
+        throw new AssertionError("User missing: " + userId);
+    }
+
     private HttpResponse<String> submitSummaryScore(
             String token, UUID gameId, int score, String theme, String categories
     ) throws Exception {
