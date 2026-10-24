@@ -19,6 +19,7 @@ import HowToPlayScreen from './components/HowToPlayScreen'
 import ResumeGameModal from './components/ResumeGameModal'
 import ScoreboardScreen from './components/ScoreboardScreen'
 import SettingsScreen from './components/SettingsScreen'
+import StartNewGameModal from './components/StartNewGameModal'
 import { getGameViewState, hasGameProgress } from './gameState'
 import {
   DEFAULT_GAME_SETTINGS,
@@ -66,23 +67,36 @@ export default function App({
   const [enabledThemeIds, setEnabledThemeIds] = useState(ALL_THEME_IDS)
   const [highScoreStatus, setHighScoreStatus] = useState(null)
   const [gameSummary, setGameSummary] = useState(null)
+  const [gameHasProgress, setGameHasProgress] = useState(false)
   const [gamePersistenceStatus, setGamePersistenceStatus] = useState('idle')
   const [savedGameToResume, setSavedGameToResume] = useState(null)
   const [resumeDecisionBusy, setResumeDecisionBusy] = useState(false)
+  const [restartOpen, setRestartOpen] = useState(false)
+  const [restartBusy, setRestartBusy] = useState(false)
+  const [restartError, setRestartError] = useState('')
   const [gameBootstrap, setGameBootstrap] = useState({ key: 0, gameId: null, state: null })
   const settingsButtonRef = useRef(null)
   const shouldRestoreSettingsFocus = useRef(false)
   const persistenceQueueRef = useRef(Promise.resolve())
   const persistenceGenerationRef = useRef(0)
   const completionRequestRef = useRef(null)
+  const restartRequestRef = useRef(null)
+  const focusNewRollRef = useRef(false)
+  const gameContainerRef = useRef(null)
   const gameStore = session.kind === 'guest' ? guestGameStore : backendClient
 
   useEffect(() => () => {
     completionRequestRef.current = null
+    restartRequestRef.current = null
   }, [])
 
   function resetGamePresentation() {
     completionRequestRef.current = null
+    restartRequestRef.current = null
+    focusNewRollRef.current = false
+    setRestartOpen(false)
+    setRestartBusy(false)
+    setRestartError('')
     persistenceGenerationRef.current += 1
     persistenceQueueRef.current = Promise.resolve()
     setGameSettings((current) => ({
@@ -93,6 +107,7 @@ export default function App({
     setActiveScreen('game')
     setHighScoreStatus(null)
     setGameSummary(null)
+    setGameHasProgress(false)
     setGamePersistenceStatus('idle')
     setSavedGameToResume(null)
     setResumeDecisionBusy(false)
@@ -193,6 +208,7 @@ export default function App({
 
     let active = true
     setGamePersistenceStatus('loading')
+    setGameHasProgress(false)
     setSavedGameToResume(null)
 
     Promise.resolve(gameStore.getGameSession())
@@ -346,6 +362,7 @@ export default function App({
     persistenceGenerationRef.current += 1
     persistenceQueueRef.current = Promise.resolve()
     setHighScoreStatus(null)
+    setGameHasProgress(false)
     setSavedGameToResume(null)
     setGamePersistenceStatus('ready')
     setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
@@ -373,6 +390,7 @@ export default function App({
 
   function handleContinueSavedGame() {
     if (!savedGameToResume) return
+    setGameHasProgress(hasGameProgress(savedGameToResume))
     setGameBootstrap((current) => ({
       key: current.key + 1,
       gameId: savedGameToResume.gameId,
@@ -383,11 +401,62 @@ export default function App({
     setActiveScreen('game')
   }
 
+  useEffect(() => {
+    if (focusNewRollRef.current && activeScreen === 'game') {
+      focusNewRollRef.current = false
+      gameContainerRef.current?.querySelector('.roll-button')?.focus()
+    }
+  }, [gameBootstrap.key, activeScreen])
+
+  function handleRequestNewGame() {
+    if (!gameHasProgress) return
+    setRestartError('')
+    setRestartOpen(true)
+  }
+
+  async function handleConfirmNewGame() {
+    if (restartRequestRef.current) return
+    const request = {}
+    restartRequestRef.current = request
+    setRestartBusy(true)
+    setRestartError('')
+    try {
+      // Finish queued autosaves before deleting, so a late save cannot resurrect this game.
+      await persistenceQueueRef.current
+      if (restartRequestRef.current !== request) return
+      await gameStore.deleteSavedGame()
+      if (restartRequestRef.current !== request) return
+      persistenceGenerationRef.current += 1
+      persistenceQueueRef.current = Promise.resolve()
+      completionRequestRef.current = null
+      setHighScoreStatus(null)
+      setGameSummary(null)
+      setGameHasProgress(false)
+      setAuthError('')
+      setSavedGameToResume(null)
+      setGamePersistenceStatus('ready')
+      focusNewRollRef.current = true
+      setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
+      setActiveScreen('game')
+      setRestartOpen(false)
+    } catch {
+      if (restartRequestRef.current === request) {
+        setRestartError('We could not start a new game. Your current game is still available. Please try again.')
+      }
+    } finally {
+      if (restartRequestRef.current === request) {
+        restartRequestRef.current = null
+        setRestartBusy(false)
+      }
+    }
+  }
+
   async function handleStartNewSavedGame() {
     setResumeDecisionBusy(true)
     setAuthError('')
     try {
       await gameStore.deleteSavedGame()
+      setGameHasProgress(false)
       setGameBootstrap((current) => ({ key: current.key + 1, gameId: null, state: null }))
       setSavedGameToResume(null)
       setGamePersistenceStatus('ready')
@@ -400,7 +469,9 @@ export default function App({
   }
 
   const handleGameStateChange = useCallback(({ gameId, state }) => {
-    if (!hasGameProgress(state) || getGameViewState(state).gameComplete) return
+    const hasProgress = hasGameProgress(state)
+    setGameHasProgress(hasProgress)
+    if (!hasProgress || getGameViewState(state).gameComplete) return
     if (session.kind === 'guest') {
       guestGameStore.saveGame(gameId, state)
       return
@@ -414,6 +485,7 @@ export default function App({
 
   const handleNewGame = useCallback(() => {
     completionRequestRef.current = null
+    setGameHasProgress(false)
     setHighScoreStatus(null)
     setGameSummary(null)
     if (session.kind === 'guest') guestGameStore.deleteSavedGame()
@@ -510,12 +582,22 @@ export default function App({
         onReturnHome={handleReturnHome}
         onOpenHowToPlay={handleOpenHowToPlay}
         onOpenPlayerView={handleOpenPlayerView}
+        onStartNewGame={handleRequestNewGame}
+        canStartNewGame={gameReady && gameHasProgress && !gameSummary}
         onOpenAdminView={handleOpenAdminView}
         onOpenSettings={handleOpenSettings}
         onSignOut={handleSignOut}
         settingsButtonRef={settingsButtonRef}
       />
       {authError && <p className="session-error" role="alert">{authError}</p>}
+      {restartOpen && (
+        <StartNewGameModal
+          isBusy={restartBusy}
+          errorMessage={restartError}
+          onCancel={() => setRestartOpen(false)}
+          onConfirm={handleConfirmNewGame}
+        />
+      )}
       {gamePersistenceStatus === 'loading' && activeScreen !== 'howToPlay' && (
         <main className="game-persistence-loading" aria-label="Loading saved game">
           <span className="loading-die" aria-hidden="true">⚄</span>
@@ -537,7 +619,7 @@ export default function App({
       )}
       {gameReady && (
         <>
-          <div className="app" hidden={activeScreen !== 'game'}>
+          <div className="app" hidden={activeScreen !== 'game'} ref={gameContainerRef}>
             <header className="app-header">
               <h1>Scott's Dice Game</h1>
               <p>Roll up to three times, cash in a category, and spend your three extra chances wisely.</p>

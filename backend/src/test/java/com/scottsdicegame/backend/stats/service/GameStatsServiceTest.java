@@ -44,6 +44,44 @@ class GameStatsServiceTest {
     }
 
     @Test
+    void excludesOrphanedPartialScorecardsFromEveryGameStatistic() {
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
+        when(scoreRepository.findStatTrackedByUserId(userId)).thenReturn(List.of(
+                game(user, 0, scorecard(Map.of()), "classic", "2026-08-01T12:00:00Z"),
+                game(user, 999, Map.of("fiveKind", 75, "fiveKindBonus", 150), "golden", "2026-08-02T12:00:00Z"),
+                game(user, 900, Map.of("firstRollFiveKind", 250), "golden", "2026-08-03T12:00:00Z")
+        ));
+
+        GameStatsResponse response = gameStatsService.getForUser(userId);
+
+        assertThat(response.gamesPlayed()).isOne();
+        assertThat(response.totalPoints()).isZero();
+        assertThat(response.highScore()).isZero();
+        assertThat(response.lowScore()).isZero();
+        assertThat(response.averageScore()).isZero();
+        assertThat(response.medianScore()).isZero();
+        assertThat(response.activeDays()).isOne();
+        assertThat(response.longestPlayStreak()).isOne();
+        assertThat(response.favoriteTheme()).isEqualTo("classic");
+        assertThat(response.averageScratchesPerGame()).isEqualTo(19);
+        assertThat(response.gamesAtLeast500()).isZero();
+        assertThat(response.gamesAtLeast600()).isZero();
+        assertThat(response.fiveOfAKindsScored()).isZero();
+        assertThat(response.firstRollFiveOfAKinds()).isZero();
+        assertThat(response.fiveOfAKindBonuses()).isZero();
+    }
+
+    @Test
+    void returnsEmptyStatisticsWhenHistoryContainsOnlyIncompleteScorecards() {
+        UserAccount user = UserAccount.manual("player", "player", "player@example.com", "encoded-password");
+        when(scoreRepository.findStatTrackedByUserId(userId)).thenReturn(List.of(
+                new GameScore(UUID.randomUUID(), user, 75, false, Map.of("fiveKind", 75))
+        ));
+
+        assertThat(gameStatsService.getForUser(userId)).isEqualTo(GameStatsResponse.empty());
+    }
+
+    @Test
     void returnsAnEmptyRecordWhenNoNewDetailedGamesHaveBeenCompleted() {
         when(scoreRepository.findStatTrackedByUserId(userId)).thenReturn(List.of());
 

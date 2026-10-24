@@ -42,7 +42,9 @@ public class GameStatsService {
     public GameStatsResponse getForUser(UUID userId) {
         authenticationService.requireUser(userId);
         long achievementsUnlocked = achievementRepository.countByUserId(userId);
-        List<GameScore> games = scoreRepository.findStatTrackedByUserId(userId);
+        List<GameScore> games = scoreRepository.findStatTrackedByUserId(userId).stream()
+                .filter(game -> ScoreCategories.isCompleteScorecard(game.getCategoryScores()))
+                .toList();
         if (games.isEmpty()) return GameStatsResponse.empty(achievementsUnlocked);
 
         List<Integer> totals = games.stream().map(GameScore::getScore).sorted().toList();
