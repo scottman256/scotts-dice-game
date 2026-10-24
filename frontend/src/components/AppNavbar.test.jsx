@@ -6,6 +6,18 @@ import { createGuestUser } from '../auth/authModel'
 import AppNavbar from './AppNavbar'
 
 describe('AppNavbar', () => {
+  it('offers guests only the new-game action in the Player Hub', async () => {
+    const onStartNewGame = jest.fn()
+    const user = userEvent.setup()
+    render(<AppNavbar sessionKind="guest" user={createGuestUser()} canStartNewGame onStartNewGame={onStartNewGame} />)
+    await user.click(screen.getByRole('button', { name: /Player Hub/ }))
+    expect(screen.getAllByRole('menuitem')).toHaveLength(1)
+    await user.click(screen.getByRole('menuitem', { name: 'Start New Game' }))
+    expect(onStartNewGame).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Player Hub/ })).toHaveFocus()
+  })
+
   it('shows a guest identity and a real link back to sign-in', async () => {
     const onReturnHome = jest.fn((event) => event.preventDefault())
     const onOpenSettings = jest.fn()

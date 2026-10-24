@@ -12,6 +12,8 @@ export default function AppNavbar({
   isSettingsOpen,
   isHowToPlayOpen,
   onOpenPlayerView,
+  onStartNewGame,
+  canStartNewGame = false,
   onOpenAdminView,
   onReturnHome,
   onOpenHowToPlay,
@@ -62,6 +64,13 @@ export default function AppNavbar({
     onOpenAdminView(view)
   }
 
+  function startNewGame() {
+    setOpenMenu(null)
+    // Keep a stable return-focus target after the menu item is removed.
+    playerMenuButtonRef.current?.focus({ preventScroll: true })
+    onStartNewGame()
+  }
+
   function openSettings() {
     setOpenMenu(null)
     onOpenSettings()
@@ -96,8 +105,7 @@ export default function AppNavbar({
           <strong>{user.name}</strong>
           <small>{accountDetail}</small>
         </span>
-        {!isGuest && (
-          <div className="nav-menus" ref={menusRef}>
+        <div className="nav-menus" ref={menusRef}>
           <div className="player-menu-wrap">
             <button
               type="button"
@@ -114,43 +122,51 @@ export default function AppNavbar({
             </button>
             {openMenu === 'player' && (
               <div className="player-menu" id="player-navigation-menu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-current={isPlayerSectionOpen && activePlayerView === 'personal' ? 'page' : undefined}
-                  onClick={() => openPlayerView('personal')}
-                >
-                  My Top 10
+                <button type="button" role="menuitem" onClick={startNewGame} disabled={!canStartNewGame}>
+                  Start New Game
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-current={isPlayerSectionOpen && activePlayerView === 'global' ? 'page' : undefined}
-                  onClick={() => openPlayerView('global')}
-                >
-                  Top 10 Overall
-                </button>
-                <span className="player-menu-divider" role="separator" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-current={isPlayerSectionOpen && activePlayerView === 'stats' ? 'page' : undefined}
-                  onClick={() => openPlayerView('stats')}
-                >
-                  Game Stats
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-current={isPlayerSectionOpen && activePlayerView === 'achievements' ? 'page' : undefined}
-                  onClick={() => openPlayerView('achievements')}
-                >
-                  Achievements
-                </button>
+                {!isGuest && (
+                  <>
+                    <span className="player-menu-divider" role="separator" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      aria-current={isPlayerSectionOpen && activePlayerView === 'personal' ? 'page' : undefined}
+                      onClick={() => openPlayerView('personal')}
+                    >
+                      My Top 10
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      aria-current={isPlayerSectionOpen && activePlayerView === 'global' ? 'page' : undefined}
+                      onClick={() => openPlayerView('global')}
+                    >
+                      Top 10 Overall
+                    </button>
+                    <span className="player-menu-divider" role="separator" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      aria-current={isPlayerSectionOpen && activePlayerView === 'stats' ? 'page' : undefined}
+                      onClick={() => openPlayerView('stats')}
+                    >
+                      Game Stats
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      aria-current={isPlayerSectionOpen && activePlayerView === 'achievements' ? 'page' : undefined}
+                      onClick={() => openPlayerView('achievements')}
+                    >
+                      Achievements
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
-          {user.admin && (
+          {!isGuest && user.admin && (
             <div className="player-menu-wrap admin-menu-wrap">
               <button
                 type="button"
@@ -187,8 +203,7 @@ export default function AppNavbar({
               )}
             </div>
           )}
-          </div>
-        )}
+        </div>
         <a
           className="nav-guide-link"
           href="/how-to-play"

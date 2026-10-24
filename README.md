@@ -10,6 +10,8 @@ Open the gear-shaped Settings menu during a game to switch themes without losing
 
 Guest progress and the selected theme are saved automatically in this browser, including when the backend is offline. Choose **Continue as Guest** on your next visit to resume or start over. One compact localStorage record holds the latest unfinished game; finishing or discarding it clears the progress while retaining your theme. Guest saves stay separate from account saves and are not shared across browsers or devices. Clearing browser data removes them; if browser storage is blocked or full, you can still play for the current session.
 
+To start over during a game, choose **Player Hub → Start New Game** and confirm. The option stays disabled until your first roll and becomes disabled again whenever you start a fresh game. This clears the current scorecard, dice, holds, and used extra rolls while keeping your theme and preferences. Canceling keeps the game intact. Unfinished games do not count toward game statistics, including older records with partial scorecards. The existing New Game buttons remain available after completing a game.
+
 Select a score in Player Hub → My Top 10 to revisit its finished scorecard in the theme used for that game. The view is read-only, includes all 19 categories and bonuses, and returns to My Top 10 without changing your current game or theme preference. Older scores saved without category details display an explanatory message.
 
 ## Project structure

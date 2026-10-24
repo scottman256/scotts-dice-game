@@ -688,6 +688,41 @@ class ApiIntegrationTest {
         return extractToken(response.body());
     }
 
+    @Test
+    void abandonedAndOrphanedIncompleteGamesDoNotAffectStatistics() throws Exception {
+        String token = registerSummaryPlayer();
+        submitSummaryScore(token, UUID.randomUUID(), 275, "classic", SCORECARD_275);
+        String statsBefore = get("/api/stats/me", token).body();
+        String scoresBefore = get("/api/scores/me", token).body();
+        String achievementsBefore = get("/api/achievements/me", token).body();
+        assertThat(put("/api/game-session/theme", "{\"theme\":\"vegas\"}", token).statusCode()).isEqualTo(200);
+        var save = put("/api/game-session/game", """
+                {"gameId":"%s","dice":[1,2,3,4,5],"heldDice":[true,false,false,false,false],
+                 "rollCount":3,"scores":{"sixes":0,"fiveKind":75},"extraRollsUsed":1,
+                 "status":"Choose a category.","statusTone":"normal"}
+                """.formatted(UUID.randomUUID()), token);
+        assertThat(save.statusCode()).isEqualTo(200);
+        assertThat(get("/api/stats/me", token).body()).isEqualTo(statsBefore);
+        assertThat(delete("/api/game-session/game", token).statusCode()).isEqualTo(204);
+        assertThat(get("/api/game-session", token).body()).contains("\"savedGame\":null", "\"theme\":\"vegas\"");
+        assertThat(get("/api/stats/me", token).body()).isEqualTo(statsBefore);
+        assertThat(get("/api/scores/me", token).body()).isEqualTo(scoresBefore);
+        assertThat(get("/api/achievements/me", token).body()).isEqualTo(achievementsBefore);
+
+        // Represent an older implementation that left a partial scorecard in score history.
+        UUID userId = UUID.fromString(extractJsonString(get("/api/auth/me", token).body(), "id"));
+        UUID orphanId = UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO game_scores (id, game_id, user_id, score, new_personal_best, completed_at, theme)
+                VALUES (?, ?, ?, 999, false, CURRENT_TIMESTAMP, 'golden')
+                """, orphanId, UUID.randomUUID(), userId);
+        jdbcTemplate.update("""
+                INSERT INTO completed_game_category_scores (game_score_id, category_id, score)
+                VALUES (?, 'fiveKind', 75)
+                """, orphanId);
+        assertThat(get("/api/stats/me", token).body()).isEqualTo(statsBefore);
+    }
+
     private HttpResponse<String> submitSummaryScore(
             String token, UUID gameId, int score, String theme, String categories
     ) throws Exception {
