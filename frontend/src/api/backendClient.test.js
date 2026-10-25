@@ -227,6 +227,22 @@ describe('backend client', () => {
     }))
   })
 
+  it('loads paged admin score history and sends explicit role changes with authorization', async () => {
+    const storage = storageMock()
+    storage.setItem('scotts-dice-game.access-token', 'admin-token')
+    const fetchImpl = jest.fn().mockResolvedValue(response(200, {}))
+    const client = createBackendClient({ fetchImpl, storage })
+    await client.getAdminUserScores('user/1')
+    await client.getAdminUserScores('user/1', { page: 2, sort: 'lowest' })
+    await client.changeAdminUserRole('user/1', true)
+    await client.changeAdminUserRole('user/1', false)
+    expect(fetchImpl.mock.calls[0][0]).toBe('http://localhost:8080/api/admin/users/user%2F1/scores?page=0&sort=newest')
+    expect(fetchImpl.mock.calls[1][0]).toBe('http://localhost:8080/api/admin/users/user%2F1/scores?page=2&sort=lowest')
+    expect(fetchImpl.mock.calls[2]).toEqual(['http://localhost:8080/api/admin/users/user%2F1/role', expect.objectContaining({ method: 'PUT', body: '{"admin":true}' })])
+    expect(fetchImpl.mock.calls[3][1].body).toBe('{"admin":false}')
+    expect(fetchImpl.mock.calls[2][1].headers.Authorization).toBe('Bearer admin-token')
+  })
+
   it('surfaces backend problem details such as duplicate usernames', async () => {
     const client = createBackendClient({
       fetchImpl: jest.fn(() => Promise.resolve(response(409, {

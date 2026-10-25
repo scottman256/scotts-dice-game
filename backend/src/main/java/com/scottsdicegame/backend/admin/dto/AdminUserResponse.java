@@ -17,9 +17,14 @@ public record AdminUserResponse(
         boolean canChangePassword,
         boolean canChangeEmail,
         boolean canDelete,
-        Instant createdAt
+        Instant createdAt,
+        long gamesPlayed,
+        Instant lastPlayed,
+        boolean gameInProgress,
+        boolean canChangeRole
 ) {
-    public static AdminUserResponse from(UserAccount user, UUID requestingAdminId) {
+    public static AdminUserResponse from(UserAccount user, UUID requestingAdminId,
+                                         long gamesPlayed, Instant lastPlayed, boolean gameInProgress) {
         return new AdminUserResponse(
                 user.getId(),
                 user.getDisplayName(),
@@ -31,7 +36,11 @@ public record AdminUserResponse(
                 user.getAuthProvider() == AuthProvider.MANUAL,
                 user.getAuthProvider() == AuthProvider.MANUAL,
                 !user.getId().equals(requestingAdminId),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                gamesPlayed,
+                lastPlayed,
+                gameInProgress,
+                !user.getId().equals(requestingAdminId)
         );
     }
 

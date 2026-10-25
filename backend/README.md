@@ -30,6 +30,8 @@ cd backend
 
 The service listens on `http://localhost:8080`. Local data persists under `backend/data/`; delete that directory only when you intentionally want a fresh local database. The local seed accounts are `test` / `test` with `test@test.com` and administrator `admin` / `admin` with `admin@admin.com`.
 
+After Java changes, stop the running backend with **Ctrl+C** and run `.\gradlew.bat bootRun` again. Building or testing the project does not reload an already-running backend. Vite refreshes frontend changes separately, so leaving the old backend running can cause newly added UI options (such as oldest-first score sorting) to be rejected.
+
 New username accounts require a valid email address and can subsequently sign in with either their username or email. Both identifiers are matched case-insensitively. Email uniqueness is case-insensitive across username, Google, and Facebook accounts. Firebase email claims are validated and refreshed from the identity provider at sign-in; an administrator can update username-account emails, while provider-managed addresses remain read-only.
 
 For the complete Docker deployment, use the root [`compose.yaml`](../compose.yaml) as documented in the [project README](../README.md). It builds this service as a non-root Java 17 container, connects it to the private H2 TCP service, and waits for database health before Spring Boot starts. The backend image is intentionally orchestrated through Compose rather than run alone because its Docker database hostname is provided there.
@@ -96,7 +98,13 @@ Administrator-role endpoints:
 
 - `GET /api/admin/themes` and `PUT /api/admin/themes/{themeId}`
 - `GET /api/admin/users`, `PUT /api/admin/users/{userId}/password`, `PUT /api/admin/users/{userId}/email`, and `DELETE /api/admin/users/{userId}`
+- `GET /api/admin/users/{userId}/scores?page=0&sort=newest` (50 entries per page; sort: `newest`, `oldest`, `highest`, or `lowest`)
+- `PUT /api/admin/users/{userId}/role` with `{ "admin": true }` or `{ "admin": false }`
 - `POST /api/admin/scores`, `DELETE /api/admin/scores/{scoreId}`, and `POST /api/admin/game-data/reset`
+
+The admin user list adds `gamesPlayed`, `lastPlayed`, `gameInProgress`, and `canChangeRole`, using bulk activity queries rather than per-user history requests. Counts include finished 19-category games and historical score-only entries; partial scorecards are excluded. Last played is the later of a finished game's timestamp and resumable progress activity. Empty saves and leftover saves for already-submitted games are not marked in progress. The history endpoint includes every stored score entry for review, with deterministic date/ID tie-breaking and bounded pages.
+
+Admin authorization checks the current database role on every request rather than trusting an old token's role. Role changes and account deletion lock the requesting and target accounts in a consistent order and recheck authorization inside the transaction. Self-demotion and self-deletion are forbidden, preventing concurrent administrators from removing each other's access and leaving no admin. System identities cannot be promoted; migration V11 permits Google and Facebook administrators while retaining provider-managed credentials.
 
 Each user can have one resumable game. Dice and in-progress category scores are stored in normalized child tables, while theme preferences remain available after a saved game is completed or deleted. New score submissions preserve their completed scorecard and completion theme. Stats exclude older score-only games, while the achievement engine replays all available history and can retroactively award milestones supported by the stored facts. Earned achievement keys and their qualifying games are persisted; definitions remain in a versionable catalog so future achievements can evaluate old data without one-off database backfills.
 

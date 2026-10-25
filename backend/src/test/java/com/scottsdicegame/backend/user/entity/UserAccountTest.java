@@ -12,6 +12,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserAccountTest {
 
     @Test
+    void supportsRoleChangesForRealAccountsButNeverSystemAccounts() {
+        UserAccount social = UserAccount.social(AuthProvider.GOOGLE, "role-test", "Player", "player@example.com", null);
+        social.changeAdminRole(true);
+        assertThat(social.isAdmin()).isTrue();
+        social.changeAdminRole(false);
+        assertThat(social.isAdmin()).isFalse();
+        assertThatThrownBy(() -> UserAccount.system("role-test", "System").changeAdminRole(true))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void rejectsProvidersThatCannotBackASocialAccount() {
         assertThatThrownBy(() -> UserAccount.social(
                 null,

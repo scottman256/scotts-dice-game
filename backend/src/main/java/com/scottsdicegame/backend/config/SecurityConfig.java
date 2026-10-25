@@ -1,5 +1,8 @@
 package com.scottsdicegame.backend.config;
 
+import com.scottsdicegame.backend.auth.service.AuthenticationService;
+import com.scottsdicegame.backend.user.repository.UserAccountRepository;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +51,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, UserAccountRepository userRepository) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -60,16 +63,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter(userRepository))))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 
-    private static JwtAuthenticationConverter jwtAuthenticationConverter() {
+    private static JwtAuthenticationConverter jwtAuthenticationConverter(UserAccountRepository userRepository) {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            String role = jwt.getClaimAsString("role");
-            return role == null ? List.of() : List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            // Access follows the current account role, not a potentially stale JWT claim.
+            boolean admin = userRepository.findById(AuthenticationService.parseUserId(jwt.getSubject()))
+                    .map(user -> user.isAdmin()).orElse(false);
+            return admin ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN")) : List.of();
         });
         return converter;
     }
