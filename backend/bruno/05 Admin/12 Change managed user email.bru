@@ -1,0 +1,39 @@
+meta {
+  name: Change managed user email
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/api/admin/users/{{managedUserId}}/email
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "updated-{{managedUserId}}@example.com"
+  }
+}
+
+script:pre-request {
+  const userId = bru.getVar("managedUserId") || bru.getEnvVar("managedUserId");
+  if (!userId) throw new Error("Run Register player first or set managedUserId explicitly.");
+  bru.setVar("managedUserId", userId);
+}
+
+tests {
+  test("Returns HTTP 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Administrator only, manual accounts only. Provide a valid unique email (max 254 characters).
+  Example uses the target UUID for a unique address. Duplicate email returns 409; provider-managed
+  Google/Facebook email returns 400. The full scenario targets the newly registered disposable account.
+}

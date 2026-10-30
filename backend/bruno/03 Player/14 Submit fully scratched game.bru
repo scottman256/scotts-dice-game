@@ -1,0 +1,65 @@
+meta {
+  name: Submit fully scratched game
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/api/scores
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "gameId": "{{scratchedGameId}}",
+    "score": 0,
+    "theme": "classic",
+    "categoryScores": {
+      "ones": 0,
+      "twos": 0,
+      "threes": 0,
+      "fours": 0,
+      "fives": 0,
+      "sixes": 0,
+      "any": 0,
+      "allEven": 0,
+      "allOdd": 0,
+      "twoPair": 0,
+      "threeKind": 0,
+      "fourKind": 0,
+      "fullHouse": 0,
+      "miniStraight": 0,
+      "smallStraight": 0,
+      "largeStraight": 0,
+      "fiveKind": 0,
+      "fiveKindBonus": 0,
+      "firstRollFiveKind": 0
+    }
+  }
+}
+
+script:pre-request {
+  bru.setVar("scratchedGameId", bru.interpolate("{{$randomUUID}}"));
+}
+
+tests {
+  test("Returns HTTP 201", function () {
+    expect(res.status).to.equal(201);
+  });
+
+  test("Accepts a complete zero scorecard as a finished game", function () {
+    expect(res.body.score).to.equal(0);
+    expect(res.body.totalGames).to.be.at.least(1);
+  });
+}
+
+docs {
+  A second complete example with every category scratched. All 19 keys are still required.
+  Creates a fresh game each send. Running this after the 385-point example gives score-history
+  sorting different scores and dates to compare. Does not replace the captured scoreId.
+}

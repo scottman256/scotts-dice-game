@@ -1,0 +1,25 @@
+meta {
+  name: Unknown score is hidden
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/scores/me/00000000-0000-0000-0000-000000000000
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 404", function () {
+    expect(res.status).to.equal(404);
+  });
+
+  test("Does not expose a missing score", function () {
+    expect(res.body.code).to.equal("SCORE_NOT_FOUND");
+  });
+}
+
+docs {
+  Missing and foreign score IDs use the same 404 SCORE_NOT_FOUND response.
+}

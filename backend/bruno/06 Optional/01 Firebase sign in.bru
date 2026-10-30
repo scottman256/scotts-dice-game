@@ -1,0 +1,52 @@
+meta {
+  name: Firebase sign in
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/firebase
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "idToken": "{{process.env.DICE_FIREBASE_ID_TOKEN}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getProcessEnv("DICE_FIREBASE_ID_TOKEN")) bru.runner.skipRequest();
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const role = res.body.user.admin ? "admin" : "player";
+    bru.setVar(role + "Token", res.body.accessToken);
+    bru.setVar(role + "UserId", res.body.user.id);
+  }
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Exchanges the provider token for an application token", function () {
+    expect(res.body.accessToken).to.be.a("string").and.not.empty;
+    expect(["google", "facebook"]).to.include(res.body.user.providerId);
+  });
+}
+
+docs {
+  Optional: skipped until DICE_FIREBASE_ID_TOKEN is set in .env. The backend must have
+  FIREBASE_PROJECT_ID configured, with socialAuthEnabled true in Health check. Obtain a fresh
+  Firebase ID token from the matching Google/Facebook sign-in, then send it here. No bearer auth.
+  The returned application token is reused by the matching role folder. Never commit the ID token.
+  An unconfigured backend returns 503; an invalid token returns 401. No fake success token is supplied.
+}

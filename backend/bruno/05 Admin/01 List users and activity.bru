@@ -1,0 +1,32 @@
+meta {
+  name: List users and activity
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/admin/users
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Includes activity and role-management fields", function () {
+    expect(res.body).to.be.an("array");
+    res.body.forEach(function (user) {
+      expect(user.gamesPlayed).to.be.a("number");
+      expect(user.gameInProgress).to.be.a("boolean");
+      expect(user.canChangeRole).to.be.a("boolean");
+      expect(user).to.have.property("lastPlayed");
+    });
+  });
+}
+
+docs {
+  Administrator only. Returns non-system accounts with identity, role, permissions, gamesPlayed,
+  lastPlayed, and gameInProgress. Search and user-list sorting happen in the frontend, not via API parameters.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Global top ten
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/scores/leaderboard
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns a ranked leaderboard", function () {
+    expect(res.body).to.be.an("array").with.length.at.most(10);
+    res.body.forEach(function (entry, index) { expect(entry.rank).to.equal(index + 1); });
+  });
+}
+
+docs {
+  Requires an ordinary player token even though scores are global. Returns at most ten entries.
+}

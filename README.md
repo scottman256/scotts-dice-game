@@ -67,6 +67,8 @@ npm run dev
 
 Open the Vite URL, normally `http://localhost:5173`. `VITE_API_BASE_URL` defaults to `http://localhost:8080` in the example environment file. If the backend is stopped, the frontend automatically offers only Guest mode and does not make authenticated persistence or score requests.
 
+For direct API testing, open the [Bruno collection](backend/bruno/README.md) in `backend/bruno`. It includes all endpoints, example request bodies, response checks, and separate player/admin tokens. Credentials stay in a Git-ignored local `.env` file.
+
 ## Optional social sign-in
 
 Enable Google and/or Facebook in Firebase Authentication and use the same Firebase project ID in both services. For Docker, set `FIREBASE_PROJECT_ID` and the public `VITE_FIREBASE_*` values in the root `.env` described above. Without Docker, configure the public values in `frontend/.env.local` and set the backend project ID before starting it:

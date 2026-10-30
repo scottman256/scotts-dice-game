@@ -1,0 +1,26 @@
+meta {
+  name: Current player
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/auth/me
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Uses the ordinary player token", function () {
+    expect(res.body.id).to.equal(bru.getVar("playerUserId") || bru.getEnvVar("playerUserId"));
+    expect(res.body.admin).to.equal(false);
+  });
+}
+
+docs {
+  Authenticated player profile. Uses playerToken inherited from this folder.
+}

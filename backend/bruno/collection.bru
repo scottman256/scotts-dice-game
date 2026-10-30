@@ -1,0 +1,24 @@
+meta {
+  type: collection
+}
+
+auth {
+  mode: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Select Local and copy .env.example to .env before signing in.
+  Public and authentication requests send no bearer token. Player and Admin
+  folders inherit their own bearer token. Login tokens and captured IDs stay
+  in runtime variables; scripts never persist credentials to environment files.
+
+  Run folders in numbered order for the complete scenario. Registration creates
+  a disposable player and signs in as that player for the rest of the run.
+  Admin cleanup deletes that account. Do not run the scenario in parallel.
+  Global reset and Firebase authentication are optional; see their Docs tabs.
+  See README.md for setup, endpoint criteria, and running on a temporary database.
+}

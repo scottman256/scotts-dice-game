@@ -1,0 +1,26 @@
+meta {
+  name: Get game session
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/game-session
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns the theme and optional resumable game", function () {
+    expect(res.body.theme).to.be.a("string");
+    expect(res.body).to.have.property("savedGame");
+  });
+}
+
+docs {
+  Returns { theme, savedGame }. savedGame is null when no game has been saved.
+}

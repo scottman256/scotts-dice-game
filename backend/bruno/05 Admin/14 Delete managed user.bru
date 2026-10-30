@@ -1,0 +1,38 @@
+meta {
+  name: Delete managed user
+  type: http
+  seq: 14
+}
+
+delete {
+  url: {{baseUrl}}/api/admin/users/{{managedUserId}}
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  const userId = bru.getVar("managedUserId") || bru.getEnvVar("managedUserId");
+  if (!userId) throw new Error("Run Register player first or set managedUserId explicitly.");
+  bru.setVar("managedUserId", userId);
+}
+
+script:post-response {
+  if (res.status === 204) {
+    bru.deleteVar("managedUserId");
+    bru.setVar("playerToken", "");
+    bru.deleteVar("playerUserId");
+    bru.deleteVar("scoreId");
+  }
+}
+
+tests {
+  test("Returns HTTP 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Administrator only. Deletes the disposable account and its dependent records at the end of the
+  scenario. Set managedUserId explicitly to target another account. Self-deletion returns 400.
+  After cleanup, sign in again before sending more player requests.
+}

@@ -1,0 +1,36 @@
+meta {
+  name: Save theme preference
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/game-session/theme
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "theme": "classic"
+  }
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Saves the selected theme", function () {
+    expect(res.body.theme).to.equal(req.getBody().theme);
+  });
+}
+
+docs {
+  theme must be a supported, enabled theme ID. classic is always available.
+  Other IDs appear in the public health response. An unknown or disabled theme returns 400.
+}

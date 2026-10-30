@@ -1,0 +1,68 @@
+meta {
+  name: Save game in progress
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/game-session/game
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "gameId": "{{gameId}}",
+    "dice": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "heldDice": [
+      false,
+      true,
+      false,
+      false,
+      true
+    ],
+    "rollCount": 1,
+    "scores": {
+      "ones": 3,
+      "twos": 6
+    },
+    "extraRollsUsed": 0,
+    "status": "Roll again or choose a category.",
+    "statusTone": "normal"
+  }
+}
+
+script:pre-request {
+  if (!bru.getVar("gameId")) bru.setVar("gameId", bru.interpolate("{{$randomUUID}}"));
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Preserves dice, holds, and scored categories", function () {
+    expect(res.body.gameId).to.equal(req.getBody().gameId);
+    expect(res.body.dice).to.deep.equal(req.getBody().dice);
+    expect(res.body.heldDice).to.deep.equal(req.getBody().heldDice);
+    expect(res.body.scores).to.deep.equal(req.getBody().scores);
+  });
+}
+
+docs {
+  Saves/replaces only the signed-in player game. gameId is a UUID, generated on first use.
+  Use five dice (1-6 after rolling), five booleans, rollCount 0-4, extraRollsUsed 0-3,
+  and at most 18 known categories. With rollCount 0, all faces must be null and holds false.
+  Roll 4 requires an extra roll to have been consumed. statusTone: normal, celebration, legendary.
+  A completed 19-category card belongs in Submit completed game, not this endpoint.
+}

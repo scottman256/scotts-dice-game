@@ -1,0 +1,23 @@
+meta {
+  name: Delete system leaderboard score
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/api/admin/scores/{{systemScoreId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Administrator only. Run Add system leaderboard score first or set systemScoreId explicitly.
+  Deletes that score and removes its unused custom system identity. Missing score returns 404.
+  The same endpoint can delete player scores; their achievements are rebuilt.
+}

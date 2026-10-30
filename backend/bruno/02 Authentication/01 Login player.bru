@@ -1,0 +1,52 @@
+meta {
+  name: Login player
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "identifier": "{{playerIdentifier}}",
+    "password": "{{playerPassword}}"
+  }
+}
+
+script:pre-request {
+  bru.setVar("playerToken", "");
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.user.admin === false) {
+    bru.setVar("playerToken", res.body.accessToken);
+    bru.setVar("playerUserId", res.body.user.id);
+  }
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns an application token for the player role", function () {
+    expect(res.body.accessToken).to.be.a("string").and.not.empty;
+    expect(Date.parse(res.body.expiresAt)).to.be.greaterThan(Date.now());
+    expect(res.body.user.admin).to.equal(false);
+  });
+}
+
+docs {
+  No bearer token required. Set DICE_PLAYER_IDENTIFIER and DICE_PLAYER_PASSWORD in .env.
+  identifier accepts a username or email, case-insensitively. Success stores playerToken
+  and playerUserId in memory for all player requests. Wrong credentials return 401.
+  The player login must belong to a non-admin player; a role mismatch fails the test and does not store the token.
+}
