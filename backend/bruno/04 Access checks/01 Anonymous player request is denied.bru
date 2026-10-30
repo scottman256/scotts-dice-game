@@ -1,0 +1,21 @@
+meta {
+  name: Anonymous player request is denied
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/auth/me
+  body: none
+  auth: none
+}
+
+tests {
+  test("Returns HTTP 401", function () {
+    expect(res.status).to.equal(401);
+  });
+}
+
+docs {
+  Intentionally sends no token. Protected player endpoints must reject anonymous access with 401.
+}

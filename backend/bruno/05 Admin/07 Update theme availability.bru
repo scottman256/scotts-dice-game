@@ -1,0 +1,37 @@
+meta {
+  name: Update theme availability
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/api/admin/themes/{{themeId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "enabled": true
+  }
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Applies the requested enabled flag", function () {
+    const theme = res.body.themes.find(function (item) { return item.id === bru.getEnvVar("themeId"); });
+    expect(theme.enabled).to.equal(req.getBody().enabled);
+  });
+}
+
+docs {
+  Administrator only. Set themeId in Local and enabled true/false in the body.
+  This is a global setting. classic cannot be disabled (400); unsupported IDs return 404.
+}

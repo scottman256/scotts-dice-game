@@ -1,0 +1,75 @@
+meta {
+  name: Submit completed game
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/scores
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "gameId": "{{completedGameId}}",
+    "score": 385,
+    "theme": "classic",
+    "categoryScores": {
+      "ones": 3,
+      "twos": 6,
+      "threes": 9,
+      "fours": 12,
+      "fives": 15,
+      "sixes": 18,
+      "any": 20,
+      "allEven": 20,
+      "allOdd": 15,
+      "twoPair": 20,
+      "threeKind": 18,
+      "fourKind": 24,
+      "fullHouse": 25,
+      "miniStraight": 20,
+      "smallStraight": 30,
+      "largeStraight": 40,
+      "fiveKind": 50,
+      "fiveKindBonus": 0,
+      "firstRollFiveKind": 0
+    }
+  }
+}
+
+script:pre-request {
+  bru.setVar("completedGameId", bru.interpolate("{{$randomUUID}}"));
+}
+
+script:post-response {
+  if (res.status === 201) bru.setVar("scoreId", res.body.id);
+}
+
+tests {
+  test("Returns HTTP 201", function () {
+    expect(res.status).to.equal(201);
+  });
+
+  test("Stores the complete scorecard and returns the game summary", function () {
+    expect(res.body.score).to.equal(req.getBody().score);
+    expect(res.body.gameId).to.equal(req.getBody().gameId);
+    expect(res.body.personalRank).to.be.at.least(1);
+    expect(res.body.totalGames).to.be.at.least(1);
+    expect(res.body.unlockedAchievements).to.be.an("array");
+  });
+}
+
+docs {
+  All 19 categories are required with values 0-250; total score must be 0-2000 and match
+  the category sum plus top bonuses. This example totals 385: category sum 345,
+  top subtotal 118, plus the 40-point bonus. Top subtotal >=100 adds 40; >=125 adds another 25.
+  The top categories are ones through sixes, any, allEven, allOdd. theme must be enabled.
+  A fresh UUID is generated each send; use a fixed gameId to test idempotent resubmission.
+  Captures scoreId for the completed-scorecard request. Inconsistent totals return 400.
+}

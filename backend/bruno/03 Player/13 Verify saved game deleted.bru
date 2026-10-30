@@ -1,0 +1,25 @@
+meta {
+  name: Verify saved game deleted
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/game-session
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("No resumable game remains", function () {
+    expect(res.body.savedGame).to.equal(null);
+  });
+}
+
+docs {
+  Run Delete saved game first; confirms that progress is gone.
+}

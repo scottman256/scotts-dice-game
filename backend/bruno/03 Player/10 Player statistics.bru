@@ -1,0 +1,28 @@
+meta {
+  name: Player statistics
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/stats/me
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Counts completed games and reports score statistics", function () {
+    expect(res.body.gamesPlayed).to.be.at.least(1);
+    expect(res.body.highScore).to.be.a("number");
+    expect(res.body.totalPoints).to.be.at.least(res.body.highScore);
+  });
+}
+
+docs {
+  Run Submit completed game first for these assertions. Statistics count complete valid scorecards;
+  in-progress games and older score-only entries do not count.
+}

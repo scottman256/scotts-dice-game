@@ -1,0 +1,26 @@
+meta {
+  name: My top ten
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/scores/me
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns at most ten scores, highest first", function () {
+    expect(res.body).to.be.an("array").with.length.at.most(10);
+    for (let i = 1; i < res.body.length; i++) expect(res.body[i-1].score).to.be.at.least(res.body[i].score);
+  });
+}
+
+docs {
+  Returns up to ten { rank, scoreId, score, completedAt, playerName } entries for this player.
+}

@@ -1,0 +1,7 @@
+# Credentials and tokens belong only in local files, never in the collection.
+.env
+.env.*
+!.env.example
+environments/*.local.bru
+environments/*.local.json
+reports/

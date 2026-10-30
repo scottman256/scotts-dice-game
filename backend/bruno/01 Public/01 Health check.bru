@@ -1,0 +1,29 @@
+meta {
+  name: Health check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/public/status
+  body: none
+  auth: none
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Service is up and advertises authentication and themes", function () {
+    expect(res.body.status).to.equal("UP");
+    expect(res.body.manualAuthEnabled).to.equal(true);
+    expect(res.body.socialAuthEnabled).to.be.a("boolean");
+    expect(res.body.enabledThemes).to.include("classic");
+  });
+}
+
+docs {
+  Public health/capabilities endpoint; no token required. Returns status UP, manualAuthEnabled,
+  socialAuthEnabled, and enabledThemes. It is a service availability check, not a full dependency diagnostic.
+}

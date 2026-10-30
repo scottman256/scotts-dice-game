@@ -1,0 +1,26 @@
+meta {
+  name: List theme availability
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/admin/themes
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns theme IDs and enabled flags", function () {
+    expect(res.body.themes).to.be.an("array").and.not.empty;
+    res.body.themes.forEach(function (theme) { expect(theme.enabled).to.be.a("boolean"); });
+  });
+}
+
+docs {
+  Administrator only. Returns themes [{ id, enabled }]. Use an id as themeId in the next request.
+}

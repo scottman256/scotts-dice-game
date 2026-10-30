@@ -1,0 +1,52 @@
+meta {
+  name: Login admin
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "identifier": "{{adminIdentifier}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+script:pre-request {
+  bru.setVar("adminToken", "");
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.user.admin === true) {
+    bru.setVar("adminToken", res.body.accessToken);
+    bru.setVar("adminUserId", res.body.user.id);
+  }
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns an application token for the admin role", function () {
+    expect(res.body.accessToken).to.be.a("string").and.not.empty;
+    expect(Date.parse(res.body.expiresAt)).to.be.greaterThan(Date.now());
+    expect(res.body.user.admin).to.equal(true);
+  });
+}
+
+docs {
+  No bearer token required. Set DICE_ADMIN_IDENTIFIER and DICE_ADMIN_PASSWORD in .env.
+  identifier accepts a username or email, case-insensitively. Success stores adminToken
+  and adminUserId in memory for all admin requests. Wrong credentials return 401.
+  The admin login must belong to an administrator; a role mismatch fails the test and does not store the token.
+}

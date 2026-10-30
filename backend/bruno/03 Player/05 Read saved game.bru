@@ -1,0 +1,26 @@
+meta {
+  name: Read saved game
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/game-session
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Restores the game just saved", function () {
+    expect(res.body.savedGame.gameId).to.equal(bru.getVar("gameId"));
+    expect(res.body.savedGame.rollCount).to.equal(1);
+  });
+}
+
+docs {
+  Run Save game in progress first. Checks that the saved game can be read back.
+}

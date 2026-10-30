@@ -1,0 +1,38 @@
+meta {
+  name: Reset all game data
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/admin/game-data/reset
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+script:pre-request {
+  if (bru.getEnvVar("allowGameDataReset") !== "true") bru.runner.skipRequest();
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Reports reset counts", function () {
+    ["scoresDeleted", "achievementsDeleted", "savedGamesDeleted", "defaultsRestored"].forEach(function (key) {
+      expect(res.body[key]).to.be.a("number").and.at.least(0);
+    });
+  });
+}
+
+docs {
+  DESTRUCTIVE: clears all non-default scores, achievements, and saved games for every player;
+  restores missing default leaderboard entries. Does not delete ordinary accounts.
+  Skipped unless allowGameDataReset is exactly true in the selected environment. Use only against
+  a disposable test database. No request body. Restore allowGameDataReset to false afterwards.
+}

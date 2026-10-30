@@ -1,0 +1,29 @@
+meta {
+  name: Read completed scorecard
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/scores/me/{{scoreId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns all nineteen categories for the submitted game", function () {
+    expect(res.body.scoreId).to.equal(bru.getVar("scoreId") || bru.getEnvVar("scoreId"));
+    expect(res.body.scorecardAvailable).to.equal(true);
+    expect(Object.keys(res.body.categoryScores)).to.have.length(19);
+  });
+}
+
+docs {
+  Run Submit completed game first or set scoreId to one of your scores from My top ten.
+  This request expects a full scorecard. Older score-only entries return scorecardAvailable false.
+  A missing score or a score owned by another player returns 404 SCORE_NOT_FOUND.
+}

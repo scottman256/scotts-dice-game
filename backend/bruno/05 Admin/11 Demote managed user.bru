@@ -1,0 +1,40 @@
+meta {
+  name: Demote managed user
+  type: http
+  seq: 11
+}
+
+put {
+  url: {{baseUrl}}/api/admin/users/{{managedUserId}}/role
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "admin": false
+  }
+}
+
+script:pre-request {
+  const userId = bru.getVar("managedUserId") || bru.getEnvVar("managedUserId");
+  if (!userId) throw new Error("Run Register player first or set managedUserId explicitly.");
+  bru.setVar("managedUserId", userId);
+}
+
+tests {
+  test("Returns HTTP 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Administrator only. Removes administrator access for managedUserId. The full scenario uses
+  the disposable account created by Register player. Existing sessions pick up the role immediately.
+  You cannot change your own role, and system players cannot be promoted. Run Demote after Promote
+  to leave the test player with ordinary access. Missing/system user returns 404; self-change returns 400.
+}

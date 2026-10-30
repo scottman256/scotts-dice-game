@@ -71,6 +71,8 @@ The console is enabled by default for local development. Set `DICE_H2_CONSOLE_EN
 
 ## API
 
+The [Bruno API collection](bruno/README.md) in `backend/bruno` includes every application endpoint, editable example bodies, response checks, and separate player/admin authentication. Open that folder in Bruno, copy `.env.example` to the Git-ignored `.env`, select **Local**, and run the login requests. It includes the existing unauthenticated `GET /api/public/status` health check.
+
 Public endpoints:
 
 - `GET /api/public/status`

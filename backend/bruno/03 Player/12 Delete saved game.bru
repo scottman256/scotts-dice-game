@@ -1,0 +1,26 @@
+meta {
+  name: Delete saved game
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{baseUrl}}/api/game-session/game
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  if (res.status === 204) bru.deleteVar("gameId");
+}
+
+tests {
+  test("Returns HTTP 204", function () {
+    expect(res.status).to.equal(204);
+  });
+}
+
+docs {
+  Discards only the signed-in player resumable game. Does not delete completed scores or theme preferences.
+  No JSON body; success is 204 with an empty response. Repeating it also succeeds.
+}

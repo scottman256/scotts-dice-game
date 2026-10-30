@@ -1,0 +1,42 @@
+meta {
+  name: Add system leaderboard score
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/admin/scores
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "playerName": "Bruno Example Player",
+    "score": 350
+  }
+}
+
+script:post-response {
+  if (res.status === 201) bru.setVar("systemScoreId", res.body.scoreId);
+}
+
+tests {
+  test("Returns HTTP 201", function () {
+    expect(res.status).to.equal(201);
+  });
+
+  test("Creates the requested leaderboard entry", function () {
+    expect(res.body.playerName).to.equal(req.getBody().playerName);
+    expect(res.body.score).to.equal(req.getBody().score);
+  });
+}
+
+docs {
+  Administrator only. Creates a non-login system player and score. playerName: 1-100 characters;
+  score: integer 0-2000. Captures systemScoreId for Delete system leaderboard score.
+}

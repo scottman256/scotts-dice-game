@@ -1,0 +1,37 @@
+meta {
+  name: Score history newest
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/admin/users/{{playerUserId}}/scores?page={{historyPage}}&sort=newest
+  body: none
+  auth: inherit
+}
+
+params:query {
+  page: {{historyPage}}
+  sort: newest
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns a bounded page sorted newest", function () {
+    expect(res.body.page).to.equal(Number(bru.getEnvVar("historyPage")));
+    expect(res.body.totalScores).to.be.a("number");
+    expect(res.body.scores).to.be.an("array").with.length.at.most(50);
+    const values = res.body.scores.map(function (entry) { return Date.parse(entry.completedAt); });
+    for (let i = 1; i < values.length; i++) expect(values[i-1]).to.be.at.least(values[i]);
+  });
+}
+
+docs {
+  Administrator only. Set playerUserId from registration/login or List users. historyPage is
+  zero-based, >=0; pages contain up to 50 scores. Accepted sorts: newest, oldest, highest, lowest.
+  Includes all stored score records, even older ones without full cards. Returns scores, page,
+  totalPages, totalScores; an empty page is valid. This request checks newest ordering.
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Player achievements
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/achievements/me
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Returns HTTP 200", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns earned badges and locked hints", function () {
+    expect(res.body.capacity).to.be.greaterThan(0);
+    expect(res.body.achievements).to.be.an("array");
+    expect(res.body.lockedAchievements).to.be.an("array");
+  });
+}
+
+docs {
+  Returns capacity, achievements (key/title/description/achievedAt), and lockedAchievements hints.
+}
